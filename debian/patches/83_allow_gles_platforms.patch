@@ -1,0 +1,29 @@
+Subject: HACK: QVTKOpenGLWindow.cxx: Define GL_BACK_{LEFT,RIGHT} for Qt with OpenGL ES
+From: Adrian Bunk <bunk@debian.org>
+
+Date: Fri, 11 Dec 2020 10:42:37 +0200
+
+
+---
+ GUISupport/Qt/QVTKOpenGLWindow.cxx | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/GUISupport/Qt/QVTKOpenGLWindow.cxx b/GUISupport/Qt/QVTKOpenGLWindow.cxx
+index 3bddc19809..79d5c2b653 100644
+--- a/GUISupport/Qt/QVTKOpenGLWindow.cxx
++++ b/GUISupport/Qt/QVTKOpenGLWindow.cxx
+@@ -35,6 +35,11 @@
+ #include "vtkObjectFactory.h"
+ #include "vtkOpenGLState.h"
+ 
++#ifndef GL_BACK_LEFT
++#define GL_BACK_LEFT GL_BACK
++#define GL_BACK_RIGHT GL_BACK
++#endif
++
+ QVTKOpenGLWindow::QVTKOpenGLWindow(QOpenGLWindow::UpdateBehavior ub, QWindow* p)
+   : QVTKOpenGLWindow(vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New(), nullptr, ub, p)
+ {
+-- 
+2.20.1
+

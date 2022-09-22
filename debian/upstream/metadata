@@ -1,0 +1,11 @@
+Name: VTK
+Bug-Database: https://gitlab.kitware.com/vtk/vtk/issues
+Bug-Submit: https://gitlab.kitware.com/vtk/vtk/issues/new
+Documentation: https://vtk.org/documentation/
+Repository: https://gitlab.kitware.com/vtk/vtk.git
+Repository-Browse: https://gitlab.kitware.com/vtk/vtk
+Reference:
+  Author: Schroeder, Will and Martin, Ken and Lorensen, Bill
+  Year: 2006
+  Title: The Visualization Toolkit (4th ed.)
+  ISBN: 978-1-930934-19-1

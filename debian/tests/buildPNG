@@ -1,0 +1,83 @@
+#!/bin/sh
+# autopkgtest check
+# (C) 2014 Anton Gladky
+
+set -e
+
+export OMPI_MCA_orte_rsh_agent=/bin/false
+
+WORKDIR=$(mktemp -d)
+trap "rm -rf $WORKDIR" 0 INT QUIT ABRT PIPE TERM
+cd $WORKDIR
+mkdir src
+cd src
+
+cat <<EOF > CMakeLists.txt
+cmake_minimum_required(VERSION 2.6)
+project(demo)
+find_package(VTK REQUIRED)
+
+add_executable(demo demo.cpp)
+target_link_libraries(demo \${VTK_LIBRARIES})
+install(TARGETS demo DESTINATION bin)
+EOF
+
+cat <<EOF > demo.cpp
+#include <vtkImageData.h>
+#include <vtkPNGWriter.h>
+#include <vtkSmartPointer.h>
+#include <vtkImageCanvasSource2D.h>
+#include <vtkImageCast.h>
+ 
+int main(int argc, char *argv[])
+{
+  std::string outputFilename;
+  if( argc > 1)
+    {
+    outputFilename = argv[1];
+    }
+  else
+    {
+    outputFilename = "output.png";
+    }
+ 
+  int extent[6] = {0, 99, 0, 99, 0, 0};
+  vtkSmartPointer<vtkImageCanvasSource2D> imageSource =
+    vtkSmartPointer<vtkImageCanvasSource2D>::New();
+  imageSource->SetExtent(extent);
+  imageSource->SetScalarTypeToUnsignedChar();
+  imageSource->SetNumberOfScalarComponents(3);
+  imageSource->SetDrawColor(127, 45, 255);
+  imageSource->FillBox(0, 99, 0, 99);
+  imageSource->SetDrawColor(255,255,255);
+  imageSource->FillBox(40, 70, 20, 50);
+  imageSource->Update();
+ 
+  vtkSmartPointer<vtkImageCast> castFilter =
+    vtkSmartPointer<vtkImageCast>::New();
+  castFilter->SetOutputScalarTypeToUnsignedChar ();
+  castFilter->SetInputConnection(imageSource->GetOutputPort());
+  castFilter->Update();
+ 
+  vtkSmartPointer<vtkPNGWriter> writer =
+    vtkSmartPointer<vtkPNGWriter>::New();
+  writer->SetFileName(outputFilename.c_str());
+  writer->SetInputConnection(castFilter->GetOutputPort());
+  writer->Write();
+ 
+  return EXIT_SUCCESS;
+}
+
+
+EOF
+
+cd ..
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=./../inst ./../src
+make
+make install
+echo "build: OK"
+[ -x demo ]
+./demo
+echo "run: OK"

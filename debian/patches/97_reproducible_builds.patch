@@ -1,0 +1,26 @@
+From c3f5613299c9dfdee66709674a6cafafb6576137 Mon Sep 17 00:00:00 2001
+From: Vagrant Cascadian <vagrant@reproducible-builds.org>
+Date: Tue, 15 Dec 2020 07:38:56 +0000
+Subject: [PATCH 2/2] doc_class2example.pl: Sort the parsers array.
+
+Thanks to Bernhard M. Wiedemann <bernhardout@lsmod.de>.
+---
+ Utilities/Doxygen/doc_class2example.pl | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/Utilities/Doxygen/doc_class2example.pl b/Utilities/Doxygen/doc_class2example.pl
+index 3978563..ce8aeca 100755
+--- a/Utilities/Doxygen/doc_class2example.pl
++++ b/Utilities/Doxygen/doc_class2example.pl
+@@ -261,6 +261,7 @@ if (exists $args{"parser"}) {
+ } else {
+     @parsers = keys %parsers;
+ }
++@parsers = sort @parsers;
+ 
+ my $os_is_win = ($^O =~ m/(MSWin32|Cygwin)/i);
+ my $open_file_as_text = $os_is_win ? O_TEXT : 0;
+-- 
+2.29.2
+
+

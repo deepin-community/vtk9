@@ -1,0 +1,72 @@
+#!/bin/sh
+# autopkgtest check
+# (C) 2014 Anton Gladky
+
+set -e
+
+export OMPI_MCA_orte_rsh_agent=/bin/false
+
+WORKDIR=$(mktemp -d)
+trap "rm -rf $WORKDIR" 0 INT QUIT ABRT PIPE TERM
+cd $WORKDIR
+mkdir src
+cd src
+
+cat <<EOF > CMakeLists.txt
+cmake_minimum_required(VERSION 2.6)
+project(demo)
+find_package(VTK REQUIRED)
+
+add_executable(demo demo.cpp)
+target_link_libraries(demo \${VTK_LIBRARIES})
+install(TARGETS demo DESTINATION bin)
+EOF
+
+cat <<EOF > demo.cpp
+#include <vtkVersion.h>
+#include <vtkCellArray.h>
+#include <vtkPoints.h>
+#include <vtkXMLPolyDataWriter.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+ 
+int main ( int, char *[] )
+{
+  vtkSmartPointer<vtkPoints> points = 
+    vtkSmartPointer<vtkPoints>::New();
+ 
+  for ( unsigned int i = 0; i < 10; ++i )
+    {
+    points->InsertNextPoint ( i, i, i );
+    }
+ 
+  vtkSmartPointer<vtkPolyData> polydata = 
+    vtkSmartPointer<vtkPolyData>::New();
+  polydata->SetPoints(points);
+ 
+  vtkSmartPointer<vtkXMLPolyDataWriter> writer =  
+    vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+  writer->SetFileName("test.vtp");
+#if VTK_MAJOR_VERSION <= 5
+  writer->SetInput(polydata);
+#else
+  writer->SetInputData(polydata);
+#endif
+  writer->Write();
+ 
+  return EXIT_SUCCESS;
+}
+
+EOF
+
+cd ..
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=./../inst ./../src
+make
+make install
+echo "build: OK"
+[ -x demo ]
+./demo
+cat test.vtp
+echo "run: OK"

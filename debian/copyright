@@ -1,0 +1,333 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://www.vtk.org/
+Upstream-Name: Visualization Toolkit
+Files-Excluded:
+  Web/*
+  Examples/GUI/Win32
+  ThirdParty/doubleconversion/vtkdoubleconversion
+  ThirdParty/expat/vtkexpat
+  ThirdParty/freetype/vtkfreetype
+  ThirdParty/gl2ps/vtkgl2ps
+  ThirdParty/hdf5/vtkhdf5
+  ThirdParty/jpeg/vtkjpeg
+  ThirdParty/jsoncpp/vtkjsoncpp
+  ThirdParty/libproj/vtklibproj
+  ThirdParty/libxml2/vtklibxml2
+  ThirdParty/lz4/vtklz4
+  ThirdParty/lzma/vtklzma
+  ThirdParty/netcdf/vtknetcdf
+  ThirdParty/png/vtkpng
+  ThirdParty/sqlite/vtksqlite
+  ThirdParty/tiff/vtktiff
+  ThirdParty/zlib/vtkzlib
+  ThirdParty/glew/vtkglew
+  ThirdParty/utf8/vtkutf8
+  ThirdParty/mpi4py
+  ThirdParty/xdmf3
+  ThirdParty/ogg/vtkogg
+  ThirdParty/theora/vtktheora
+  ThirdParty/eigen/vtkeigen
+
+Files: *
+Copyright: 1993-2015 Ken Martin, Will Schroeder, Bill Lorensen,
+           Kitware inc., Sandia Corporation.
+License: BSD-3-clause
+
+Files: Accelerators/*
+Copyright: 2012 Sandia Corporation.
+License: BSD-3-clause
+
+Files: Common/Core/vtkMersenneTwister.h
+ Common/Core/vtkMersenneTwister_Private.cxx
+Copyright: Ken Martin, Will Schroeder, Bill Lorensen
+          2001-2009 Makoto Matsumoto and Takuji Nishimura.
+          2009 Mutsuo Saito
+License: BSD-2-clause
+
+Files: Common/DataModel/vtkDistributedGraphHelper.cxx
+ Common/DataModel/vtkDistributedGraphHelper.h
+Copyright: Ken Martin, Will Schroeder, Bill Lorensen
+License: BSL-1
+
+Files: Examples/Android/NativeVTK/*
+Copyright: 2010, The Android Open Source Project
+License: Apache-2
+
+Files: Filters/General/vtkTemporalPathLineFilter.cxx
+Copyright: CSCS - Swiss National Supercomputing Centre.
+License: BSD-3-clause
+
+Files: IO/Image/Testing/*
+Copyright: GeometryFactory
+License: BSD-3-clause
+
+Files: IO/PIO/BHTree.cxx
+ IO/PIO/BHTree.h
+Copyright: 2007, Los Alamos National Security, LLC
+License: BSD-3-clause
+
+Files: Interaction/Widgets/Testing/Cxx/*
+Copyright: Ken Martin, Will Schroeder, Bill Lorensen
+License: Apache-2
+
+Files: ThirdParty/diy2/vtkdiy2/*
+Copyright: 2016-2018, Chobolabs Inc.
+License: BSD-3-clause
+
+Files: ThirdParty/diy2/vtkdiy2/include/vtkdiy2/fmt/*
+Copyright: 2012-2016, Victor Zverovich
+License: BSD-like
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+  .
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+  .
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  .
+  --- Optional exception to the license ---
+  .
+  As an exception, if, as a result of your compiling your source code, portions
+  of this Software are embedded into a machine-executable object form of such
+  source code, you may redistribute such embedded portions in such object form
+  without including the above copyright and permission notices.
+
+Files: ThirdParty/kissfft/vtkkissfft/*
+Copyright: 2003-2010, Mark Borgerding .
+License: BSD-3-clause
+
+Files: ThirdParty/libharu/vtklibharu/*
+Copyright: 2007-2009, Antony Dovgal
+ 1999-2006, Takeshi Kanno
+ 2007-2009, Antony Dovgal et al.
+ 2000-2006, Takeshi Kanno
+License: Zlib
+
+Files: ThirdParty/pegtl/vtkpegtl/*
+Copyright: 2007-2019, Dr. Colin Hirsch and Daniel Frey
+License: Expat
+
+Files: ThirdParty/pugixml/vtkpugixml/*
+Copyright: 2006-2016, Arseny Kapoulkine
+License: Expat
+
+Files: ThirdParty/vpic/*
+Copyright: 2007, Los Alamos National Security, LLC
+License: BSD-3-clause
+
+Files: ThirdParty/xdmf2/vtkxdmf2/*
+Copyright: 1984, 1989, 1990, 2000-2003, Free Software Foundation, Inc.
+License: GPL-2+
+
+Files: ThirdParty/zfp/vtkzfp/*
+Copyright: 2014-2019, Lawrence Livermore National Security, LLC.
+License: BSD-3-clause-notice
+
+Files: Utilities/DICOMParser/*
+Copyright: 2003, Matt Turek
+License: BSD-3-clause
+
+Files: Utilities/KWSys/*
+Copyright: 1996, Silicon Graphics Computer Systems, Inc.
+License: BSD-3-clause
+
+Files: Utilities/KWSys/vtksys/MD5.c
+Copyright: 1999, 2000, 2002, Aladdin Enterprises.
+License: Zlib
+
+Files: Utilities/Maintenance/*
+Copyright: Insight Software Consortium
+License: Apache-2
+
+Files: Utilities/MetaIO/*
+Copyright: 2000-2011, Insight Software Consortium
+License: Apache-2
+
+License: BSD-3-clause
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+  .
+  * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+  .
+  * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+  .
+  * Neither name of Ken Martin, Will Schroeder, or Bill Lorensen nor the names
+    of any contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+  .
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
+  ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+  SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-2-clause
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are
+  met:
+  .
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+  .
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSL-1
+  Boost Software License - Version 1.0 - August 17th, 2003
+  .
+  Permission is hereby granted, free of charge, to any person or organization
+  obtaining a copy of the software and accompanying documentation covered by
+  this license (the "Software") to use, reproduce, display, distribute,
+  execute, and transmit the Software, and to prepare derivative works of the
+  Software, and to permit third-parties to whom the Software is furnished to
+  do so, all subject to the following:
+  .
+  The copyright notices in the Software and this entire statement, including
+  the above license grant, this restriction and the following disclaimer,
+  must be included in all copies of the Software, in whole or in part, and
+  all derivative works of the Software, unless such copies or derivative
+  works are solely in the form of machine-executable object code generated by
+  a source language processor.
+  .
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT
+  SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
+  FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
+  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+  DEALINGS IN THE SOFTWARE.
+
+License: Apache-2
+  On Debian systems, the full text of the Apache
+  License version 2 can be found in the file
+  `/usr/share/common-licenses/Apache-2'.
+
+License: Zlib
+  This software is provided 'as-is', without any express or implied warranty.
+  .
+  In no event will the authors be held liable for any damages arising from the 
+  use of this software.
+  .
+  Permission is granted to anyone to use this software for any purpose,including 
+  commercial applications, and to alter it and redistribute it freely, subject 
+  to the following restrictions:
+  .
+  1. The origin of this software must not be misrepresented; you must not claim 
+      that you wrote the original software. If you use this software in a 
+      product, an acknowledgment in the product documentation would be 
+      appreciated but is not required.
+  2. Altered source versions must be plainly marked as such, and must not be 
+      misrepresented as being the original software.
+  3. This notice may not be removed or altered from any source distribution.
+
+License: Expat
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  .
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+  .
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
+License: GPL-2+
+  This program is free software; you can redistribute it
+  and/or modify it under the terms of the GNU General Public
+  License as published by the Free Software Foundation; either
+  version 2 of the License, or (at your option) any later
+  version.
+  .
+  On Debian systems, the full text of the GNU General Public
+  License version 2 can be found in the file
+  `/usr/share/common-licenses/GPL-2'.
+
+License: BSD-3-clause-notice
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+  .
+  1. Redistributions of source code must retain the above copyright notice,
+  this list of conditions and the disclaimer below.
+  .
+  2. Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the disclaimer (as noted below) in the
+  documentation and/or other materials provided with the distribution.
+  .
+  3. Neither the name of the LLNS/LLNL nor the names of its contributors may
+  be used to endorse or promote products derived from this software without
+  specific prior written permission.
+  .
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED.  IN NO EVENT SHALL LAWRENCE LIVERMORE NATIONAL SECURITY,
+  LLC, THE U.S. DEPARTMENT OF ENERGY OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  .
+  .
+  Additional BSD Notice
+  .
+  1. This notice is required to be provided under our contract with the U.S.
+  Department of Energy (DOE).  This work was produced at Lawrence Livermore
+  National Laboratory under Contract No. DE-AC52-07NA27344 with the DOE.
+  .
+  2. Neither the United States Government nor Lawrence Livermore National
+  Security, LLC nor any of their employees, makes any warranty, express or
+  implied, or assumes any liability or responsibility for the accuracy,
+  completeness, or usefulness of any information, apparatus, product, or
+  process disclosed, or represents that its use would not infringe
+  privately-owned rights.
+  .
+  3. Also, reference herein to any specific commercial products, process, or
+  services by trade name, trademark, manufacturer or otherwise does not
+  necessarily constitute or imply its endorsement, recommendation, or
+  favoring by the United States Government or Lawrence Livermore National
+  Security, LLC.  The views and opinions of authors expressed herein do not
+  necessarily state or reflect those of the United States Government or
+  Lawrence Livermore National Security, LLC, and shall not be used for
+  advertising or product endorsement purposes.

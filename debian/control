@@ -1,0 +1,282 @@
+Source: vtk9
+Maintainer: Debian Science Team <debian-science-maintainers@lists.alioth.debian.org>
+Uploaders: Anton Gladky <gladk@debian.org>,
+           Gert Wollny <gewo@debian.org>,
+           Nico Schlömer <nico.schloemer@gmail.com>
+Section: graphics
+Priority: optional
+Build-Depends: chrpath,
+               cmake (>= 3.2.0),
+               debhelper-compat (= 13),
+               default-jdk [!hppa !hurd-any !kfreebsd-any],
+               default-libmysqlclient-dev,
+               dh-sequence-python3,
+               doxygen-latex,
+               ghostscript,
+               gnuplot-nox,
+               graphviz,
+               hdf5-tools,
+               dh-sequence-javahelper,
+               libalglib-dev,
+               libavcodec-dev,
+               libavformat-dev,
+               libavutil-dev,
+               libdigest-md5-perl,
+               libdouble-conversion-dev,
+               libeigen3-dev,
+               libexpat-dev,
+               libfontconfig1-dev,
+               libfreetype6-dev,
+               libftgl-dev,
+               libgdal-dev,
+               libgl1-mesa-dev | libgl-dev,
+               libgl2ps-dev (>= 1.4.1),
+               libglew-dev,
+               libglu1-mesa-dev | libglu-dev,
+               libhdf5-openmpi-dev,
+               libhpdf-dev,
+               libjpeg-dev,
+               libjs-mathjax,
+               libjsoncpp-dev,
+               liblz4-dev,
+               libmrmpi-dev,
+               libnetcdf-cxx-legacy-dev,
+               libnetcdf-dev,
+               libogg-dev,
+               libosmesa6-dev,
+               libpng-dev,
+               libpq-dev,
+               libproj-dev,
+               libsqlite3-dev,
+               libswscale-dev,
+               libtbb-dev,
+               libtheora-dev,
+               libtiff-dev,
+               libutfcpp-dev,
+               libx11-dev,
+               libxdmf-dev,
+               libxml2-dev,
+               libxpm-dev,
+               libxt-dev,
+               lzma,
+               mpi-default-dev,
+               pkg-config,
+               python3-all-dev,
+               python3-matplotlib,
+               python3-mpi4py,
+               qtbase5-dev,
+               r-base-core,
+               r-base-dev,
+               r-base,
+               tcl-dev,
+               texlive-binaries,
+               tk-dev,
+               x11proto-core-dev,
+               xauth,
+               xvfb,
+               zlib1g-dev
+Standards-Version: 4.6.0
+Vcs-Browser: https://salsa.debian.org/science-team/vtk9
+Vcs-Git: https://salsa.debian.org/science-team/vtk9.git
+Homepage: https://www.vtk.org/
+Rules-Requires-Root: no
+
+Package: libvtk9-dev
+Architecture: any
+Section: libdevel
+Depends: ${misc:Depends},
+         ${shlibs:Depends},
+         default-jdk [!hppa !hurd-any !kfreebsd-any],
+         default-libmysqlclient-dev,
+         libavcodec-dev,
+         libavformat-dev,
+         libavutil-dev,
+         libc6-dev,
+         libdouble-conversion-dev,
+         libeigen3-dev,
+         libexpat-dev,
+         libfreetype6-dev,
+         libgdal-dev,
+         libgl1-mesa-dev | libgl-dev,
+         libgl2ps-dev,
+         libglew-dev,
+         libglu1-mesa-dev | libglu-dev,
+         libhdf5-mpi-dev,
+         libjpeg-dev,
+         libjsoncpp-dev,
+         liblz4-dev,
+         libnetcdf-cxx-legacy-dev,
+         libnetcdf-dev,
+         libpng-dev,
+         libpq-dev,
+         libproj-dev,
+         libpython3-dev,
+         libswscale-dev,
+         libtbb-dev,
+         libtheora-dev,
+         libtiff-dev,
+         libutfcpp-dev,
+         libvtk9 (= ${binary:Version}),
+         libvtk9-java (= ${binary:Version}) [!hppa !hurd-any !kfreebsd-any],
+         libx11-dev,
+         libxft-dev,
+         libxml2-dev,
+         libxss-dev,
+         libxt-dev,
+         mpi-default-dev,
+         python3-vtk9 (= ${binary:Version}),
+         tcl-dev,
+         tk-dev,
+         vtk9 (= ${binary:Version}),
+         x11proto-core-dev,
+         zlib1g-dev
+Suggests: vtk9-doc,
+          vtk9-examples
+Conflicts: libvtk5-dev,
+           libvtk6-dev,
+           libvtk7-dev
+Replaces: libvtk5-dev,
+          libvtk6-dev,
+          libvtk7-dev
+Description: VTK header files
+ The Visualization Toolkit (VTK) is an open-source software system
+ for 3D computer graphics, image processing, and visualization.
+ .
+ This package provides the VTK header files required to compile
+ C++ programs that use VTK to do 3D visualisation.
+
+Package: libvtk9
+Architecture: any
+Multi-Arch: same
+Section: libs
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Suggests: mpi-default-bin,
+          vtk9-doc,
+          vtk9-examples
+Replaces: libvtk5.8,
+          libvtk7.1
+Description: VTK libraries
+ The Visualization Toolkit (VTK) is an open-source software system
+ for 3D computer graphics, image processing, and visualization.
+ .
+ This package provides the shared libraries needed to run C++ programs
+ that use VTK.
+
+Package: libvtk9-java
+Architecture: amd64 arm64 armel armhf i386 mips64el mipsel ppc64el s390x alpha ia64 m68k powerpc ppc64 riscv64 sh4 sparc64 sw64 x32
+Section: java
+Depends: ${java:Depends},
+         ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends}
+Suggests: java-virtual-machine,
+          libvtk9-dev (= ${binary:Version}),
+          vtk9-doc,
+          vtk9-examples
+Breaks: libvtk6-java,
+        libvtk7-java
+Replaces: libvtk6-java,
+          libvtk7-java
+Description: VTK - Java language support
+ The Visualization Toolkit (VTK) is an object oriented, high level
+ library that allows one to easily write C++ programs, Tcl, Python and
+ Java scripts that do 3D visualization.
+ .
+ This package provides the VTK Java language support.
+
+Package: python3-vtk9
+Architecture: any
+Section: python
+Depends: libvtk9 (= ${binary:Version}),
+         python3-mpi4py,
+         ${misc:Depends},
+         ${python3:Depends},
+         ${shlibs:Depends}
+Suggests: mayavi2,
+          vtk9-doc,
+          vtk9-examples
+Breaks: python3-vtk6,
+        python3-vtk7
+Replaces: python3-vtk6,
+          python3-vtk7
+Description: Python bindings for VTK
+ The Visualization Toolkit (VTK) is an open-source software system
+ for 3D computer graphics, image processing, and visualization.
+ .
+ This package provides the python3 bindings for VTK.
+
+Package: vtk9
+Architecture: any
+Section: interpreters
+Depends: libvtk9 (= ${binary:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends}
+Suggests: vtk9-doc,
+          vtk9-examples
+Description: Binaries for VTK9
+ The Visualization Toolkit (VTK) is an open-source software system
+ for 3D computer graphics, image processing, and visualization.
+ .
+ This package provides binaries for VTK9
+
+Package: vtk9-doc
+Architecture: all
+Section: doc
+Depends: doc-base,
+         libjs-jquery,
+         libjs-mathjax,
+         ${misc:Depends}
+Suggests: libvtk9-dev,
+          vtk9-examples
+Description: VTK class reference documentation
+ The Visualization Toolkit (VTK) is an open-source software system
+ for 3D computer graphics, image processing, and visualization.
+ .
+ This package provides documentation for VTK9
+
+Package: vtk9-examples
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}
+Suggests: libvtk9-dev,
+          python3,
+          python3-vtk9,
+          vtk9-doc
+Description: VTK examples
+ The Visualization Toolkit (VTK) is an open-source software system
+ for 3D computer graphics, image processing, and visualization.
+ .
+ This package provides examples for VTK9
+
+Package: libvtk9-qt
+Architecture: any
+Multi-Arch: same
+Section: libs
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: VTK libraries, Qt files
+ The Visualization Toolkit (VTK) is an open-source software system
+ for 3D computer graphics, image processing, and visualization.
+ .
+ This package provides the shared libraries needed to run C++ programs
+ that use VTK. Qt files
+
+Package: libvtk9-qt-dev
+Architecture: any
+Multi-Arch: same
+Section: libdevel
+Depends: libvtk9-dev (= ${binary:Version}),
+         libvtk9-qt (= ${binary:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends},
+         qtbase5-dev,
+         qttools5-private-dev,
+         libqt5opengl5-dev,
+         libqt5webkit5-dev
+Description: VTK header files, containing Qt files
+ The Visualization Toolkit (VTK) is an open-source software system
+ for 3D computer graphics, image processing, and visualization.
+ .
+ This package provides the VTK header files required to compile
+ C++ programs that use VTK to do 3D visualisation. Qt files

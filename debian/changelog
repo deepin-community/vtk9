@@ -1,0 +1,156 @@
+vtk9 (9.0.3+dfsg1.1-1+dde) UNRELEASED; urgency=medium
+
+  * update
+
+ -- Debian Science Team <debian-science-maintainers@lists.alioth.debian.org>  Mon, 25 Jul 2022 15:20:22 +0800
+
+vtk9 (9.0.3+dfsg1.1-1+dde) unstable; urgency=medium
+
+  * Add sunway support.
+
+ -- Miao Changwei <miaochangwei@uniontech.com>  Thu, 19 May 2022 23:21:01 +0800
+
+vtk9 (9.0.3+dfsg1-3) unstable; urgency=medium
+
+  * Team upload.
+  * Add upstream patch to include <limits> (Closes: #984399)
+  * Bump Java source/target versions (Closes: #981974)
+  * Add upstream patch for proj>=5 api (Closes: #983299)
+  * Use dh-sequencers
+  * Use execute_after_ of dh
+  * Add Multi-Arch hints from the MA hinter
+  * Bump policy versions (no changes)
+
+ -- Jochen Sprickerhof <jspricke@debian.org>  Tue, 12 Oct 2021 10:21:32 +0200
+
+vtk9 (9.0.3+dfsg1-2) unstable; urgency=medium
+
+  * [ccb2b2e] Remove gitlab-ci
+  * [7e35e50] Add libtbb-dev as depends
+
+ -- Anton Gladky <gladk@debian.org>  Sat, 18 Sep 2021 08:10:15 +0200
+
+vtk9 (9.0.3+dfsg1-1) unstable; urgency=medium
+
+  [ Adrian Bunk ]
+  * [f635946] Bump the libgl2ps-dev build dependency to >= 1.4.1
+
+  [ Francois Mazen ]
+  * [91a8c79] Set TBB as SMP backend.
+
+  [ Anton Gladky ]
+  * [3116116] New upstream version 9.0.3+dfsg1
+  * [6bce9b2] Compile with MPI
+  * [991e8b0] Apply cme fix dpkg
+  * [b64d990] Add .gitlab-ci.yml
+
+ -- Anton Gladky <gladk@debian.org>  Fri, 17 Sep 2021 22:14:11 +0200
+
+vtk9 (9.0.1+dfsg1-8) unstable; urgency=medium
+
+  [ Samuel Thibault ]
+  * [e2a0f2b]  Fix java dep on non-java ports. (Closes: #980125)
+
+ -- Anton Gladky <gladk@debian.org>  Thu, 14 Jan 2021 21:36:46 +0100
+
+vtk9 (9.0.1+dfsg1-7) unstable; urgency=medium
+
+  * [cab8734] Enable some more modules
+
+ -- Anton Gladky <gladk@debian.org>  Thu, 07 Jan 2021 19:43:49 +0100
+
+vtk9 (9.0.1+dfsg1-6) unstable; urgency=medium
+
+  [ Samuel Thibault ]
+  * [7027348] Fix FTBFS on hurd-i386 and non-java ports. (Closes: #978659)
+
+  [ Vagrant Cascadian ]
+  * [7a3a0e0] Make vtk9 build-reproducible. (Closes: #977522, #977521)
+
+  [ Anton Gladky ]
+  * [a341c32] Enable RenderingContextOpenGL2. (Closes: #979073)
+
+ -- Anton Gladky <gladk@debian.org>  Mon, 04 Jan 2021 22:12:05 +0100
+
+vtk9 (9.0.1+dfsg1-5) unstable; urgency=medium
+
+  [ Adrian Bunk ]
+  * [06163ff] Fixes and workaround for platforms where Qt uses OpenGL ES
+
+  [ Anton Gladky ]
+  * [3e6d9ec] Ignore quilt dir
+  * [294ca1e] Revert "Do not build qt on some (GLES) archs"
+
+ -- Anton Gladky <gladk@debian.org>  Sun, 13 Dec 2020 12:55:42 +0100
+
+vtk9 (9.0.1+dfsg1-4) unstable; urgency=medium
+
+  * [b80e4ab] Do not build qt on some (GLES) archs
+
+ -- Anton Gladky <gladk@debian.org>  Sun, 13 Dec 2020 12:14:22 +0100
+
+vtk9 (9.0.1+dfsg1-3) unstable; urgency=medium
+
+  [ Adrian Bunk ]
+  * [52af841] Revert "Link against latomic"
+  * [381ea98] Link with libatomic on archtectures that need it
+
+  [ Anton Gladky ]
+  * [a983346] 80_allow_gles_platforms.patch.
+  * [e79137e] Fix FTBFS against freetype 2.10.4. (Closes: #976975)
+  * [d7ecb86] Add python3-vtk9 as Breaks+Replaces: python3-paraview.
+              (Closes: #976127)
+  * [19fe54e] Update changelog.
+
+ -- Anton Gladky <gladk@debian.org>  Thu, 10 Dec 2020 17:33:59 +0100
+
+vtk9 (9.0.1+dfsg1-2) unstable; urgency=medium
+
+  * [3afb408] Fix autopkgtests
+  * [8c41fa9] Minor fix in d/copyright
+
+ -- Anton Gladky <gladk@debian.org>  Wed, 25 Nov 2020 21:50:59 +0100
+
+vtk9 (9.0.1+dfsg1-1) unstable; urgency=medium
+
+  * [6b297c8] Link against latomic
+  * Upload into unstable
+
+ -- Anton Gladky <gladk@debian.org>  Thu, 19 Nov 2020 19:59:45 +0100
+
+vtk9 (9.0.1+dfsg1-1~exp6) experimental; urgency=medium
+
+  * [751a92f] Remove Qt-files from non-qt binaries. (Closes: #974923)
+
+ -- Anton Gladky <gladk@debian.org>  Mon, 16 Nov 2020 21:39:46 +0100
+
+vtk9 (9.0.1+dfsg1-1~exp5) experimental; urgency=medium
+
+  * [21adbaf] Fix FTBFS
+  * [4326c39] Sort build-dependencies
+
+ -- Anton Gladky <gladk@debian.org>  Sun, 15 Nov 2020 08:47:31 +0100
+
+vtk9 (9.0.1+dfsg1-1~exp4) experimental; urgency=medium
+
+  * [0be2017] Drop Build-Depends-Arch:
+
+ -- Anton Gladky <gladk@debian.org>  Fri, 13 Nov 2020 23:29:02 +0100
+
+vtk9 (9.0.1+dfsg1-1~exp3) experimental; urgency=medium
+
+  * [e5cfe7f] Move javahelper to BD
+
+ -- Anton Gladky <gladk@debian.org>  Fri, 13 Nov 2020 22:53:27 +0100
+
+vtk9 (9.0.1+dfsg1-1~exp2) experimental; urgency=medium
+
+  * [cedb51e] Fix FTBFS on -any arch
+
+ -- Anton Gladky <gladk@debian.org>  Fri, 13 Nov 2020 16:07:58 +0100
+
+vtk9 (9.0.1+dfsg1-1~exp1) experimental; urgency=medium
+
+  * Initial release. (Closes: #974165)
+
+ -- Anton Gladky <gladk@debian.org>  Tue, 10 Nov 2020 22:12:50 +0100

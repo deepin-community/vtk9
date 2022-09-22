@@ -1,0 +1,3 @@
+usr/include/vtk-9.0 usr/include
+usr/lib/*/*.so
+usr/lib/*/cmake/vtk-9.0

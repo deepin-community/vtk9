@@ -1,0 +1,61 @@
+From b48706fdff04672bdad6d10afae23afc26b89178 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Stefan=20Br=C3=BCns?= <stefan.bruens@rwth-aachen.de>
+Date: Tue, 9 Jun 2020 17:11:12 +0200
+Subject: Fix compilation when Qt is built for GLES platforms
+
+On GLES 2.0/3.0 platforms (more specifically, for Qt5 "opengl es2" builds),
+QOpenGLFunctions_3_2_Core does not exist.
+
+After the last restructuring, from the GL 3.2 Core functions only
+glDrawBuffer is used. glDrawBuffer can be trivially replaced with
+glDrawBuffers, which is part of OpenGL 2.0 and GLES 3.0, and as an
+extension in many GLES 2.0 implementations.
+---
+ GUISupport/Qt/QVTKRenderWindowAdapter.cxx | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/GUISupport/Qt/QVTKRenderWindowAdapter.cxx b/GUISupport/Qt/QVTKRenderWindowAdapter.cxx
+index 5a66e236df..530cec9b2a 100644
+--- a/GUISupport/Qt/QVTKRenderWindowAdapter.cxx
++++ b/GUISupport/Qt/QVTKRenderWindowAdapter.cxx
+@@ -28,9 +28,8 @@
+ #include <QOffscreenSurface>
+ #include <QOpenGLContext>
+ #include <QOpenGLDebugLogger>
++#include <QOpenGLExtraFunctions>
+ #include <QOpenGLFramebufferObject>
+-#include <QOpenGLFunctions>
+-#include <QOpenGLFunctions_3_2_Core>
+ #include <QPointer>
+ #include <QScopedValueRollback>
+ #include <QScreen>
+@@ -334,14 +333,15 @@ public:
+     {
+       return false;
+     }
+-    QOpenGLFunctions_3_2_Core* f = this->Context->versionFunctions<QOpenGLFunctions_3_2_Core>();
++    QOpenGLExtraFunctions* f = this->Context->extraFunctions();
+     if (!f)
+     {
+       return false;
+     }
+ 
+     f->glBindFramebuffer(GL_DRAW_FRAMEBUFFER, targetId);
+-    f->glDrawBuffer(targetAttachment);
++    const GLenum bufs[1] = { static_cast<GLenum>(targetAttachment) };
++    f->glDrawBuffers(1, bufs);
+ 
+     f->glBindFramebuffer(GL_READ_FRAMEBUFFER, this->FBO->handle());
+     f->glReadBuffer(
+@@ -436,7 +436,7 @@ public:
+   {
+     Q_ASSERT(this->Context && this->FBO);
+ 
+-    QOpenGLFunctions_3_2_Core* f = this->Context->versionFunctions<QOpenGLFunctions_3_2_Core>();
++    QOpenGLFunctions* f = this->Context->functions();
+     if (f)
+     {
+       // now clear alpha otherwise we end up blending the rendering with
+-- 
+2.20.1
+

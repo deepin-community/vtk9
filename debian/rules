@@ -1,0 +1,103 @@
+#!/usr/bin/make -f
+BUILDDIR = $(CURDIR)/debian/build
+
+DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
+nojava_archs=hppa hurd-i386 kfreebsd-i386 kfreebsd-amd64
+ifneq ($(DEB_BUILD_ARCH),$(filter $(DEB_BUILD_ARCH), $(nojava_archs)))
+  export JAVA_HOME=/usr/lib/jvm/default-java
+  extra_flags += -DVTK_WRAP_JAVA=ON
+endif
+
+ifneq (,$(filter $(DEB_HOST_ARCH), armel m68k mips mipsel powerpc sh4))
+  export DEB_CXXFLAGS_MAINT_APPEND += -Wl,--no-as-needed -latomic -Wl,--as-needed
+  export DEB_LDFLAGS_MAINT_APPEND += -Wl,--no-as-needed -latomic -Wl,--as-needed
+endif
+
+%:
+	dh $@ --buildsystem=cmake --builddirectory=$(BUILDDIR)
+
+extra_flags +=  \
+	-DBUILD_SHARED_LIBS=ON \
+	-DCMAKE_C_COMPILER=mpicc \
+	-DCMAKE_CXX_COMPILER=mpic++ \
+	-DCMAKE_EXE_LINKER_FLAGS="-Wl,--as-needed -latomic" \
+	-DCMAKE_MODULE_LINKER_FLAGS="-Wl,--as-needed" \
+	-DCMAKE_SHARED_LINKER_FLAGS="-Wl,--as-needed" \
+	-DCMAKE_VERBOSE_MAKEFILE=ON \
+	-DHDF5_IS_PARALLEL=OFF \
+	-DVTK_BUILD_DOCUMENTATION=ON \
+	-DVTK_BUILD_EXAMPLES=OFF \
+	-DVTK_BUILD_TESTING=OFF \
+	-DVTK_EXTRA_COMPILER_WARNINGS=ON \
+	-DVTK_GROUP_ENABLE_Qt:STRING="YES" \
+	-DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL:STRING="NO" \
+	-DVTK_GROUP_ENABLE_Rendering:STRING="YES" \
+	-DVTK_GROUP_ENABLE_StandAlone:STRING="YES" \
+	-DVTK_GROUP_ENABLE_Views:STRING="YES" \
+	-DVTK_GROUP_ENABLE_MPI:STRING="YES" \
+	-DVTK_GROUP_ENABLE_Imaging:STRING="YES" \
+	-DVTK_MODULE_ENABLE_VTK_RenderingQt:STRING="YES" \
+	-DVTK_MODULE_ENABLE_VTK_RenderingTk:STRING="YES" \
+	-DVTK_MODULE_ENABLE_VTK_utf8:STRING="YES" \
+	-DVTK_MODULE_ENABLE_VTK_InteractionWidgets:STRING="YES" \
+	-DVTK_MODULE_ENABLE_VTK_InteractionImage:STRING="YES" \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_doubleconversion:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_eigen:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_expat:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_freetype:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_gl2ps:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_glew:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_hdf5:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_jpeg:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_jsoncpp:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_libproj:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_libxml2:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_lz4:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_lzma:BOOL:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_netcdf:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_ogg:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_png:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_sqlite:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_theora:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_tiff:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_utf8:BOOL=ON \
+	-DVTK_MODULE_USE_EXTERNAL_VTK_zlib:BOOL=ON \
+	-DVTK_SMP_IMPLEMENTATION_TYPE:STRING="TBB" \
+	-DVTK_PYTHON_VERSION:STRING=3 \
+	-DVTK_USE_TK=ON \
+	-DVTK_WRAP_PYTHON=ON \
+	-DVTK_MODULE_ENABLE_VTK_RenderingContextOpenGL2=YES \
+	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+	-DVTK_MODULE_ENABLE_VTK_ParallelMPI:STRING="YES" \
+	-DVTK_USE_MPI=ON \
+	-DVTK_JAVA_SOURCE_VERSION:STRING=1.8 \
+	-DVTK_JAVA_TARGET_VERSION:STRING=1.8 \
+
+
+override_dh_auto_configure:
+	dh_auto_configure -- $(extra_flags)
+
+execute_after_dh_auto_clean:
+	rm -rf $(BUILDDIR)
+
+execute_after_dh_auto_build:
+	cd $(BUILDDIR) && make DoxygenDoc
+	find $(BUILDDIR)/Utilities/Doxygen/doc/html/ -name "*.md5" | xargs rm -f
+
+override_dh_auto_install:
+	dh_auto_install -X.pyc -X.pyo
+ifneq ($(JAVA_HOME),)
+	# Correct headers for paraview
+	mv $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/java/vtk.jar $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/java/vtk9.jar
+endif
+	sed -i -e "s/FATAL_ERROR/STATUS/g" $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/cmake/vtk-9.0/VTK-targets.cmake
+
+execute_after_dh_install:
+	rm -rf $(CURDIR)/debian/tmp/usr/share/licenses
+	find $(CURDIR)/debian/libvtk9-dev/ -name "*Qt*" -exec rm {} \; || true
+	find $(CURDIR)/debian/libvtk9-dev/ -name "libvtkRenderingPythonTkWidgets.so" -exec rm {} \; || true
+	find $(CURDIR)/debian/libvtk9-dev/usr/include/ -name "Q*" -exec rm {} \; || true
+	find $(CURDIR)/debian/libvtk9/ -name "*Qt*" -exec rm {} \; || true
+	find $(CURDIR)/debian/tmp/usr/share/doc/vtk-9.0/doxygen -name "_formulas.log" -exec rm {} \; || true
+	find $(CURDIR)/debian/build/Utilities/Doxygen/doc/html -name "_formulas.log" -exec rm {} \; || true

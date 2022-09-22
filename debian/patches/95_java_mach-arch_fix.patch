@@ -1,0 +1,40 @@
+https://gitlab.kitware.com/diatomic/diy/-/merge_requests/59
+
+From bb0d55c8ae34a43354b1002262dad722c410d8cb Mon Sep 17 00:00:00 2001
+From: Samuel Thibault <samuel.thibault@ens-lyon.org>
+Date: Sat, 13 Jun 2020 13:59:31 +0200
+Subject: [PATCH] Fix build on mach-based OS which are not OS X
+
+---
+ include/diy/time.hpp | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp b/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp
+index 692cf36..671e69d 100644
+--- a/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp
++++ b/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp
+@@ -3,11 +3,11 @@
+ 
+ #ifndef _WIN32
+ #include <sys/time.h>
+-#ifdef __MACH__
++#if defined(__MACH__) && defined(__APPLE__)
+ #include <mach/clock.h>
+ #include <mach/mach.h>
+-#endif // __MACH__
++#endif // __MACH__ && __APPLE__
+ #endif // ifndef _WIN32
+ 
+ namespace diy
+ {
+@@ -16,7 +16,7 @@ typedef     unsigned long       time_type;
+ 
+ inline time_type get_time()
+ {
+-#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
++#if defined(__MACH__) && defined(__APPLE__) // OS X does not have clock_gettime, use clock_get_time
+     clock_serv_t cclock;
+     mach_timespec_t ts;
+     host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+-- 
+GitLab

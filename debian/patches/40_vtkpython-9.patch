@@ -1,0 +1,35 @@
+Description: Rename vtkpython to vtkpython-9.0
+Author: Anton Gladky <gladk@debian.org>
+Last-Update: 2020-11-05
+
+Index: vtk9-9.0.1+dfsg1/Wrapping/Python/CMakeLists.txt
+===================================================================
+--- vtk9-9.0.1+dfsg1.orig/Wrapping/Python/CMakeLists.txt
++++ vtk9-9.0.1+dfsg1/Wrapping/Python/CMakeLists.txt
+@@ -23,21 +23,21 @@ endif ()
+ 
+ # The interpreters are not supported in wheel builds, so skip them.
+ if (NOT VTK_WHEEL_BUILD)
+-  add_executable(vtkpython
++  add_executable(vtkpython-9.0
+     vtkpython.rc
+     vtkPythonAppInit.cxx)
+-  target_link_libraries(vtkpython
++  target_link_libraries(vtkpython-9.0
+     PRIVATE
+       VTK::WrappingPythonCore
+       VTK::PythonInterpreter
+       VTK::Python
+       VTK::vtkpythonmodules
+       VTK::vtksys)
+-  add_executable(VTK::vtkpython ALIAS vtkpython)
++  add_executable(VTK::vtkpython-9.0 ALIAS vtkpython-9.0)
+   if (VTK_INSTALL_PYTHON_EXES)
+     install(
+-      TARGETS     vtkpython
+-      EXPORT      VTKPython
++      TARGETS     vtkpython-9.0
++      EXPORT      VTK9Python
+       DESTINATION "${CMAKE_INSTALL_BINDIR}")
+   endif ()
+ 

@@ -1,0 +1,17 @@
+10_matplotlib.patch
+20_do_not_link_against_socket.patch
+30_drop_medical_example.patch
+40_vtkpython-9.patch
+50_fix_python-modules_path.patch
+60_fix_path_perl.patch
+70_fix_python_numpy_warning.patch
+80_allow_gles_platforms.patch
+81_allow_gles_platforms.patch
+82_allow_gles_platforms.patch
+83_allow_gles_platforms.patch
+91_include_limits.patch
+92_proj8.patch
+95_java_mach-arch_fix.patch
+97_reproducible_builds.patch
+98_fix_mpi4py.py
+add-sunway-support.patch

@@ -1,0 +1,58 @@
+#!/bin/sh
+# autopkgtest check
+# (C) 2014 Anton Gladky
+
+set -e
+
+export OMPI_MCA_orte_rsh_agent=/bin/false
+
+WORKDIR=$(mktemp -d)
+trap "rm -rf $WORKDIR" 0 INT QUIT ABRT PIPE TERM
+cd $WORKDIR
+mkdir src
+cd src
+
+cat <<EOF > CMakeLists.txt
+cmake_minimum_required(VERSION 2.6)
+project(demo)
+find_package(VTK REQUIRED)
+
+add_executable(demo demo.cpp)
+target_link_libraries(demo \${VTK_LIBRARIES})
+install(TARGETS demo DESTINATION bin)
+EOF
+
+cat <<EOF > demo.cpp
+#include <vtkMath.h>
+ 
+int main(int, char *[])
+{
+  // Create two points.
+  double p0[3] = {0.0, 0.0, 0.0};
+  double p1[3] = {1.0, 1.0, 1.0};
+ 
+  // Find the squared distance between the points.
+  double squaredDistance = vtkMath::Distance2BetweenPoints(p0, p1);
+ 
+  // Take the square root to get the Euclidean distance between the points.
+  double distance = sqrt(squaredDistance);
+ 
+  // Output the results.
+  std::cout << "SquaredDistance = " << squaredDistance << std::endl;
+  std::cout << "Distance = " << distance << std::endl;
+ 
+  return EXIT_SUCCESS;
+}
+
+EOF
+
+cd ..
+mkdir build
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=./../inst ./../src
+make
+make install
+echo "build: OK"
+[ -x demo ]
+./demo
+echo "run: OK"

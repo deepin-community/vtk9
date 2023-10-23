@@ -37,18 +37,18 @@ public:
    */
   static vtkOutlineCornerSource* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the factor that controls the relative size of the corners
    * to the length of the corresponding bounds
    */
   vtkSetClampMacro(CornerFactor, double, 0.001, 0.5);
   vtkGetMacro(CornerFactor, double);
-  //@}
+  ///@}
 
 protected:
   vtkOutlineCornerSource();
-  ~vtkOutlineCornerSource() override {}
+  ~vtkOutlineCornerSource() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 

@@ -16,6 +16,7 @@
 
 #include "vtkCommand.h"
 #include "vtkDataObject.h"
+#include "vtkDataObjectTypes.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
@@ -23,7 +24,7 @@
 
 vtkStandardNewMacro(vtkDataObjectAlgorithm);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObjectAlgorithm::vtkDataObjectAlgorithm()
 {
   // by default assume filters have one input and one output
@@ -32,40 +33,40 @@ vtkDataObjectAlgorithm::vtkDataObjectAlgorithm()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObjectAlgorithm::~vtkDataObjectAlgorithm() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkDataObjectAlgorithm::GetOutput()
 {
   return this->GetOutput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkDataObjectAlgorithm::GetOutput(int port)
 {
   return this->GetOutputDataObject(port);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectAlgorithm::SetOutput(vtkDataObject* d)
 {
   this->GetExecutive()->SetOutputData(0, d);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkDataObjectAlgorithm::GetInput()
 {
   return this->GetInput(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkDataObjectAlgorithm::GetInput(int port)
 {
   if (this->GetNumberOfInputConnections(port) < 1)
@@ -75,7 +76,7 @@ vtkDataObject* vtkDataObjectAlgorithm::GetInput(int port)
   return this->GetExecutive()->GetInputData(port, 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkDataObjectAlgorithm::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -105,7 +106,7 @@ vtkTypeBool vtkDataObjectAlgorithm::ProcessRequest(
   return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataObjectAlgorithm::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   // now add our info
@@ -113,14 +114,14 @@ int vtkDataObjectAlgorithm::FillOutputPortInformation(int vtkNotUsed(port), vtkI
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataObjectAlgorithm::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataObject");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkDataObjectAlgorithm::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -128,26 +129,53 @@ int vtkDataObjectAlgorithm::RequestInformation(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectAlgorithm::SetInputData(vtkDataObject* input)
 {
   this->SetInputData(0, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectAlgorithm::SetInputData(int index, vtkDataObject* input)
 {
   this->SetInputDataInternal(index, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectAlgorithm::AddInputData(vtkDataObject* input)
 {
   this->AddInputData(0, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDataObjectAlgorithm::AddInputData(int index, vtkDataObject* input)
 {
   this->AddInputDataInternal(index, input);
+}
+
+//------------------------------------------------------------------------------
+bool vtkDataObjectAlgorithm::SetOutputDataObject(
+  int dataType, vtkInformation* outInfo, bool exact /*=false*/)
+{
+  if (!outInfo)
+  {
+    return false;
+  }
+
+  auto dobj = vtkDataObject::GetData(outInfo);
+  if (dobj == nullptr ||
+    (exact == false && vtkDataObjectTypes::TypeIdIsA(dobj->GetDataObjectType(), dataType)) ||
+    (exact == true && dobj->GetDataObjectType() != dataType))
+  {
+    dobj = vtkDataObjectTypes::NewDataObject(dataType);
+    if (!dobj)
+    {
+      return false;
+    }
+
+    outInfo->Set(vtkDataObject::DATA_OBJECT(), dobj);
+    outInfo->Set(vtkDataObject::DATA_EXTENT_TYPE(), dobj->GetExtentType());
+    dobj->FastDelete();
+  }
+  return true;
 }

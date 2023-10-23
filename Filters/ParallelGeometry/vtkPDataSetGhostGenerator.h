@@ -28,25 +28,28 @@
 #define vtkPDataSetGhostGenerator_h
 
 #include "vtkDataSetGhostGenerator.h"
+#include "vtkDeprecation.h"                   // For VTK_DEPRECATED_IN_9_1_0
 #include "vtkFiltersParallelGeometryModule.h" // For export macro
 
 class vtkMultiProcessController;
 class vtkMultiBlockDataSet;
 
-class VTKFILTERSPARALLELGEOMETRY_EXPORT vtkPDataSetGhostGenerator : public vtkDataSetGhostGenerator
+class VTK_DEPRECATED_IN_9_1_0(
+  "Use vtkGhostCellsGenerator instead") VTKFILTERSPARALLELGEOMETRY_EXPORT vtkPDataSetGhostGenerator
+  : public vtkDataSetGhostGenerator
 {
 public:
   vtkTypeMacro(vtkPDataSetGhostGenerator, vtkDataSetGhostGenerator);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set macro for the multi-process controller. If a controller is not
    * supplied, then, the global controller is assumed.
    */
   vtkSetMacro(Controller, vtkMultiProcessController*);
   vtkGetMacro(Controller, vtkMultiProcessController*);
-  //@}
+  ///@}
 
   /**
    * Initializes
@@ -78,3 +81,5 @@ private:
 };
 
 #endif /* vtkPDataSetGhostGenerator_h */
+
+// VTK-HeaderTest-Exclude: vtkPDataSetGhostGenerator.h

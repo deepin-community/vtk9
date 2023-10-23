@@ -21,6 +21,7 @@
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
+#include "vtksys/FStream.hxx"
 #include "vtksys/SystemTools.hxx"
 
 #include <sstream>
@@ -41,10 +42,10 @@ vtkHDRReader::vtkHDRReader()
   this->SetDataByteOrderToLittleEndian();
 }
 
-//----------------------------------------------------------------------------
-vtkHDRReader::~vtkHDRReader() {}
+//------------------------------------------------------------------------------
+vtkHDRReader::~vtkHDRReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -58,7 +59,7 @@ void vtkHDRReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SwappedAxis: " << this->SwappedAxis << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::ExecuteInformation()
 {
   // if the user has not set the extent, but has set the VOI
@@ -106,11 +107,11 @@ void vtkHDRReader::ExecuteInformation()
   this->vtkImageReader::ExecuteInformation();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHDRReader::CanReadFile(const char* fname)
 {
   // get the magic number by reading in a file
-  std::ifstream ifs(fname, std::ifstream::in);
+  vtksys::ifstream ifs(fname, vtksys::ifstream::in);
 
   if (ifs.fail())
   {
@@ -129,7 +130,7 @@ int vtkHDRReader::CanReadFile(const char* fname)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads a data from a file.  The datas extent/axes
 // are assumed to be the same as the file extent/order.
 void vtkHDRReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
@@ -155,7 +156,7 @@ void vtkHDRReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformat
   this->HDRReaderUpdate(data, outPtr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::HDRReaderUpdate(vtkImageData* data, float* outPtr)
 {
   vtkIdType outIncr[3];
@@ -213,11 +214,11 @@ void vtkHDRReader::ConvertAllDataFromRGBToXYZ(float* outPtr, int size)
 {
   for (int i = 0; i < size; i += HDR_DATA_SIZE)
   {
-    this->XYZ2RGB(matrixXYZ2RGB, outPtr[i], outPtr[i + 1], outPtr[i + 2]);
+    vtkHDRReader::XYZ2RGB(matrixXYZ2RGB, outPtr[i], outPtr[i + 1], outPtr[i + 2]);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads in one data of data.
 // templated to handle different data types.
 bool vtkHDRReader::HDRReaderUpdateSlice(float* outPtr, int* outExt)
@@ -349,7 +350,7 @@ bool vtkHDRReader::HDRReaderUpdateSlice(float* outPtr, int* outExt)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHDRReader::HasError(std::istream* is)
 {
   if (!*is)
@@ -371,7 +372,7 @@ int vtkHDRReader::GetHeight() const
   return this->DataExtent[3] - this->DataExtent[2] + 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHDRReader::ReadHeaderData()
 {
   // Precondition:CanReadFile return true
@@ -509,7 +510,7 @@ bool vtkHDRReader::ReadHeaderData()
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::FillOutPtrRLE(
   int* outExt, float*& outPtr, std::vector<unsigned char>& lineBuffer)
 {
@@ -529,7 +530,7 @@ void vtkHDRReader::FillOutPtrRLE(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::FillOutPtrNoRLE(
   int* outExt, float*& outPtr, std::vector<unsigned char>& lineBuffer)
 {
@@ -542,7 +543,7 @@ void vtkHDRReader::FillOutPtrNoRLE(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHDRReader::ReadAllFileNoRLE(std::istream* is, float* outPtr, int decrPtr, int* outExt)
 {
   std::vector<unsigned char> lineBuffer(this->GetWidth() * 4);
@@ -570,7 +571,7 @@ bool vtkHDRReader::ReadAllFileNoRLE(std::istream* is, float* outPtr, int decrPtr
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHDRReader::ReadLineRLE(std::istream* is, unsigned char* lineBufferPtr)
 {
   // A line in RLE is sorted by channels, ie. it begins by all the red, then green, blue, and
@@ -631,7 +632,7 @@ bool vtkHDRReader::ReadLineRLE(std::istream* is, unsigned char* lineBufferPtr)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::RGBE2Float(unsigned char* rgbe, float& r, float& g, float& b)
 {
   if (rgbe[3]) /*nonzero pixel*/
@@ -647,7 +648,7 @@ void vtkHDRReader::RGBE2Float(unsigned char* rgbe, float& r, float& g, float& b)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHDRReader::XYZ2RGB(const float convertMatrix[3][3], float& r, float& g, float& b)
 {
   // Copy initial xyz values

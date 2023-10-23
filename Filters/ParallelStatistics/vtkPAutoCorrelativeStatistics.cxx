@@ -12,8 +12,6 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "vtkToolkits.h"
-
 #include "vtkPAutoCorrelativeStatistics.h"
 
 #include "vtkCommunicator.h"
@@ -27,27 +25,27 @@
 
 vtkStandardNewMacro(vtkPAutoCorrelativeStatistics);
 vtkCxxSetObjectMacro(vtkPAutoCorrelativeStatistics, Controller, vtkMultiProcessController);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPAutoCorrelativeStatistics::vtkPAutoCorrelativeStatistics()
 {
-  this->Controller = 0;
+  this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPAutoCorrelativeStatistics::~vtkPAutoCorrelativeStatistics()
 {
-  this->SetController(0);
+  this->SetController(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPAutoCorrelativeStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPAutoCorrelativeStatistics::Learn(
   vtkTable* inData, vtkTable* inParameters, vtkMultiBlockDataSet* outMeta)
 {
@@ -162,7 +160,7 @@ void vtkPAutoCorrelativeStatistics::Learn(
   delete[] n_g;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPAutoCorrelativeStatistics::Test(
   vtkTable* inData, vtkMultiBlockDataSet* inMeta, vtkTable* outMeta)
 {

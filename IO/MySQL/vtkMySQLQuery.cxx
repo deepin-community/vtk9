@@ -64,7 +64,7 @@
  * which parameters are and aren't bound at any given time.
  */
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 class vtkMySQLBoundParameter
 {
@@ -101,7 +101,6 @@ public:
     return output;
   }
 
-public:
   my_bool IsNull;                 // Is this parameter nullptr?
   my_bool IsUnsigned;             // For integer types, is it unsigned?
   char* Data;                     // Buffer holding actual data
@@ -112,7 +111,7 @@ public:
   enum enum_field_types DataType; // MySQL data type for the contained data
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 MYSQL_BIND BuildNullParameterStruct()
 {
@@ -121,7 +120,7 @@ MYSQL_BIND BuildNullParameterStruct()
   return output;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 #define VTK_MYSQL_TYPENAME_MACRO(type, return_type)                                                \
   enum enum_field_types vtkMySQLTypeName(type) { return return_type; }
@@ -178,7 +177,7 @@ bool vtkMySQLIsTypeUnsigned<unsigned long long>(unsigned long long)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Description:
 // This function will build and populate a vtkMySQLBoundParameter
@@ -247,7 +246,7 @@ vtkMySQLBoundParameter* vtkBuildBoundParameter(const char* data, unsigned long l
   return param;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 class vtkMySQLQueryInternals
 {
@@ -271,7 +270,6 @@ public:
   // the old-fashioned way.
   bool ValidPreparedStatementSQL(const char* query);
 
-public:
   MYSQL_STMT* Statement;
   MYSQL_RES* Result;
   MYSQL_BIND* BoundParameters;
@@ -282,7 +280,7 @@ public:
   ParameterList UserParameterList;
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkMySQLQueryInternals::vtkMySQLQueryInternals()
   : Statement(nullptr)
@@ -292,7 +290,7 @@ vtkMySQLQueryInternals::vtkMySQLQueryInternals()
 {
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkMySQLQueryInternals::~vtkMySQLQueryInternals()
 {
@@ -302,7 +300,7 @@ vtkMySQLQueryInternals::~vtkMySQLQueryInternals()
   this->FreeBoundParameters();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkMySQLQueryInternals::FreeResult()
 {
@@ -313,7 +311,7 @@ void vtkMySQLQueryInternals::FreeResult()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkMySQLQueryInternals::FreeStatement()
 {
@@ -324,7 +322,7 @@ void vtkMySQLQueryInternals::FreeStatement()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQueryInternals::SetQuery(
   const char* queryString, MYSQL* db, vtkStdString& error_message)
@@ -359,7 +357,7 @@ bool vtkMySQLQueryInternals::SetQuery(
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkMySQLQueryInternals::FreeUserParameterList()
 {
@@ -371,14 +369,14 @@ void vtkMySQLQueryInternals::FreeUserParameterList()
   this->UserParameterList.clear();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkMySQLQueryInternals::FreeBoundParameters()
 {
   delete[] this->BoundParameters;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQueryInternals::SetBoundParameter(int index, vtkMySQLBoundParameter* param)
 {
@@ -396,7 +394,7 @@ bool vtkMySQLQueryInternals::SetBoundParameter(int index, vtkMySQLBoundParameter
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQueryInternals::BindParametersToStatement()
 {
@@ -424,7 +422,7 @@ bool vtkMySQLQueryInternals::BindParametersToStatement()
   return mysql_stmt_bind_param(this->Statement, this->BoundParameters);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQueryInternals::ValidPreparedStatementSQL(const char* query)
 {
@@ -470,11 +468,11 @@ bool vtkMySQLQueryInternals::ValidPreparedStatementSQL(const char* query)
   return false;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkMySQLQuery);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkMySQLQuery::vtkMySQLQuery()
 {
@@ -483,7 +481,7 @@ vtkMySQLQuery::vtkMySQLQuery()
   this->LastErrorText = nullptr;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkMySQLQuery::~vtkMySQLQuery()
 {
@@ -491,14 +489,14 @@ vtkMySQLQuery::~vtkMySQLQuery()
   delete this->Internals;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkMySQLQuery::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMySQLQuery::Execute()
 {
   this->Active = false;
@@ -602,7 +600,7 @@ bool vtkMySQLQuery::Execute()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMySQLQuery::BeginTransaction()
 {
   this->SetQuery("START TRANSACTION");
@@ -621,7 +619,7 @@ bool vtkMySQLQuery::RollbackTransaction()
   return this->Execute();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkMySQLQuery::GetNumberOfFields()
 {
@@ -636,7 +634,7 @@ int vtkMySQLQuery::GetNumberOfFields()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 const char* vtkMySQLQuery::GetFieldName(int column)
 {
@@ -665,7 +663,7 @@ const char* vtkMySQLQuery::GetFieldName(int column)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkMySQLQuery::GetFieldType(int column)
 {
@@ -763,7 +761,7 @@ int vtkMySQLQuery::GetFieldType(int column)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::NextRow()
 {
@@ -816,7 +814,7 @@ bool vtkMySQLQuery::NextRow()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkVariant vtkMySQLQuery::DataValue(vtkIdType column)
 {
@@ -883,14 +881,14 @@ vtkVariant vtkMySQLQuery::DataValue(vtkIdType column)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 const char* vtkMySQLQuery::GetLastErrorText()
 {
   return this->LastErrorText;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::HasError()
 {
@@ -928,7 +926,7 @@ vtkStdString vtkMySQLQuery::EscapeString(vtkStdString src, bool addSurroundingQu
   return dst;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::SetQuery(const char* newQuery)
 {
@@ -991,7 +989,7 @@ bool vtkMySQLQuery::SetQuery(const char* newQuery)
   return success;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, unsigned char value)
 {
@@ -999,7 +997,7 @@ bool vtkMySQLQuery::BindParameter(int index, unsigned char value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, signed char value)
 {
@@ -1007,7 +1005,7 @@ bool vtkMySQLQuery::BindParameter(int index, signed char value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, unsigned short value)
 {
@@ -1015,7 +1013,7 @@ bool vtkMySQLQuery::BindParameter(int index, unsigned short value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, signed short value)
 {
@@ -1023,7 +1021,7 @@ bool vtkMySQLQuery::BindParameter(int index, signed short value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, unsigned int value)
 {
@@ -1031,7 +1029,7 @@ bool vtkMySQLQuery::BindParameter(int index, unsigned int value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, signed int value)
 {
@@ -1039,7 +1037,7 @@ bool vtkMySQLQuery::BindParameter(int index, signed int value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, unsigned long value)
 {
@@ -1047,7 +1045,7 @@ bool vtkMySQLQuery::BindParameter(int index, unsigned long value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, signed long value)
 {
@@ -1055,7 +1053,7 @@ bool vtkMySQLQuery::BindParameter(int index, signed long value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, unsigned long long value)
 {
@@ -1063,7 +1061,7 @@ bool vtkMySQLQuery::BindParameter(int index, unsigned long long value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, long long value)
 {
@@ -1071,7 +1069,7 @@ bool vtkMySQLQuery::BindParameter(int index, long long value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, float value)
 {
@@ -1079,7 +1077,7 @@ bool vtkMySQLQuery::BindParameter(int index, float value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, double value)
 {
@@ -1087,7 +1085,7 @@ bool vtkMySQLQuery::BindParameter(int index, double value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, const char* value)
 {
@@ -1095,14 +1093,14 @@ bool vtkMySQLQuery::BindParameter(int index, const char* value)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, const vtkStdString& value)
 {
   return this->BindParameter(index, value.c_str());
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, const char* data, size_t length)
 {
@@ -1110,7 +1108,7 @@ bool vtkMySQLQuery::BindParameter(int index, const char* data, size_t length)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::BindParameter(int index, const void* data, size_t length)
 {
@@ -1119,7 +1117,7 @@ bool vtkMySQLQuery::BindParameter(int index, const void* data, size_t length)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkMySQLQuery::ClearParameterBindings()
 {

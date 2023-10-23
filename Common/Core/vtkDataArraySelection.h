@@ -126,7 +126,7 @@ public:
    * This method will call `this->Modified()` if the enable state for the
    * array changed.
    */
-  void SetArraySetting(const char* name, int status);
+  void SetArraySetting(const char* name, int setting);
 
   /**
    * Remove all array entries.
@@ -164,7 +164,7 @@ public:
    */
   void RemoveArrayByName(const char* name);
 
-  //@{
+  ///@{
   /**
    * Set the list of arrays that have entries.  For arrays that
    * already have entries, the settings are copied.  For arrays that
@@ -179,7 +179,7 @@ public:
    */
   void SetArrays(const char* const* names, int numArrays);
   void SetArraysWithDefault(const char* const* names, int numArrays, int defaultStatus);
-  //@}
+  ///@}
 
   /**
    * Copy the selections from the given vtkDataArraySelection instance.
@@ -188,17 +188,21 @@ public:
    */
   void CopySelections(vtkDataArraySelection* selections);
 
+  ///@{
   /**
    * Update `this` to include values from `other`. For arrays that don't
    * exist in `this` but exist in `other`, they will get added to `this` with
    * the same array setting as in `other`. Array settings for arrays already in
    * `this` are left unchanged.
    *
-   * This method will call `this->Modified()` if the array selections changed.
+   * This method will call `this->Modified()` if the array selections changed
+   * unless @a skipModified is set to true (default is false).
    */
-  void Union(vtkDataArraySelection* other);
+  void Union(vtkDataArraySelection* other) { this->Union(other, false); }
+  void Union(vtkDataArraySelection* other, bool skipModified);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set enabled state for any unknown arrays. Default is 0 i.e. not
    * enabled. When set to 1, `ArrayIsEnabled` will return 1 for any
@@ -206,7 +210,7 @@ public:
    */
   vtkSetMacro(UnknownArraySetting, int);
   vtkGetMacro(UnknownArraySetting, int);
-  //@}
+  ///@}
 protected:
   vtkDataArraySelection();
   ~vtkDataArraySelection() override;

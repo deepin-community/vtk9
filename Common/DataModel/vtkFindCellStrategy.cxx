@@ -17,24 +17,16 @@
 #include "vtkLogger.h"
 #include "vtkPointSet.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFindCellStrategy::vtkFindCellStrategy()
 {
   this->PointSet = nullptr;
 }
 
-//----------------------------------------------------------------------------
-vtkFindCellStrategy::~vtkFindCellStrategy()
-{
-  // if ( this->PointSet != nullptr )
-  // {
-  //   vtkPointSet *ps = this->PointSet;
-  //   this->PointSet = nullptr;
-  //   ps->Delete();
-  // }
-}
+//------------------------------------------------------------------------------
+vtkFindCellStrategy::~vtkFindCellStrategy() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFindCellStrategy::Initialize(vtkPointSet* ps)
 {
   // Make sure everything is up to snuff
@@ -51,7 +43,7 @@ int vtkFindCellStrategy::Initialize(vtkPointSet* ps)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFindCellStrategy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

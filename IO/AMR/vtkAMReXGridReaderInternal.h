@@ -14,9 +14,7 @@
 =========================================================================*/
 /**
  * @class   vtkAMReXGridReaderInternal
- *
- *
- *  Consists of the low-level AMReX Reader used by the vtkAMReXGridReader.
+ * @brief   Consists of the low-level AMReX Reader used by the vtkAMReXGridReader.
  *
  * @sa
  *  vtkAMReXGridReader
@@ -26,10 +24,12 @@
 #define vtkAMReXGridReaderInternal_h
 #ifndef __VTK_WRAP__
 
+#include <map>
 #include <string>
 #include <vector>
 
 #include "vtkDataSet.h"
+#include "vtkSOADataArrayTemplate.h"
 
 class vtkIndent;
 
@@ -93,19 +93,32 @@ public:
   std::string versionName;
   int variableNamesSize;
   std::vector<std::string> variableNames;
+
+  // prefix string indicating a variable is a vector component
+  // Note: this prefix will be removed from any variable name
+  // whether or not the variable name is a properly formed
+  // vector variable name (contains a proper postfix)
+  std::string vectorNamePrefix = "amrexvec";
+
+  // delimeter must be the same after prefix and before postfix
+  char nameDelim = '_';
+
+  // variableNames map to (potentially a collection of) variableNames indices
+  std::map<std::string, std::vector<int>> parsedVariableNames;
+
   int dim;
   double time;
   int finestLevel;
   std::vector<double> problemDomainLoEnd;
   std::vector<double> problemDomainHiEnd;
   std::vector<int> refinementRatio;
-  std::vector<std::vector<std::vector<int> > > levelDomains;
+  std::vector<std::vector<std::vector<int>>> levelDomains;
   std::vector<int> levelSteps;
-  std::vector<std::vector<double> > cellSize;
+  std::vector<std::vector<double>> cellSize;
   int geometryCoord;
   int magicZero;
   std::vector<int> levelSize;
-  std::vector<std::vector<std::vector<std::vector<double> > > > levelCells;
+  std::vector<std::vector<std::vector<std::vector<double>>>> levelCells;
   std::vector<std::string> levelPrefix;
   std::vector<std::string> multiFabPrefix;
   bool debugHeader;
@@ -116,6 +129,21 @@ public:
   void PrintSelfGenericHeader(std::ostream& os, vtkIndent indent);
   bool Parse(const std::string& headerData);
   bool ParseGenericHeader(const std::string& headerData);
+
+  void SetVectorNamePrefix(const std::string& prefix);
+  void SetNameDelimiter(const char delim);
+
+private:
+  // if the vectorNamePrefix is detected at the beginning of the name,
+  // remove it along with the expected x/y/z postfix. Otherwise, return
+  // the original string
+  std::string GetBaseVariableName(const std::string& name);
+
+  // returns 0 if postfix is x, 1 for y and 2 for z. returns -1 otherwise
+  int CheckComponent(const std::string& name);
+
+  // check if name has the vectorNamePrefix
+  bool HasVectorPrefix(const std::string& name);
 };
 
 // ----------------------------------------------------------------------------
@@ -155,13 +183,13 @@ public:
   int levelNumberOfGhostCells;
   int levelBoxArraySize;
   int levelMagicZero;
-  std::vector<std::vector<std::vector<int> > > levelBoxArrays;
+  std::vector<std::vector<std::vector<int>>> levelBoxArrays;
   int levelNumberOfFABOnDisk;
   std::string levelFabOnDiskPrefix;
   std::vector<std::string> levelFABFile;
   std::vector<long> levelFileOffset;
-  std::vector<std::vector<double> > levelMinimumsFAB;
-  std::vector<std::vector<double> > levelMaximumsFAB;
+  std::vector<std::vector<double>> levelMinimumsFAB;
+  std::vector<std::vector<double>> levelMaximumsFAB;
   std::vector<double> levelFABArrayMinimum;
   std::vector<double> levelFABArrayMaximum;
   int levelRealNumberOfBytes;
@@ -218,6 +246,11 @@ public:
   void PermuteOrder(
     void* out, const void* in, long nitems, const int* outord, const int* inord, int REALSIZE);
 
+  template <typename T>
+  void CreateVTKAttributeArray(vtkAOSDataArrayTemplate<T>* dataArray, const RealDescriptor* ord,
+    const RealDescriptor* ird, const std::vector<std::vector<char>>& buffers,
+    const int numberOfPoints, const std::string& attribute);
+
   bool headersAreRead;
   bool debugReader;
   std::string FileName;
@@ -226,6 +259,30 @@ public:
   std::vector<vtkAMReXGridLevelHeader*> LevelHeader;
   friend class vtkAMReXGridLeveHeader;
 };
+
+template <typename T>
+void vtkAMReXGridReaderInternal::CreateVTKAttributeArray(vtkAOSDataArrayTemplate<T>* dataArray,
+  const RealDescriptor* ord, const RealDescriptor* ird,
+  const std::vector<std::vector<char>>& buffers, const int numberOfPoints,
+  const std::string& attribute)
+{
+  int nComps = static_cast<int>(this->Header->parsedVariableNames[attribute].size());
+  dataArray->SetName(attribute.c_str());
+  dataArray->SetNumberOfComponents(nComps);
+  dataArray->SetNumberOfTuples(numberOfPoints);
+  T* arrayPtr = new T[numberOfPoints];
+  for (int j = 0; j < nComps; ++j)
+  {
+    this->Convert(arrayPtr, buffers[j].data(), numberOfPoints, *ord, *ird);
+
+    // Copy to data array component
+    for (int i = 0; i < numberOfPoints; ++i)
+    {
+      dataArray->SetTypedComponent(i, j, arrayPtr[i]);
+    }
+  }
+  delete[] arrayPtr;
+}
 
 // ----------------------------------------------------------------------------
 //                     Class  vtkAMReXGridReaderInternal ( end )

@@ -50,14 +50,7 @@ static const int OPTIONAL_SKIP = 128;
 class DICOMParserImplementation
 {
 public:
-  DICOMParserImplementation()
-    : Groups()
-    , Elements()
-    , Datatypes()
-    , Map()
-    , TypeMap(){
-
-    };
+  DICOMParserImplementation() = default;
 
   dicom_stl::vector<doublebyte> Groups;
   dicom_stl::vector<doublebyte> Elements;
@@ -78,7 +71,6 @@ public:
 };
 
 DICOMParser::DICOMParser()
-  : ParserOutputFile()
 {
   this->Implementation = new DICOMParserImplementation();
   this->DataFile = nullptr;
@@ -149,7 +141,7 @@ DICOMParser::~DICOMParser()
 
 bool DICOMParser::ReadHeader()
 {
-  bool dicom = this->IsDICOMFile(this->DataFile);
+  bool dicom = DICOMParser::IsDICOMFile(this->DataFile);
   if (!dicom)
   {
     return false;
@@ -594,8 +586,6 @@ void DICOMParser::DumpTag(dicom_stream::ostream& out, doublebyte group, doubleby
   out << dicom_stream::dec << dicom_stream::endl;
   out.fill(prev);
   out << dicom_stream::dec;
-
-  return;
 }
 
 void DICOMParser::ModalityTag(doublebyte, doublebyte, VRTypes, unsigned char* tempdata, quadbyte)

@@ -33,7 +33,7 @@
 
 vtkStandardNewMacro(vtkAdaptiveTemporalInterpolator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkAdaptiveTemporalInterpolator::ResamplingHelperImpl
 {
 public:
@@ -60,7 +60,7 @@ public:
     pointDataResampler->SetCellLocatorPrototype(pointDataResamplerLocator);
 
     cellCenters->SetInputConnection(stripAllArrays->GetOutputPort());
-    cellCenters->SetVertexCells(1);
+    cellCenters->SetVertexCells(true);
 
     cellDataResampler->SetSourceConnection(keepOnlyCellArrays->GetOutputPort());
     cellDataResampler->SetInputConnection(cellCenters->GetOutputPort());
@@ -75,7 +75,7 @@ public:
     appendAttributes->AddInputConnection(pointToCell->GetOutputPort());
   }
 
-  ~ResamplingHelperImpl() {}
+  ~ResamplingHelperImpl() = default;
 
   vtkPointSet* GetResampledDataObject(vtkPointSet* t0, vtkPointSet* t1)
   {
@@ -108,28 +108,25 @@ public:
   vtkNew<vtkPMergeArrays> appendAttributes;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAdaptiveTemporalInterpolator::vtkAdaptiveTemporalInterpolator()
 {
   this->ResampleImpl = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAdaptiveTemporalInterpolator::~vtkAdaptiveTemporalInterpolator()
 {
-  if (this->ResampleImpl != nullptr)
-  {
-    delete this->ResampleImpl;
-  }
+  delete this->ResampleImpl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAdaptiveTemporalInterpolator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
   vtkDataSet* in1, vtkDataSet* in2, double ratio)
 {
@@ -143,8 +140,8 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
   // while the refinement must (in theory) have a significant
   // improvement or it would be abandoned. Thus we prefer the latter:
   const int sourceInput = 1;
-  vtkDataSet* output = input[sourceInput]->NewInstance();
-  output->CopyStructure(input[sourceInput]);
+  vtkDataSet* output = input[0]->NewInstance();
+  output->CopyStructure(input[0]);
 
   //
   // Interpolate points if the dataset is a vtkPointSet
@@ -152,6 +149,8 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
   vtkPointSet* inPointSet1 = vtkPointSet::SafeDownCast(input[0]);
   vtkPointSet* inPointSet2 = vtkPointSet::SafeDownCast(input[1]);
   vtkPointSet* outPointSet = vtkPointSet::SafeDownCast(output);
+  vtkPointSet* nPtsSrc = inPointSet1;
+  vtkDataSet* dataArraysSrc = input[0];
   ArrayMatch status = MISMATCHED_COMPS;
   vtkPointSet* resampledInput = nullptr;
   if (inPointSet1 && inPointSet2)
@@ -182,6 +181,13 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
           // that the same space is covered but that the areas where
           // mesh density is high varies between the datasets.
           // So, we will copy the points from \a sourceInput.
+          output->Delete();
+          output = input[sourceInput]->NewInstance();
+          output->CopyStructure(input[sourceInput]);
+          outPointSet = vtkPointSet::SafeDownCast(output);
+          nPtsSrc = sourceInput == 0 ? inPointSet1 : inPointSet2;
+          dataArraysSrc = input[sourceInput];
+
           outarray = arrays[sourceInput];
           outarray->Register(this); // Delete will be called below.
           resampledInput = this->ResampleDataObject(inPointSet1, inPointSet2, sourceInput);
@@ -225,7 +231,7 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
       {
         outpoints->SetDataTypeToFloat();
       }
-      outpoints->SetNumberOfPoints(outarray->GetNumberOfTuples());
+      outpoints->SetNumberOfPoints(nPtsSrc->GetNumberOfPoints());
       outpoints->SetData(outarray);
       outpoints->Delete();
     }
@@ -239,8 +245,8 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
   //
   // Interpolate pointdata if present
   //
-  output->GetPointData()->ShallowCopy(input[sourceInput]->GetPointData());
-  for (int s = 0; s < input[sourceInput == 0 ? 1 : 0]->GetPointData()->GetNumberOfArrays(); ++s)
+  output->GetPointData()->ShallowCopy(dataArraysSrc->GetPointData());
+  for (int s = 0; s < dataArraysSrc->GetPointData()->GetNumberOfArrays(); ++s)
   {
     std::vector<vtkDataArray*> arrays;
     char* scalarname = nullptr;
@@ -294,8 +300,8 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
   //
   // Interpolate celldata if present
   //
-  output->GetCellData()->ShallowCopy(input[sourceInput]->GetCellData());
-  for (int s = 0; s < input[sourceInput == 0 ? 1 : 0]->GetCellData()->GetNumberOfArrays(); ++s)
+  output->GetCellData()->ShallowCopy(dataArraysSrc->GetCellData());
+  for (int s = 0; s < dataArraysSrc->GetCellData()->GetNumberOfArrays(); ++s)
   {
     // copy the structure
     std::vector<vtkDataArray*> arrays;
@@ -350,7 +356,7 @@ vtkDataSet* vtkAdaptiveTemporalInterpolator ::InterpolateDataSet(
   return output;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPointSet* vtkAdaptiveTemporalInterpolator::ResampleDataObject(
   vtkPointSet*& a, vtkPointSet*& b, int sourceInput)
 {

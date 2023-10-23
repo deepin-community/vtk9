@@ -219,7 +219,7 @@ void vtkCompositePolyDataMapper::ComputeBounds()
     vtkPolyData* pd = vtkPolyData::SafeDownCast(this->GetExecutive()->GetInputData(0, 0));
     if (pd)
     {
-      pd->GetBounds(this->Bounds);
+      pd->GetCellsBounds(this->Bounds);
     }
     this->BoundsMTime.Modified();
     return;
@@ -242,7 +242,7 @@ void vtkCompositePolyDataMapper::ComputeBounds()
       // block
       if (vtkMath::AreBoundsInitialized(this->Bounds))
       {
-        pd->GetBounds(bounds);
+        pd->GetCellsBounds(bounds);
         if (vtkMath::AreBoundsInitialized(bounds))
         {
           for (i = 0; i < 3; i++)
@@ -259,7 +259,7 @@ void vtkCompositePolyDataMapper::ComputeBounds()
       // of the data as the initial bounds
       else
       {
-        pd->GetBounds(this->Bounds);
+        pd->GetCellsBounds(this->Bounds);
       }
     }
     iter->GoToNextItem();
@@ -312,7 +312,7 @@ vtkPolyDataMapper* vtkCompositePolyDataMapper::MakeAMapper()
   return m;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // look at children
 bool vtkCompositePolyDataMapper::HasOpaqueGeometry()
 {
@@ -333,7 +333,7 @@ bool vtkCompositePolyDataMapper::HasOpaqueGeometry()
   return hasOpaque;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // look at children
 bool vtkCompositePolyDataMapper::HasTranslucentPolygonalGeometry()
 {

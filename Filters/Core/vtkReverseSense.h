@@ -46,27 +46,27 @@ public:
    */
   static vtkReverseSense* New();
 
-  //@{
+  ///@{
   /**
    * Flag controls whether to reverse cell ordering.
    */
   vtkSetMacro(ReverseCells, vtkTypeBool);
   vtkGetMacro(ReverseCells, vtkTypeBool);
   vtkBooleanMacro(ReverseCells, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Flag controls whether to reverse normal orientation.
    */
   vtkSetMacro(ReverseNormals, vtkTypeBool);
   vtkGetMacro(ReverseNormals, vtkTypeBool);
   vtkBooleanMacro(ReverseNormals, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkReverseSense();
-  ~vtkReverseSense() override {}
+  ~vtkReverseSense() override = default;
 
   // Usual data generation method
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;

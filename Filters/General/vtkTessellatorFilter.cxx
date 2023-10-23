@@ -339,11 +339,11 @@ void vtkTessellatorFilter::SetSubdivider(vtkDataSetEdgeSubdivisionCriterion* s)
   this->Modified();
 }
 
-void vtkTessellatorFilter::SetFieldCriterion(int s, double err)
+void vtkTessellatorFilter::SetFieldCriterion(int field, double err)
 {
   if (this->Subdivider)
   {
-    this->Subdivider->SetFieldError2(s, err > 0. ? err * err : -1.);
+    this->Subdivider->SetFieldError2(field, err > 0. ? err * err : -1.);
   }
 }
 
@@ -1606,35 +1606,69 @@ int vtkTessellatorFilter::RequestData(
       }
 
       // OK, now output the primitives
-      int tet, tri, edg;
-      switch (dim)
+      if (cp->IsLinear())
       {
-        case 3:
-          for (tet = 0; tet < nprim; ++tet, outconn += 4)
-          {
-            this->Tessellator->AdaptivelySample3Facet(
-              pts[outconn[0]], pts[outconn[1]], pts[outconn[2]], pts[outconn[3]]);
-          }
-          break;
-        case 2:
-          for (tri = 0; tri < nprim; ++tri, outconn += 3)
-          {
-            this->Tessellator->AdaptivelySample2Facet(
-              pts[outconn[0]], pts[outconn[1]], pts[outconn[2]]);
-          }
-          break;
-        case 1:
-          for (edg = 0; edg < nprim; ++edg, outconn += 2)
-          {
-            this->Tessellator->AdaptivelySample1Facet(pts[outconn[0]], pts[outconn[1]]);
-          }
-          break;
-        case 0:
-          this->Tessellator->AdaptivelySample0Facet(pts[0]);
-          break;
-        default:
-          // do nothing
-          break;
+        switch (dim)
+        {
+          case 3:
+            for (int tet = 0; tet < nprim; ++tet, outconn += 4)
+            {
+              this->Tessellator->AdaptivelySample3FacetLinear(
+                pts[outconn[0]], pts[outconn[1]], pts[outconn[2]], pts[outconn[3]]);
+            }
+            break;
+          case 2:
+            for (int tri = 0; tri < nprim; ++tri, outconn += 3)
+            {
+              this->Tessellator->AdaptivelySample2FacetLinear(
+                pts[outconn[0]], pts[outconn[1]], pts[outconn[2]]);
+            }
+            break;
+          case 1:
+            for (int edg = 0; edg < nprim; ++edg, outconn += 2)
+            {
+              this->Tessellator->AdaptivelySample1FacetLinear(pts[outconn[0]], pts[outconn[1]]);
+            }
+            break;
+          case 0:
+            this->Tessellator->AdaptivelySample0Facet(pts[0]);
+            break;
+          default:
+            // do nothing
+            break;
+        }
+      }
+      else
+      {
+        switch (dim)
+        {
+          case 3:
+            for (int tet = 0; tet < nprim; ++tet, outconn += 4)
+            {
+              this->Tessellator->AdaptivelySample3Facet(
+                pts[outconn[0]], pts[outconn[1]], pts[outconn[2]], pts[outconn[3]]);
+            }
+            break;
+          case 2:
+            for (int tri = 0; tri < nprim; ++tri, outconn += 3)
+            {
+              this->Tessellator->AdaptivelySample2Facet(
+                pts[outconn[0]], pts[outconn[1]], pts[outconn[2]]);
+            }
+            break;
+          case 1:
+            for (int edg = 0; edg < nprim; ++edg, outconn += 2)
+            {
+              this->Tessellator->AdaptivelySample1Facet(pts[outconn[0]], pts[outconn[1]]);
+            }
+            break;
+          case 0:
+            this->Tessellator->AdaptivelySample0Facet(pts[0]);
+            break;
+          default:
+            // do nothing
+            break;
+        }
       }
 
       // Copy cell data.
@@ -1654,7 +1688,7 @@ int vtkTessellatorFilter::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTessellatorFilter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");

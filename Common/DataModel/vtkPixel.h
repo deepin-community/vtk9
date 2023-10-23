@@ -38,7 +38,7 @@ public:
   vtkTypeMacro(vtkPixel, vtkCell);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * See the vtkCell API for descriptions of these methods.
    */
@@ -58,7 +58,26 @@ public:
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
-  //@}
+  ///@}
+
+  /**
+   * Inflates this pixel by a distance of dist by moving the edges of the pixel
+   * by that distance. Since a pixel lies in 3D, the degenerate case where the
+   * pixel is homogeneous to a line are discarted because of normal direction
+   * ambiguity. Hence, if you shrink a 2D pixel so it loses thickness in one
+   * dimension. inflating it back to its previous form is impossible.
+   *
+   * A degenerate pixel of dimension 1 is inflated the same way a segment would be
+   * inflated. A degenerate pixel of dimension 0 is untouched.
+   *
+   * \return 1
+   */
+  int Inflate(double dist) override;
+
+  /**
+   * Computes exact bounding sphere of this pixel.
+   */
+  double ComputeBoundingSphere(double center[3]) const override;
 
   /**
    * Return the center of the triangle in parametric coordinates.
@@ -74,7 +93,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[4]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[8]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -87,7 +106,14 @@ public:
   {
     vtkPixel::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
+  ///@}
+
+  /**
+   * vtkPixel's normal cannot be computed using vtkPolygon::ComputeNormal because
+   * its points are not sorted such that circulating on them forms the pixel.
+   * This is a convenient method so one can compute normals on a pixel.
+   */
+  int ComputeNormal(double n[3]);
 
 protected:
   vtkPixel();

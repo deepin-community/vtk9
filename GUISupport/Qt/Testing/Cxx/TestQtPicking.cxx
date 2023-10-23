@@ -61,7 +61,7 @@ int TestQtPicking(int argc, char* argv[])
   const double SphereRadius = 0.5;
 
   // Add spheres arranged in a circle
-  std::vector<vtkSmartPointer<vtkActor2D> > actors;
+  std::vector<vtkSmartPointer<vtkActor2D>> actors;
   const double Pi2 = 2.0 * vtkMath::Pi();
   const double step = Pi2 / NumSpheres;
   for (double theta = 0.0; theta < Pi2; theta += step)
@@ -97,7 +97,7 @@ int TestQtPicking(int argc, char* argv[])
   coordinate->SetCoordinateSystemToWorld();
 
   // Pick at sphere centers
-  std::vector<vtkSmartPointer<vtkActor2D> > hits;
+  std::vector<vtkSmartPointer<vtkActor2D>> hits;
   for (double theta = 0.0; theta < Pi2; theta += step)
   {
     const double x = sin(theta);
@@ -112,14 +112,14 @@ int TestQtPicking(int argc, char* argv[])
     {
       actor->GetProperty()->SetColor(0.89, 0.81, 0.67);
     }
-    hits.push_back(actor);
+    hits.emplace_back(actor);
 
     interactor->Render();
-    app.processEvents();
+    QApplication::processEvents();
   }
 
   // Pick outside of spheres
-  std::vector<vtkSmartPointer<vtkActor2D> > misses;
+  std::vector<vtkSmartPointer<vtkActor2D>> misses;
   for (double theta = 0.0; theta < Pi2; theta += (0.5 * step))
   {
     const double x = 2.0 * sin(theta);
@@ -134,10 +134,10 @@ int TestQtPicking(int argc, char* argv[])
     {
       actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
     }
-    misses.push_back(actor);
+    misses.emplace_back(actor);
 
     interactor->Render();
-    app.processEvents();
+    QApplication::processEvents();
   }
 
   // Pick in center of window
@@ -151,10 +151,10 @@ int TestQtPicking(int argc, char* argv[])
     {
       actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
     }
-    misses.push_back(actor);
+    misses.emplace_back(actor);
 
     interactor->Render();
-    app.processEvents();
+    QApplication::processEvents();
   }
 
   // Check that picks on spheres hit correct actors

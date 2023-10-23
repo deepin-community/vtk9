@@ -34,7 +34,7 @@
 
 vtkStandardNewMacro(vtkFramebufferPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFramebufferPass::vtkFramebufferPass()
 {
   this->FrameBufferObject = nullptr;
@@ -44,7 +44,7 @@ vtkFramebufferPass::vtkFramebufferPass()
   this->ColorFormat = vtkTextureObject::Fixed8;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFramebufferPass::~vtkFramebufferPass()
 {
   if (this->FrameBufferObject != nullptr)
@@ -63,13 +63,13 @@ vtkFramebufferPass::~vtkFramebufferPass()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFramebufferPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -148,13 +148,13 @@ void vtkFramebufferPass::Render(const vtkRenderState* s)
 
   // now copy the result to the outer FO
   ostate->PushReadFramebufferBinding();
-  this->FrameBufferObject->Bind(this->FrameBufferObject->GetReadMode());
+  this->FrameBufferObject->Bind(vtkOpenGLFramebufferObject::GetReadMode());
 
   ostate->vtkglViewport(
     this->ViewportX, this->ViewportY, this->ViewportWidth, this->ViewportHeight);
   ostate->vtkglScissor(this->ViewportX, this->ViewportY, this->ViewportWidth, this->ViewportHeight);
 
-  glBlitFramebuffer(0, 0, this->ViewportWidth, this->ViewportHeight, this->ViewportX,
+  ostate->vtkglBlitFramebuffer(0, 0, this->ViewportWidth, this->ViewportHeight, this->ViewportX,
     this->ViewportY, this->ViewportX + this->ViewportWidth, this->ViewportY + this->ViewportHeight,
     GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
@@ -163,7 +163,7 @@ void vtkFramebufferPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.

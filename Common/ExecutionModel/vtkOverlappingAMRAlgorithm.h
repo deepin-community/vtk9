@@ -14,9 +14,7 @@
  =========================================================================*/
 /**
  * @class   vtkOverlappingAMRAlgorithm
- *
- *
- *  A base class for all algorithms that take as input vtkOverlappingAMR and
+ * @brief   A base class for all algorithms that take as input vtkOverlappingAMR and
  *  produce vtkOverlappingAMR.
  */
 
@@ -36,25 +34,25 @@ public:
   vtkTypeMacro(vtkOverlappingAMRAlgorithm, vtkUniformGridAMRAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm
    */
   vtkOverlappingAMR* GetOutput();
   vtkOverlappingAMR* GetOutput(int);
-  //@}
+  ///@}
 
 protected:
   vtkOverlappingAMRAlgorithm();
   ~vtkOverlappingAMRAlgorithm() override;
 
-  //@{
+  ///@{
   /**
    * See algorithm for more info.
    */
   int FillOutputPortInformation(int port, vtkInformation* info) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
-  //@}
+  ///@}
 
 private:
   vtkOverlappingAMRAlgorithm(const vtkOverlappingAMRAlgorithm&) = delete;

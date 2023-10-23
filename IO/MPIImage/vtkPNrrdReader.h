@@ -52,23 +52,23 @@ class VTKIOMPIIMAGE_EXPORT vtkPNrrdReader : public vtkNrrdReader
 public:
   vtkTypeMacro(vtkPNrrdReader, vtkNrrdReader);
   static vtkPNrrdReader* New();
-  virtual void PrintSelf(ostream& os, vtkIndent indent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/set the multi process controller to use for coordinated reads.  By
    * default, set to the global controller.
    */
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
   virtual void SetController(vtkMultiProcessController*);
-  //@}
+  ///@}
 
 protected:
   vtkPNrrdReader();
   ~vtkPNrrdReader() override;
 
-  virtual int ReadHeader() override;
-  virtual int ReadHeader(vtkCharArray* headerBuffer) override;
+  int ReadHeader() override;
+  int ReadHeader(vtkCharArray* headerBuffer) override;
 
   /**
    * Returns the size, in bytes of the scalar data type (GetDataScalarType).
@@ -110,16 +110,16 @@ protected:
    */
   virtual void TransformData(vtkImageData* data);
 
-  //@{
+  ///@{
   /**
    * A group of processes that are reading the same file (as determined by
    * PartitionController.
    */
   void SetGroupedController(vtkMultiProcessController*);
   vtkMultiProcessController* GroupedController;
-  //@}
+  ///@}
 
-  virtual void ExecuteDataWithInformation(vtkDataObject* data, vtkInformation* outInfo) override;
+  void ExecuteDataWithInformation(vtkDataObject* data, vtkInformation* outInfo) override;
 
   vtkMultiProcessController* Controller;
 

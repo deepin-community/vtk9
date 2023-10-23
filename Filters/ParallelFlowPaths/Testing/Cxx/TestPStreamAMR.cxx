@@ -69,7 +69,7 @@ public:
 
   static TestAMRVectorSource* New();
 
-  virtual int FillInputPortInformation(int, vtkInformation* info) override
+  int FillInputPortInformation(int, vtkInformation* info) override
   {
     // now add our info
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkOverlappingAMR");
@@ -89,7 +89,7 @@ protected:
   // Description:
   // This is called by the superclass.
   // This is the method you should override.
-  virtual int RequestData(vtkInformation*, vtkInformationVector** inputVector,
+  int RequestData(vtkInformation*, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override
   {
     vtkInformation* inInfo = inputVector[0]->GetInformationObject(0);
@@ -155,8 +155,9 @@ int TestPStreamAMR(int argc, char* argv[])
   int Rank = c->GetLocalProcessId();
   if (numProcs != 4)
   {
-    cerr << "Cannot Create four MPI Processes. Success is only norminal";
-    return EXIT_SUCCESS;
+    std::cerr << "Test requires 4 processes." << std::endl;
+    c->Finalize();
+    return EXIT_FAILURE;
   }
 
   char* fname =

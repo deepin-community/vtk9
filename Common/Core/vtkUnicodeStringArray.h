@@ -36,10 +36,13 @@
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkUnicodeString.h"    // For value type
 
-class VTKCOMMONCORE_EXPORT vtkUnicodeStringArray : public vtkAbstractArray
+class VTK_DEPRECATED_IN_9_1_0(
+  "Use vtkStringArray instead.") VTKCOMMONCORE_EXPORT vtkUnicodeStringArray
+  : public vtkAbstractArray
 {
 public:
   static vtkUnicodeStringArray* New();
+  static vtkUnicodeStringArray* ExtendedNew();
   vtkTypeMacro(vtkUnicodeStringArray, vtkAbstractArray);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -100,3 +103,5 @@ private:
 };
 
 #endif
+
+// VTK-HeaderTest-Exclude: vtkUnicodeStringArray.h

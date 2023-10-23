@@ -74,7 +74,7 @@ bool operator<(const vtkQtLabelMapEntry& a, const vtkQtLabelMapEntry& other)
   return a.Font < other.Font;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtLabelRenderStrategy::vtkQtLabelRenderStrategy()
 {
   this->Implementation = new Internals();
@@ -104,7 +104,7 @@ vtkQtLabelRenderStrategy::vtkQtLabelRenderStrategy()
   this->Actor->SetMapper(this->Mapper);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtLabelRenderStrategy::~vtkQtLabelRenderStrategy()
 {
   delete this->Implementation->Painter;
@@ -127,7 +127,7 @@ void vtkQtLabelRenderStrategy::ReleaseGraphicsResources(vtkWindow* window)
 
 // double start_frame_time = 0;
 // int start_frame_iter = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::StartFrame()
 {
   // vtkTimerLog* timer = vtkTimerLog::New();
@@ -179,7 +179,7 @@ void vtkQtLabelRenderStrategy::StartFrame()
 
 // double compute_bounds_time = 0;
 // int compute_bounds_iter = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::ComputeLabelBounds(
   vtkTextProperty* tprop, vtkUnicodeString label, double bds[4])
 {
@@ -278,7 +278,7 @@ void vtkQtLabelRenderStrategy::ComputeLabelBounds(
 
 // double render_label_time = 0;
 // int render_label_iter = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::RenderLabel(
   int x[2], vtkTextProperty* tprop, vtkUnicodeString label, int maxWidth)
 {
@@ -383,7 +383,7 @@ void vtkQtLabelRenderStrategy::RenderLabel(
   //  }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::RenderLabel(int x[2], vtkTextProperty* tprop, vtkUnicodeString label)
 {
   if (!QApplication::instance())
@@ -528,7 +528,7 @@ void vtkQtLabelRenderStrategy::RenderLabel(int x[2], vtkTextProperty* tprop, vtk
 
 // double end_frame_time = 0;
 // int end_frame_iter = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::EndFrame()
 {
   // vtkTimerLog* timer = vtkTimerLog::New();
@@ -543,7 +543,7 @@ void vtkQtLabelRenderStrategy::EndFrame()
   //  }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtLabelRenderStrategy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

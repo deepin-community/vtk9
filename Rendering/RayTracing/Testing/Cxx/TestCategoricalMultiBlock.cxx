@@ -50,7 +50,9 @@ int TestCategoricalMultiBlock(int argc, char* argv[])
     vtkSmartPointer<vtkRenderWindowInteractor>::New();
   iren->SetRenderWindow(renWin);
   vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-  vtkOSPRayRendererNode::SetBackgroundMode(2, renderer);
+  vtkOSPRayRendererNode::SetBackgroundMode(
+    vtkOSPRayRendererNode::Environment, renderer); // test use ENV instead of BP
+  renderer->SetBackground(1.0, 0.0, 1.0);
   renderer->SetEnvironmentalBG(0.0, 0.0, 0.0);
   renderer->SetEnvironmentalBG2(0.8, 0.8, 1.0);
   renderer->GradientEnvironmentalBGOn();
@@ -129,15 +131,15 @@ int TestCategoricalMultiBlock(int argc, char* argv[])
   vtkSmartPointer<vtkOSPRayMaterialLibrary> ml = vtkSmartPointer<vtkOSPRayMaterialLibrary>::New();
   vtkOSPRayRendererNode::SetMaterialLibrary(ml, renderer);
   // add materials to it
-  ml->AddMaterial("Five", "Metal");
-  ml->AddMaterial("One", "ThinGlass");
+  ml->AddMaterial("Five", "metal");
+  ml->AddMaterial("One", "thinGlass");
   // some of material names use the same low level material implementation
-  ml->AddMaterial("Two", "ThinGlass");
+  ml->AddMaterial("Two", "thinGlass");
   // but each one  can be tuned
   double green[3] = { 0.0, 0.9, 0.0 };
   ml->AddShaderVariable("Two", "attenuationColor", 3, green);
   ml->AddShaderVariable("Two", "eta", { 1. });
-  ml->AddMaterial("Three", "ThinGlass");
+  ml->AddMaterial("Three", "thinGlass");
   double blue[3] = { 0.0, 0.0, 0.9 };
   ml->AddShaderVariable("Three", "attenuationColor", 3, blue);
   ml->AddShaderVariable("Three", "eta", { 1.65 });

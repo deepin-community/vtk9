@@ -51,30 +51,30 @@ protected:
   vtkMergeArrays();
   ~vtkMergeArrays() override;
 
-  //@{
+  ///@{
   /**
    * Given an existing set of output arrays and an array name and input data set
    * index, return an appropriate name to use for the output array. Returns true
    * if the name is a new name and false if not.
    */
   virtual bool GetOutputArrayName(
-    vtkFieldData* arrays, const char* inArrayName, int inputIndex, std::string& outArrayName);
-  //@}
+    vtkFieldData* arrays, const char* inArrayName, int inputIndex, std::string& outputArrayName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add input field arrays to output, mangling output array names as needed
    * based on inputIndex.
    */
   void MergeArrays(int inputIndex, vtkFieldData* inputFD, vtkFieldData* outputFD);
 
-  //@{
+  ///@{
   /**
    * For a given input and index, add data arrays to the output. Returns 1 for
    * success and 0 for failure.
    */
   virtual int MergeDataObjectFields(vtkDataObject* input, int inputIndex, vtkDataObject* output);
-  //@}
+  ///@}
 
   // see algorithm for more info
   int FillInputPortInformation(int port, vtkInformation* info) override;

@@ -15,6 +15,7 @@ vtk_module_wrap_java(
   JAVA_OUTPUT     "${CMAKE_CURRENT_BINARY_DIR}/vtk"
   MODULES         ${vtk_modules}
   WRAPPED_MODULES vtk_java_wrapped_modules
+  UTILITY_TARGET  "VTK::vtkbuild"
   LIBRARY_DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   # Update vtkSettings.java.in if this changes.
   JNILIB_DESTINATION  "${CMAKE_INSTALL_JNILIBDIR}")
@@ -200,10 +201,10 @@ set(VTK_JAVA_TARGET_VERSION "<DEFAULT>" CACHE STRING "javac target version")
 mark_as_advanced(VTK_JAVA_TARGET_VERSION)
 
 if (VTK_JAVA_SOURCE_VERSION STREQUAL "<DEFAULT>")
-  set(VTK_JAVA_SOURCE_VERSION "1.6")
+  set(VTK_JAVA_SOURCE_VERSION "1.7")
 endif ()
 if (VTK_JAVA_TARGET_VERSION STREQUAL "<DEFAULT>")
-  set(VTK_JAVA_TARGET_VERSION "1.6")
+  set(VTK_JAVA_TARGET_VERSION "1.7")
 endif ()
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_JARDIR}")
@@ -266,6 +267,6 @@ install(
   DESTINATION "${vtk_cmake_destination}"
   COMPONENT "development")
 
-if (BUILD_TESTING AND TARGET VTK::TestingRendering)
+if (VTK_BUILD_TESTING AND TARGET VTK::TestingRendering)
   add_subdirectory(Testing)
 endif ()

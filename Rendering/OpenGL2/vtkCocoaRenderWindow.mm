@@ -13,6 +13,9 @@ PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtk_glew.h"
 
 #import "vtkCocoaMacOSXSDKCompatibility.h" // Needed to support old SDKs
@@ -24,7 +27,6 @@ PURPOSE.  See the above copyright notice for more information.
 #import "vtkCommand.h"
 #import "vtkIdList.h"
 #import "vtkObjectFactory.h"
-#import "vtkOpenGL.h"
 #import "vtkOpenGLState.h"
 #import "vtkOpenGLVertexBufferObjectCache.h"
 #import "vtkRenderWindowInteractor.h"
@@ -334,6 +336,12 @@ void vtkCocoaRenderWindow::MakeCurrent()
 }
 
 //----------------------------------------------------------------------------
+void vtkCocoaRenderWindow::ReleaseCurrent()
+{
+  [NSOpenGLContext clearCurrentContext];
+}
+
+//----------------------------------------------------------------------------
 void vtkCocoaRenderWindow::PushContext()
 {
   NSOpenGLContext* current = [NSOpenGLContext currentContext];
@@ -372,9 +380,10 @@ bool vtkCocoaRenderWindow::IsCurrent()
 }
 
 //----------------------------------------------------------------------------
-#ifndef VTK_LEGACY_REMOVE
 bool vtkCocoaRenderWindow::IsDrawable()
 {
+  VTK_LEGACY_BODY(vtkCocoaRenderWindow::IsDrawable, "VTK 9.1");
+
   // you must initialize it first
   // else it always evaluates false
   this->Initialize();
@@ -392,7 +401,6 @@ bool vtkCocoaRenderWindow::IsDrawable()
 
   return win && ok;
 }
-#endif
 
 //----------------------------------------------------------------------------
 void vtkCocoaRenderWindow::UpdateContext()
@@ -707,9 +715,20 @@ void vtkCocoaRenderWindow::CreateAWindow()
 
     NSWindow* theWindow = nil;
 
-    // Get the screen's size (in points).  (If there's no mainScreen, the
+    // Revert to main screen if specified screen isn't available.
+    NSScreen* screen;
+    NSArray* allScreens = [NSScreen screens];
+    if (this->DisplayIndex >= 0 && (NSUInteger)this->DisplayIndex < [allScreens count])
+    {
+      screen = [allScreens objectAtIndex:this->DisplayIndex];
+    }
+    else
+    {
+      screen = [NSScreen mainScreen];
+    }
+
+    // Get the screen's size (in points).  (If there's no screen, the
     // rectangle will become all zeros and not used anyway.)
-    NSScreen* screen = [NSScreen mainScreen];
     NSRect screenRect = [screen frame];
 
     // Convert from points to pixels.
@@ -1122,10 +1141,24 @@ int* vtkCocoaRenderWindow::GetScreenSize()
   NSWindow* window = [view window];
   NSScreen* screen = [window screen];
 
-  // If screen is nil, then fall back to mainScreen, which CreateAWindow()
-  // also uses (it could be nil too).
+  // If screen is nil, then fall back to the screen with index DisplayIndex,
+  // which CreateAWindow() also uses (it could be nil too).
   if (!screen)
   {
+    NSArray* allScreens = [NSScreen screens];
+    if (this->DisplayIndex >= 0 && (NSUInteger)this->DisplayIndex < [allScreens count])
+    {
+      screen = [allScreens objectAtIndex:this->DisplayIndex];
+    }
+    else
+    {
+      screen = [NSScreen mainScreen];
+    }
+  }
+
+  if (!screen)
+  {
+    // Revert to main screen if specified screen isn't available.
     screen = [NSScreen mainScreen];
   }
 
@@ -1567,6 +1600,7 @@ void vtkCocoaRenderWindow::SetCurrentCursor(int shape)
   switch (shape)
   {
     case VTK_CURSOR_DEFAULT:
+    case VTK_CURSOR_CUSTOM:
     case VTK_CURSOR_ARROW:
       cursor = [NSCursor arrowCursor];
       break;

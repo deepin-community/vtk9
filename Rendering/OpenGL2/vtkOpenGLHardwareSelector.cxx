@@ -45,26 +45,27 @@ void annotate(const std::string& str)
 }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOpenGLHardwareSelector);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+#ifdef vtkOpenGLHardwareSelectorDEBUG
 vtkOpenGLHardwareSelector::vtkOpenGLHardwareSelector()
 {
-#ifdef vtkOpenGLHardwareSelectorDEBUG
   cerr << "=====vtkOpenGLHardwareSelector::vtkOpenGLHardwareSelector" << endl;
-#endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLHardwareSelector::~vtkOpenGLHardwareSelector()
 {
-#ifdef vtkOpenGLHardwareSelectorDEBUG
   cerr << "=====vtkOpenGLHardwareSelector::~vtkOpenGLHardwareSelector" << endl;
-#endif
 }
+#else
+vtkOpenGLHardwareSelector::vtkOpenGLHardwareSelector() = default;
+vtkOpenGLHardwareSelector::~vtkOpenGLHardwareSelector() = default;
+#endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::PreCapturePass(int pass)
 {
   annotate(std::string("Starting pass: ") + this->PassTypeToString(static_cast<PassTypes>(pass)));
@@ -78,7 +79,7 @@ void vtkOpenGLHardwareSelector::PreCapturePass(int pass)
   ostate->vtkglDisable(GL_BLEND);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::PostCapturePass(int pass)
 {
   // Restore blending.
@@ -90,7 +91,7 @@ void vtkOpenGLHardwareSelector::PostCapturePass(int pass)
   annotate(std::string("Pass complete: ") + this->PassTypeToString(static_cast<PassTypes>(pass)));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::BeginSelection()
 {
   vtkOpenGLRenderWindow* rwin =
@@ -100,7 +101,8 @@ void vtkOpenGLHardwareSelector::BeginSelection()
   rwin->SetMultiSamples(0);
 
   vtkOpenGLState* ostate = rwin->GetState();
-  ostate->ResetFramebufferBindings();
+  ostate->Reset();
+  ostate->Push();
 
   // render normally to set the zbuffer
   if (this->FieldAssociation == vtkDataObject::FIELD_ASSOCIATION_POINTS)
@@ -115,7 +117,7 @@ void vtkOpenGLHardwareSelector::BeginSelection()
   return this->Superclass::BeginSelection();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::EndSelection()
 {
   // render normally to set the zbuffer
@@ -127,11 +129,13 @@ void vtkOpenGLHardwareSelector::EndSelection()
   vtkOpenGLRenderWindow* rwin =
     static_cast<vtkOpenGLRenderWindow*>(this->Renderer->GetRenderWindow());
   rwin->SetMultiSamples(this->OriginalMultiSample);
+  vtkOpenGLState* ostate = rwin->GetState();
+  ostate->Pop();
 
   return this->Superclass::EndSelection();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // just add debug output if compiled with vtkOpenGLHardwareSelectorDEBUG
 void vtkOpenGLHardwareSelector::SavePixelBuffer(int passNo)
 {
@@ -169,7 +173,7 @@ void vtkOpenGLHardwareSelector::SavePixelBuffer(int passNo)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::BeginRenderProp(vtkRenderWindow*)
 {
 #ifdef vtkOpenGLHardwareSelectorDEBUG
@@ -177,7 +181,7 @@ void vtkOpenGLHardwareSelector::BeginRenderProp(vtkRenderWindow*)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::BeginRenderProp()
 {
   this->InPropRender++;
@@ -201,20 +205,19 @@ void vtkOpenGLHardwareSelector::BeginRenderProp()
     }
     float color[3];
     // Since 0 is reserved for nothing selected, we offset propid by 1.
-    propid = propid + 1;
+    propid = propid + ID_OFFSET;
     vtkHardwareSelector::Convert(propid, color);
     this->SetPropColorValue(color);
   }
   else if (this->CurrentPass == PROCESS_PASS)
   {
     float color[3];
-    // Since 0 is reserved for nothing selected, we offset propid by 1.
     vtkHardwareSelector::Convert(this->ProcessID + 1, color);
     this->SetPropColorValue(color);
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::EndRenderProp(vtkRenderWindow*)
 {
 #ifdef vtkOpenGLHardwareSelectorDEBUG
@@ -222,13 +225,13 @@ void vtkOpenGLHardwareSelector::EndRenderProp(vtkRenderWindow*)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::EndRenderProp()
 {
   this->Superclass::EndRenderProp();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::RenderCompositeIndex(unsigned int index)
 {
 
@@ -238,8 +241,6 @@ void vtkOpenGLHardwareSelector::RenderCompositeIndex(unsigned int index)
     return;
   }
 
-  index += ID_OFFSET;
-
   if (this->CurrentPass == COMPOSITE_INDEX_PASS)
   {
     float color[3];
@@ -248,7 +249,7 @@ void vtkOpenGLHardwareSelector::RenderCompositeIndex(unsigned int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::RenderProcessId(unsigned int processid)
 {
   if (this->CurrentPass == PROCESS_PASS && this->UseProcessIdFromData)
@@ -265,7 +266,7 @@ void vtkOpenGLHardwareSelector::RenderProcessId(unsigned int processid)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLHardwareSelector::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

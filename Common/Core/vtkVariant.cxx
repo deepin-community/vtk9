@@ -18,6 +18,9 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkVariant.h"
 
 #include "vtkAbstractArray.h"
@@ -36,7 +39,7 @@
 #include <locale> // C++ locale
 #include <sstream>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Implementation of vtkVariant's
 // fast-but-potentially-counterintuitive < operation
@@ -121,7 +124,7 @@ bool vtkVariantStrictWeakOrder::operator()(const vtkVariant& s1, const vtkVarian
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkVariantStrictEquality::operator()(const vtkVariant& s1, const vtkVariant& s2) const
 {
@@ -202,21 +205,21 @@ bool vtkVariantStrictEquality::operator()(const vtkVariant& s1, const vtkVariant
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkVariantLessThan::operator()(const vtkVariant& v1, const vtkVariant& v2) const
 {
   return v1.operator<(v2);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 bool vtkVariantEqual::operator()(const vtkVariant& v1, const vtkVariant& v2) const
 {
   return v1.operator==(v2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVariant::vtkVariant()
 {
   this->Valid = 0;
@@ -655,11 +658,32 @@ const char* vtkVariant::GetTypeAsString() const
   return vtkImageScalarTypeNameMacro(this->Type);
 }
 
+void SetFormattingOnStream(int formatting, std::ostringstream& ostr)
+{
+  switch (formatting)
+  {
+    case (vtkVariant::FIXED_FORMATTING):
+      ostr << std::fixed;
+      return;
+    case (vtkVariant::SCIENTIFIC_FORMATTING):
+      ostr << std::scientific;
+      return;
+    case (vtkVariant::DEFAULT_FORMATTING):
+      // GCC 4.8.1 does not support std::defaultfloat or std::hexfloat
+      VTK_FALLTHROUGH;
+    default:
+      return;
+  }
+}
+
 template <typename iterT>
-vtkStdString vtkVariantArrayToString(iterT* it)
+vtkStdString vtkVariantArrayToString(iterT* it, int formatting, int precision)
 {
   vtkIdType maxInd = it->GetNumberOfValues();
   std::ostringstream ostr;
+  SetFormattingOnStream(formatting, ostr);
+  ostr << std::setprecision(precision);
+
   for (vtkIdType i = 0; i < maxInd; i++)
   {
     if (i > 0)
@@ -671,7 +695,7 @@ vtkStdString vtkVariantArrayToString(iterT* it)
   return ostr.str();
 }
 
-vtkStdString vtkVariant::ToString() const
+vtkStdString vtkVariant::ToString(int formatting, int precision) const
 {
   if (!this->IsValid())
   {
@@ -689,6 +713,8 @@ vtkStdString vtkVariant::ToString() const
   {
     std::ostringstream ostr;
     ostr.imbue(std::locale::classic());
+    SetFormattingOnStream(formatting, ostr);
+    ostr << std::setprecision(precision);
     ostr << this->Data.Float;
     return vtkStdString(ostr.str());
   }
@@ -696,6 +722,8 @@ vtkStdString vtkVariant::ToString() const
   {
     std::ostringstream ostr;
     ostr.imbue(std::locale::classic());
+    SetFormattingOnStream(formatting, ostr);
+    ostr << std::setprecision(precision);
     ostr << this->Data.Double;
     return vtkStdString(ostr.str());
   }
@@ -778,7 +806,8 @@ vtkStdString vtkVariant::ToString() const
     vtkStdString str;
     switch (arr->GetDataType())
     {
-      vtkArrayIteratorTemplateMacro(str = vtkVariantArrayToString(static_cast<VTK_TT*>(iter)));
+      vtkArrayIteratorTemplateMacro(
+        str = vtkVariantArrayToString(static_cast<VTK_TT*>(iter), formatting, precision));
     }
     iter->Delete();
     return str;
@@ -788,7 +817,7 @@ vtkStdString vtkVariant::ToString() const
   return vtkStdString();
 }
 
-vtkUnicodeString vtkVariant::ToUnicodeString() const
+vtkUnicodeString vtkVariant::ToUnicodeString(int formatting, int precision) const
 {
   if (!this->IsValid())
   {
@@ -803,7 +832,7 @@ vtkUnicodeString vtkVariant::ToUnicodeString() const
     return *this->Data.UnicodeString;
   }
 
-  return vtkUnicodeString::from_utf8(this->ToString());
+  return vtkUnicodeString::from_utf8(this->ToString(formatting, precision));
 }
 
 vtkObjectBase* vtkVariant::ToVTKObject() const
@@ -832,7 +861,7 @@ template <typename T>
 T vtkVariantStringToNonFiniteNumeric(vtkStdString vtkNotUsed(str), bool* valid)
 {
   if (valid)
-    *valid = 0;
+    *valid = false;
   return 0;
 }
 
@@ -891,12 +920,13 @@ T vtkVariantStringToNumeric(vtkStdString str, bool* valid, T* vtkNotUsed(ignored
   return data;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Definition of ToNumeric
 
+// NOLINTNEXTLINE(bugprone-suspicious-include)
 #include "vtkVariantToNumeric.cxx"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Explicitly instantiate the ToNumeric member template to make sure
 // the symbols are exported from this object file.
 // This explicit instantiation exists to resolve VTK issue #5791.
@@ -921,7 +951,7 @@ vtkVariantToNumericInstantiateMacro(unsigned long long);
 
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Callers causing implicit instantiations of ToNumeric
 
 float vtkVariant::ToFloat(bool* valid) const
@@ -1084,4 +1114,14 @@ ostream& operator<<(ostream& os, const vtkVariant& val)
       break;
   }
   return os;
+}
+
+bool vtkVariant::CheckUnicodeStringEqual(const vtkVariant& other) const
+{
+  return this->ToUnicodeString() == other.ToUnicodeString();
+}
+
+bool vtkVariant::CheckUnicodeStringLessThan(const vtkVariant& other) const
+{
+  return this->ToUnicodeString() < other.ToUnicodeString();
 }

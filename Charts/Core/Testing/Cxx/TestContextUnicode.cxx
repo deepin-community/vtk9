@@ -13,6 +13,9 @@
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkBrush.h"
 #include "vtkContext2D.h"
 #include "vtkContextItem.h"
@@ -32,7 +35,7 @@
 
 #include <string>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class ContextUnicode : public vtkContextItem
 {
 public:
@@ -43,7 +46,7 @@ public:
   std::string FontFile;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestContextUnicode(int argc, char* argv[])
 {
   if (argc < 2)

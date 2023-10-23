@@ -69,6 +69,7 @@ public:
 
   /**
    * Specify the underlying data type of the object.
+   * Default is VTK_FLOAT.
    */
   virtual void SetDataType(int dataType);
   void SetDataTypeToBit() { this->SetDataType(VTK_BIT); }
@@ -99,7 +100,7 @@ public:
    */
   virtual void Reset();
 
-  //@{
+  ///@{
   /**
    * Different ways to copy data. Shallow copy does reference count (i.e.,
    * assigns pointers and updates reference count); deep copy runs through
@@ -107,7 +108,7 @@ public:
    */
   virtual void DeepCopy(vtkPoints* ad);
   virtual void ShallowCopy(vtkPoints* ad);
-  //@}
+  ///@}
 
   /**
    * Return the memory in kibibytes (1024 bytes) consumed by this attribute data.
@@ -122,7 +123,7 @@ public:
   /**
    * Return number of points in array.
    */
-  vtkIdType GetNumberOfPoints() { return this->Data->GetNumberOfTuples(); }
+  vtkIdType GetNumberOfPoints() const { return this->Data->GetNumberOfTuples(); }
 
   /**
    * Return a pointer to a double point x[3] for a specific id.
@@ -162,7 +163,7 @@ public:
   void SetPoint(vtkIdType id, double x, double y, double z)
     VTK_EXPECTS(0 <= id && id < GetNumberOfPoints());
 
-  //@{
+  ///@{
   /**
    * Insert point into object. Range checking performed and memory
    * allocated as necessary.
@@ -176,7 +177,7 @@ public:
     this->Data->InsertTuple(id, x);
   }
   void InsertPoint(vtkIdType id, double x, double y, double z) VTK_EXPECTS(0 <= id);
-  //@}
+  ///@}
 
   /**
    * Copy the points indexed in srcIds from the source array to the tuple
@@ -221,7 +222,7 @@ public:
   /**
    * Given a list of pt ids, return an array of points.
    */
-  void GetPoints(vtkIdList* ptId, vtkPoints* fp);
+  void GetPoints(vtkIdList* ptId, vtkPoints* outPoints);
 
   /**
    * Determine (xmin,xmax, ymin,ymax, zmin,zmax) bounds of points.

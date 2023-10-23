@@ -37,18 +37,18 @@ public:
 
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The filtered axes are the input axes that get relabeled to X,Y,Z.
    */
   void SetFilteredAxes(int x, int y, int z);
   void SetFilteredAxes(const int xyz[3]) { this->SetFilteredAxes(xyz[0], xyz[1], xyz[2]); }
   vtkGetVector3Macro(FilteredAxes, int);
-  //@}
+  ///@}
 
 protected:
   vtkImagePermute();
-  ~vtkImagePermute() override {}
+  ~vtkImagePermute() override = default;
 
   int FilteredAxes[3];
 

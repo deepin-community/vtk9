@@ -33,13 +33,10 @@
 #define SEVEN_POINT_TRIANGLE
 
 vtkStandardNewMacro(vtkBezierTriangle);
-//----------------------------------------------------------------------------
-vtkBezierTriangle::vtkBezierTriangle()
-  : vtkHigherOrderTriangle()
-{
-}
+//------------------------------------------------------------------------------
+vtkBezierTriangle::vtkBezierTriangle() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBezierTriangle::~vtkBezierTriangle() = default;
 
 void vtkBezierTriangle::PrintSelf(ostream& os, vtkIndent indent)
@@ -98,10 +95,9 @@ void vtkBezierTriangle::EvaluateLocationProjectedNode(
 void vtkBezierTriangle::SetRationalWeightsFromPointData(
   vtkPointData* point_data, const vtkIdType numPts)
 {
-  if (point_data->SetActiveAttribute(
-        "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
+  vtkDataArray* v = point_data->GetRationalWeights();
+  if (v)
   {
-    vtkDataArray* v = point_data->GetRationalWeights();
     this->GetRationalWeights()->SetNumberOfTuples(numPts);
     for (vtkIdType i = 0; i < numPts; i++)
     {
@@ -112,17 +108,17 @@ void vtkBezierTriangle::SetRationalWeightsFromPointData(
     this->GetRationalWeights()->Reset();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBezierTriangle::InterpolateFunctions(const double pcoords[3], double* weights)
 {
   const int dim = 2;
   const int deg = GetOrder();
   const vtkIdType nPoints = this->GetPoints()->GetNumberOfPoints();
   std::vector<double> coeffs(nPoints, 0.0);
-  vtkBezierInterpolation::deCasteljauSimplex(dim, deg, pcoords, &coeffs[0]);
+  vtkBezierInterpolation::DeCasteljauSimplex(dim, deg, pcoords, &coeffs[0]);
   for (vtkIdType i = 0; i < nPoints; ++i)
   {
-    vtkVector3i bv = vtkBezierInterpolation::unflattenSimplex(dim, deg, i);
+    vtkVector3i bv = vtkBezierInterpolation::UnFlattenSimplex(dim, deg, i);
     vtkIdType lbv[3] = { bv[0], bv[1], bv[2] };
     weights[Index(lbv, deg)] = coeffs[i];
   }
@@ -144,17 +140,17 @@ void vtkBezierTriangle::InterpolateFunctions(const double pcoords[3], double* we
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBezierTriangle::InterpolateDerivs(const double pcoords[3], double* derivs)
 {
   const int dim = 2;
   const int deg = GetOrder();
   const vtkIdType nPoints = this->GetPoints()->GetNumberOfPoints();
   std::vector<double> coeffs(nPoints, 0.0);
-  vtkBezierInterpolation::deCasteljauSimplexDeriv(dim, deg, pcoords, &coeffs[0]);
+  vtkBezierInterpolation::DeCasteljauSimplexDeriv(dim, deg, pcoords, &coeffs[0]);
   for (vtkIdType i = 0; i < nPoints; ++i)
   {
-    vtkVector3i bv = vtkBezierInterpolation::unflattenSimplex(dim, deg, i);
+    vtkVector3i bv = vtkBezierInterpolation::UnFlattenSimplex(dim, deg, i);
     vtkIdType lbv[3] = { bv[0], bv[1], bv[2] };
     for (int j = 0; j < dim; ++j)
     {
@@ -168,7 +164,7 @@ vtkDoubleArray* vtkBezierTriangle::GetRationalWeights()
   return RationalWeights.Get();
 }
 
-vtkHigherOrderCurve* vtkBezierTriangle::getEdgeCell()
+vtkHigherOrderCurve* vtkBezierTriangle::GetEdgeCell()
 {
   return EdgeCell;
 }

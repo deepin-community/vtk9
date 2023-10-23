@@ -72,6 +72,8 @@ private:
   using APIType = GetAPIType<ArrayType>;
 
 public:
+  using value_type = APIType;
+
   VTK_ITER_INLINE
   ConstComponentReference() noexcept
     : Array{ nullptr }
@@ -163,6 +165,8 @@ private:
   using APIType = GetAPIType<ArrayType>;
 
 public:
+  using value_type = APIType;
+
   VTK_ITER_INLINE
   ComponentReference() noexcept
     : Array{ nullptr }
@@ -322,8 +326,8 @@ public:
   }
 
 #define VTK_REF_OP_OVERLOADS(Op, ImplOp)                                                           \
-  friend VTK_ITER_INLINE ComponentReference operator Op(ComponentReference lhs, APIType val)       \
-    noexcept                                                                                       \
+  friend VTK_ITER_INLINE ComponentReference operator Op(                                           \
+    ComponentReference lhs, APIType val) noexcept                                                  \
   {                                                                                                \
     const APIType newVal = lhs ImplOp val;                                                         \
     lhs = newVal;                                                                                  \
@@ -373,24 +377,19 @@ protected:
 // Const component iterator
 template <typename ArrayType, ComponentIdType TupleSize>
 struct ConstComponentIterator
-  : public std::iterator<std::random_access_iterator_tag, GetAPIType<ArrayType>, ComponentIdType,
-      // expected types don't have members, no op->().
-      void, ConstComponentReference<ArrayType, TupleSize> >
 {
 private:
   static_assert(IsValidTupleSize<TupleSize>::value, "Invalid tuple size.");
   static_assert(IsVtkDataArray<ArrayType>::value, "Invalid array type.");
 
   using NumCompsType = GenericTupleSize<TupleSize>;
-  using Superclass = std::iterator<std::random_access_iterator_tag, GetAPIType<ArrayType>,
-    ComponentIdType, void, ConstComponentReference<ArrayType, TupleSize> >;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = GetAPIType<ArrayType>;
+  using difference_type = ComponentIdType;
+  using pointer = void;
+  using reference = ConstComponentReference<ArrayType, TupleSize>;
 
   VTK_ITER_INLINE
   ConstComponentIterator() noexcept
@@ -562,8 +561,6 @@ private:
 // Component iterator
 template <typename ArrayType, ComponentIdType TupleSize>
 struct ComponentIterator
-  : public std::iterator<std::random_access_iterator_tag, GetAPIType<ArrayType>, ComponentIdType,
-      ComponentReference<ArrayType, TupleSize>, ComponentReference<ArrayType, TupleSize> >
 {
 private:
   static_assert(IsValidTupleSize<TupleSize>::value, "Invalid tuple size.");
@@ -571,22 +568,21 @@ private:
 
   using NumCompsType = GenericTupleSize<TupleSize>;
   using APIType = GetAPIType<ArrayType>;
-  using Superclass = std::iterator<std::random_access_iterator_tag, APIType, ComponentIdType,
-    ComponentReference<ArrayType, TupleSize>, ComponentReference<ArrayType, TupleSize> >;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = APIType;
+  using difference_type = ComponentIdType;
+  using pointer = ComponentReference<ArrayType, TupleSize>;
+  using reference = ComponentReference<ArrayType, TupleSize>;
 
   VTK_ITER_INLINE
   ComponentIterator() noexcept = default;
 
   VTK_ITER_INLINE
-  ComponentIterator(ArrayType* array, NumCompsType numComps, TupleIdType tupleId,
-    ComponentIdType comp) noexcept : Ref(array, numComps, tupleId, comp)
+  ComponentIterator(
+    ArrayType* array, NumCompsType numComps, TupleIdType tupleId, ComponentIdType comp) noexcept
+    : Ref(array, numComps, tupleId, comp)
   {
     VTK_ITER_ASSERT(array != nullptr, "Invalid array.");
     VTK_ITER_ASSERT(numComps.value > 0, "Invalid number of components.");
@@ -1272,25 +1268,19 @@ protected:
 // Const tuple iterator
 template <typename ArrayType, ComponentIdType TupleSize>
 struct ConstTupleIterator
-  : public std::iterator<std::random_access_iterator_tag, ConstTupleReference<ArrayType, TupleSize>,
-      TupleIdType, ConstTupleReference<ArrayType, TupleSize>,
-      ConstTupleReference<ArrayType, TupleSize> >
 {
 private:
   static_assert(IsValidTupleSize<TupleSize>::value, "Invalid tuple size.");
   static_assert(IsVtkDataArray<ArrayType>::value, "Invalid array type.");
 
   using NumCompsType = GenericTupleSize<TupleSize>;
-  using Superclass = std::iterator<std::random_access_iterator_tag,
-    ConstTupleReference<ArrayType, TupleSize>, TupleIdType,
-    ConstTupleReference<ArrayType, TupleSize>, ConstTupleReference<ArrayType, TupleSize> >;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = ConstTupleReference<ArrayType, TupleSize>;
+  using difference_type = TupleIdType;
+  using pointer = ConstTupleReference<ArrayType, TupleSize>;
+  using reference = ConstTupleReference<ArrayType, TupleSize>;
 
   VTK_ITER_INLINE
   ConstTupleIterator() noexcept = default;
@@ -1306,7 +1296,10 @@ public:
   }
 
   VTK_ITER_INLINE
-  ConstTupleIterator(const TupleIterator<ArrayType, TupleSize>& o) noexcept : Ref{ o.Ref } {}
+  ConstTupleIterator(const TupleIterator<ArrayType, TupleSize>& o) noexcept
+    : Ref{ o.Ref }
+  {
+  }
 
   VTK_ITER_INLINE
   ConstTupleIterator(const ConstTupleIterator& o) noexcept = default;
@@ -1459,24 +1452,19 @@ private:
 // Tuple iterator
 template <typename ArrayType, ComponentIdType TupleSize>
 struct TupleIterator
-  : public std::iterator<std::random_access_iterator_tag, TupleReference<ArrayType, TupleSize>,
-      TupleIdType, TupleReference<ArrayType, TupleSize>, TupleReference<ArrayType, TupleSize> >
 {
 private:
   static_assert(IsValidTupleSize<TupleSize>::value, "Invalid tuple size.");
   static_assert(IsVtkDataArray<ArrayType>::value, "Invalid array type.");
 
   using NumCompsType = GenericTupleSize<TupleSize>;
-  using Superclass =
-    std::iterator<std::random_access_iterator_tag, TupleReference<ArrayType, TupleSize>,
-      TupleIdType, TupleReference<ArrayType, TupleSize>, TupleReference<ArrayType, TupleSize> >;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = TupleReference<ArrayType, TupleSize>;
+  using difference_type = TupleIdType;
+  using pointer = TupleReference<ArrayType, TupleSize>;
+  using reference = TupleReference<ArrayType, TupleSize>;
 
   VTK_ITER_INLINE
   TupleIterator() noexcept = default;
@@ -1546,8 +1534,8 @@ public:
   pointer& operator->() noexcept { return this->Ref; }
 
 #define VTK_TMP_MAKE_OPERATOR(OP)                                                                  \
-  friend VTK_ITER_INLINE bool operator OP(const TupleIterator& lhs, const TupleIterator& rhs)      \
-    noexcept                                                                                       \
+  friend VTK_ITER_INLINE bool operator OP(                                                         \
+    const TupleIterator& lhs, const TupleIterator& rhs) noexcept                                   \
   {                                                                                                \
     VTK_ITER_ASSERT(                                                                               \
       lhs.GetArray() == rhs.GetArray(), "Cannot compare iterators from different arrays.");        \

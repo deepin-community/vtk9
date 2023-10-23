@@ -36,6 +36,7 @@ class VTKCOMMONCORE_EXPORT vtkObjectFactoryCollection : public vtkCollection
 public:
   vtkTypeMacro(vtkObjectFactoryCollection, vtkCollection);
   static vtkObjectFactoryCollection* New();
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Add an ObjectFactory the bottom of the list.
@@ -61,8 +62,8 @@ public:
   }
 
 protected:
-  vtkObjectFactoryCollection() {}
-  ~vtkObjectFactoryCollection() override {}
+  vtkObjectFactoryCollection() = default;
+  ~vtkObjectFactoryCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
@@ -74,4 +75,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkObjectFactoryCollection.h

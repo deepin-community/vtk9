@@ -28,6 +28,13 @@
  * have the same point and/or cell attributes available. (For example, if one dataset
  * has scalars but another does not, scalars will not be appended.)
  *
+ * Points can be merged if MergePoints is set to true. In this case, points are
+ * really merged if there are no ghost cells and no global point ids, or if
+ * there are global point ids. In the case of the presence of global point ids,
+ * the filter exclusively relies on those ids, not checking if points are
+ * coincident. It assumes that the global ids were properly set. In the case of
+ * the absence of global ids, points withing Tolerance are merged.
+ *
  * @sa
  * vtkAppendFilter vtkAppendPolyData
  */
@@ -48,7 +55,7 @@ public:
   vtkTypeMacro(vtkAppendDataSets, vtkPointSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set if the filter should merge coincidental points
    * Note: The filter will only merge points if the ghost cell array doesn't exist
@@ -57,9 +64,9 @@ public:
   vtkGetMacro(MergePoints, bool);
   vtkSetMacro(MergePoints, bool);
   vtkBooleanMacro(MergePoints, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the tolerance to use to find coincident points when `MergePoints`
    * is `true`. Default is 0.0.
@@ -69,9 +76,9 @@ public:
    */
   vtkSetClampMacro(Tolerance, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set whether Tolerance is treated as an absolute or relative tolerance.
    * The default is to treat it as an absolute tolerance. When off, the
@@ -80,9 +87,9 @@ public:
   vtkSetMacro(ToleranceIsAbsolute, bool);
   vtkGetMacro(ToleranceIsAbsolute, bool);
   vtkBooleanMacro(ToleranceIsAbsolute, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set the output type produced by this filter. Only input datasets compatible with the
    * output type will be merged in the output. For example, if the output type is vtkPolyData, then
@@ -94,9 +101,9 @@ public:
    */
   vtkSetMacro(OutputDataSetType, int);
   vtkGetMacro(OutputDataSetType, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::Precision enum for an explanation of the available
@@ -104,7 +111,7 @@ public:
    */
   vtkSetClampMacro(OutputPointsPrecision, int, SINGLE_PRECISION, DEFAULT_PRECISION);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
   /**
    * see vtkAlgorithm for details

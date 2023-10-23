@@ -33,6 +33,7 @@ class VTKCOMMONDATAMODEL_EXPORT vtkDataObjectCollection : public vtkCollection
 public:
   static vtkDataObjectCollection* New();
   vtkTypeMacro(vtkDataObjectCollection, vtkCollection);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Add a data object to the bottom of the list.
@@ -59,8 +60,8 @@ public:
   }
 
 protected:
-  vtkDataObjectCollection() {}
-  ~vtkDataObjectCollection() override {}
+  vtkDataObjectCollection() = default;
+  ~vtkDataObjectCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
@@ -72,4 +73,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkDataObjectCollection.h

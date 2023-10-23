@@ -41,45 +41,45 @@ public:
 
   static vtkProteinRibbonFilter* New();
 
-  //@{
+  ///@{
   /**
    * Width of the ribbon coil. Default is 0.3.
    */
   vtkGetMacro(CoilWidth, float);
   vtkSetMacro(CoilWidth, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Width of the helix part of the ribbon. Default is 1.3.
    */
   vtkGetMacro(HelixWidth, float);
   vtkSetMacro(HelixWidth, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Smoothing factor of the ribbon. Default is 20.
    */
   vtkGetMacro(SubdivideFactor, int);
   vtkSetMacro(SubdivideFactor, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If enabled, small molecules (HETATMs) are drawn as spheres. Default is true.
    */
   vtkGetMacro(DrawSmallMoleculesAsSpheres, bool);
   vtkSetMacro(DrawSmallMoleculesAsSpheres, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Resolution of the spheres for small molecules. Default is 20.
    */
   vtkGetMacro(SphereResolution, int);
   vtkSetMacro(SphereResolution, int);
-  //@}
+  ///@}
 
 protected:
   vtkProteinRibbonFilter();
@@ -90,14 +90,13 @@ protected:
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   void CreateThinStrip(vtkPolyData* poly, vtkUnsignedCharArray* pointsColors, vtkPoints* p,
-    std::vector<std::pair<vtkVector3f, bool> >& p1, std::vector<std::pair<vtkVector3f, bool> >& p2,
+    std::vector<std::pair<vtkVector3f, bool>>& p1, std::vector<std::pair<vtkVector3f, bool>>& p2,
     std::vector<vtkColor3ub>& colors);
 
   void CreateAtomAsSphere(vtkPolyData* poly, vtkUnsignedCharArray* pointsColors, double* pos,
     const vtkColor3ub& color, float radius, float scale);
 
-  static std::vector<vtkVector3f>* Subdivide(
-    std::vector<std::pair<vtkVector3f, bool> >& p, int div);
+  static std::vector<vtkVector3f>* Subdivide(std::vector<std::pair<vtkVector3f, bool>>& p, int div);
 
   void SetColorByAtom(std::vector<vtkColor3ub>& colors, vtkStringArray* atomTypes);
 

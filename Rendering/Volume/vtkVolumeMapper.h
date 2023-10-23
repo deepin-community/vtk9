@@ -28,9 +28,10 @@
 #include "vtkAbstractVolumeMapper.h"
 #include "vtkRenderingVolumeModule.h" // For export macro
 
+class vtkImageData;
+class vtkRectilinearGrid;
 class vtkRenderer;
 class vtkVolume;
-class vtkImageData;
 
 #define VTK_CROP_SUBVOLUME 0x0002000
 #define VTK_CROP_FENCE 0x2ebfeba
@@ -46,17 +47,18 @@ public:
   vtkTypeMacro(vtkVolumeMapper, vtkAbstractVolumeMapper);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the input data
    */
   virtual void SetInputData(vtkImageData*);
   virtual void SetInputData(vtkDataSet*);
-  virtual vtkImageData* GetInput();
-  virtual vtkImageData* GetInput(const int port);
-  //@}
+  virtual void SetInputData(vtkRectilinearGrid*);
+  virtual vtkDataSet* GetInput();
+  virtual vtkDataSet* GetInput(const int port);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the blend mode.
    * The default mode is Composite where the scalar values are sampled through
@@ -117,9 +119,9 @@ public:
   void SetBlendModeToIsoSurface() { this->SetBlendMode(vtkVolumeMapper::ISOSURFACE_BLEND); }
   void SetBlendModeToSlice() { this->SetBlendMode(vtkVolumeMapper::SLICE_BLEND); }
   vtkGetMacro(BlendMode, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the scalar range to be considered for average intensity projection
    * blend mode. Only scalar values between this range will be averaged during
@@ -130,9 +132,9 @@ public:
    */
   vtkSetVector2Macro(AverageIPScalarRange, double);
   vtkGetVectorMacro(AverageIPScalarRange, double, 2);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn On/Off orthogonal cropping. (Clipping planes are
    * perpendicular to the coordinate axes.)
@@ -140,9 +142,9 @@ public:
   vtkSetClampMacro(Cropping, vtkTypeBool, 0, 1);
   vtkGetMacro(Cropping, vtkTypeBool);
   vtkBooleanMacro(Cropping, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Cropping Region Planes ( xmin, xmax, ymin, ymax, zmin, zmax )
    * These planes are defined in volume coordinates - spacing and origin are
@@ -150,17 +152,17 @@ public:
    */
   vtkSetVector6Macro(CroppingRegionPlanes, double);
   vtkGetVectorMacro(CroppingRegionPlanes, double, 6);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the cropping region planes in voxels. Only valid during the
    * rendering process
    */
   vtkGetVectorMacro(VoxelCroppingRegionPlanes, double, 6);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the flags for the cropping regions. The clipping planes divide the
    * volume into 27 regions - there is one bit for each region. The regions
@@ -185,7 +187,7 @@ public:
   {
     this->SetCroppingRegionFlags(VTK_CROP_INVERTED_CROSS);
   }
-  //@}
+  ///@}
 
   /**
    * WARNING: INTERNAL METHOD - NOT INTENDED FOR GENERAL USE
@@ -273,7 +275,7 @@ protected:
    */
   double AverageIPScalarRange[2];
 
-  //@{
+  ///@{
   /**
    * Cropping variables, and a method for converting the world
    * coordinate cropping region planes to voxel coordinates
@@ -283,7 +285,7 @@ protected:
   double VoxelCroppingRegionPlanes[6];
   int CroppingRegionFlags;
   void ConvertCroppingRegionPlanesToVoxels();
-  //@}
+  ///@}
 
   int FillInputPortInformation(int, vtkInformation*) override;
 

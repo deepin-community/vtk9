@@ -61,27 +61,27 @@ public:
   /**
    * Perform rendering according to a render state s.
    */
-  virtual void Render(const vtkRenderState* s) override;
+  void Render(const vtkRenderState* s) override;
 
-  //@{
+  ///@{
   /**
    * Tells the pass what it will render.
    */
   void SetSceneGraph(vtkOSPRayRendererNode*);
   vtkGetObjectMacro(SceneGraph, vtkOSPRayRendererNode);
-  //@}
+  ///@}
 
   /**
    * Called by the internals of this class
    */
   virtual void RenderInternal(const vtkRenderState* s);
 
-  //@{
+  ///@{
   /**
    * Wrapper around ospray's init and shutdown that protect
    * with a reference count.
    */
-  //@}
+  ///@}
   static void RTInit();
   static void RTShutdown();
 

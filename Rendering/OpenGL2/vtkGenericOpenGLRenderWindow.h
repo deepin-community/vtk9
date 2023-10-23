@@ -76,8 +76,7 @@ public:
   void SetBackRightBuffer(unsigned int);
   // }@
 
-  void SetDefaultFrameBufferId(unsigned int);
-  void SetOwnContext(int);
+  void SetOwnContext(vtkTypeBool);
 
   //! no-op (for API compat with OpenGL1).
   void PushState() {}
@@ -108,7 +107,7 @@ public:
   void DestroyWindow() override;
   // }@
 
-  //@{
+  ///@{
   /**
    * Allow to update state within observer callback without changing
    * data argument and MTime.
@@ -116,7 +115,7 @@ public:
   void SetIsDirect(vtkTypeBool newValue);
   void SetSupportsOpenGL(int newValue);
   void SetIsCurrent(bool newValue);
-  //@}
+  ///@}
 
   /**
    * Override the Render method to do some state management.
@@ -132,16 +131,16 @@ public:
    */
   float GetMaximumHardwareLineWidth() override;
 
-  //@{
+  ///@{
   /**
    * Specify a non-zero line width to force the hardware line width determined
    * by the window.
    */
   vtkSetClampMacro(ForceMaximumHardwareLineWidth, float, 0, VTK_FLOAT_MAX);
   vtkGetMacro(ForceMaximumHardwareLineWidth, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set this to true to indicate that the context is now ready. For backwards
    * compatibility reasons, it's set to true by default. If set to false, the
@@ -168,7 +167,14 @@ public:
   /**
    * Overridden to simply call `GetReadyForRendering`
    */
-  VTK_LEGACY(bool IsDrawable() override);
+  VTK_DEPRECATED_IN_9_1_0(
+    "Deprecated in 9.1 because no one knows what it's for and nothing uses it")
+  bool IsDrawable() override;
+
+  /**
+   * Initialize OpenGL for this window.
+   */
+  void OpenGLInit() override;
 
 protected:
   /**

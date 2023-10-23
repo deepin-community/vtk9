@@ -34,94 +34,94 @@ public:
   vtkTypeMacro(vtkRTAnalyticSource, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the extent of the whole output image. Initial value is
    * {-10,10,-10,10,-10,10}
    */
   void SetWholeExtent(int xMinx, int xMax, int yMin, int yMax, int zMin, int zMax);
   vtkGetVector6Macro(WholeExtent, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the center of function. Initial value is {0.0,0.0,0.0}
    */
   vtkSetVector3Macro(Center, double);
   vtkGetVector3Macro(Center, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Maximum value of the function. Initial value is 255.0.
    */
   vtkSetMacro(Maximum, double);
   vtkGetMacro(Maximum, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the standard deviation of the function. Initial value is 0.5.
    */
   vtkSetMacro(StandardDeviation, double);
   vtkGetMacro(StandardDeviation, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the natural frequency in x. Initial value is 60.
    */
   vtkSetMacro(XFreq, double);
   vtkGetMacro(XFreq, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the natural frequency in y. Initial value is 30.
    */
   vtkSetMacro(YFreq, double);
   vtkGetMacro(YFreq, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the natural frequency in z. Initial value is 40.
    */
   vtkSetMacro(ZFreq, double);
   vtkGetMacro(ZFreq, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the magnitude in x. Initial value is 10.
    */
   vtkSetMacro(XMag, double);
   vtkGetMacro(XMag, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the magnitude in y. Initial value is 18.
    */
   vtkSetMacro(YMag, double);
   vtkGetMacro(YMag, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the magnitude in z. Initial value is 5.
    */
   vtkSetMacro(ZMag, double);
   vtkGetMacro(ZMag, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the sub-sample rate. Initial value is 1.
    */
   vtkSetMacro(SubsampleRate, int);
   vtkGetMacro(SubsampleRate, int);
-  //@}
+  ///@}
 
 protected:
   /**
@@ -135,7 +135,7 @@ protected:
   /**
    * Destructor.
    */
-  ~vtkRTAnalyticSource() override {}
+  ~vtkRTAnalyticSource() override = default;
 
   double XFreq;
   double YFreq;
@@ -152,8 +152,6 @@ protected:
   int RequestInformation(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
   void ExecuteDataWithInformation(vtkDataObject* data, vtkInformation* outInfo) override;
-
-  int FillOutputPortInformation(int port, vtkInformation* info) override;
 
 private:
   vtkRTAnalyticSource(const vtkRTAnalyticSource&) = delete;

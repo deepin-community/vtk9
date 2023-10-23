@@ -18,8 +18,6 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#include "vtkToolkits.h"
-
 #include "vtkDescriptiveStatistics.h"
 #include "vtkStatisticsAlgorithmPrivate.h"
 
@@ -42,7 +40,7 @@
 
 vtkObjectFactoryNewMacro(vtkDescriptiveStatistics);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDescriptiveStatistics::vtkDescriptiveStatistics()
 {
   this->AssessNames->SetNumberOfValues(1);
@@ -56,10 +54,10 @@ vtkDescriptiveStatistics::vtkDescriptiveStatistics()
   this->SignedDeviations = 0; // By default, use unsigned deviation (1D Mahlanobis distance)
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDescriptiveStatistics::~vtkDescriptiveStatistics() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -69,7 +67,7 @@ void vtkDescriptiveStatistics::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "SignedDeviations: " << this->SignedDeviations << "\n";
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::Aggregate(
   vtkDataObjectCollection* inMetaColl, vtkMultiBlockDataSet* outMeta)
 {
@@ -217,7 +215,7 @@ void vtkDescriptiveStatistics::Aggregate(
   aggregatedTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::Learn(
   vtkTable* inData, vtkTable* vtkNotUsed(inParameters), vtkMultiBlockDataSet* outMeta)
 {
@@ -276,7 +274,7 @@ void vtkDescriptiveStatistics::Learn(
 
   // Loop over requests
   vtkIdType nRow = inData->GetNumberOfRows();
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one column of interest (if there are others, they are ignored)
@@ -351,7 +349,7 @@ void vtkDescriptiveStatistics::Learn(
   primaryTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 {
   if (!inMeta || inMeta->GetNumberOfBlocks() < 1)
@@ -460,7 +458,7 @@ void vtkDescriptiveStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   derivedTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Use the invalid value of -1 for p-values if R is absent
 vtkDoubleArray* vtkDescriptiveStatistics::CalculatePValues(vtkDoubleArray* statCol)
 {
@@ -478,7 +476,7 @@ vtkDoubleArray* vtkDescriptiveStatistics::CalculatePValues(vtkDoubleArray* statC
   return testCol;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::Test(
   vtkTable* inData, vtkMultiBlockDataSet* inMeta, vtkTable* outMeta)
 {
@@ -529,7 +527,7 @@ void vtkDescriptiveStatistics::Test(
   vtkStringArray* vars = vtkArrayDownCast<vtkStringArray>(primaryTab->GetColumnByName("Variable"));
 
   // Loop over requests
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one column of interest (if there are others, they are ignored)
@@ -590,7 +588,7 @@ void vtkDescriptiveStatistics::Test(
   statCol->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class TableColumnDeviantFunctor : public vtkStatisticsAlgorithm::AssessFunctor
 {
 public:
@@ -651,7 +649,7 @@ public:
   }
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDescriptiveStatistics::SelectAssessFunctor(
   vtkTable* outData, vtkDataObject* inMetaDO, vtkStringArray* rowNames, AssessFunctor*& dfunc)
 {

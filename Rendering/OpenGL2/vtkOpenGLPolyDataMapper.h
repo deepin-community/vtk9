@@ -21,16 +21,18 @@
 #ifndef vtkOpenGLPolyDataMapper_h
 #define vtkOpenGLPolyDataMapper_h
 
+#include "vtkDeprecation.h"  // For VTK_DEPRECATED_IN_9_0_0
+#include "vtkInformation.h"  // for prim struct
 #include "vtkNew.h"          // For vtkNew
-#include "vtkNew.h"          // for ivars
 #include "vtkOpenGLHelper.h" // used for ivars
 #include "vtkPolyDataMapper.h"
 #include "vtkRenderingOpenGL2Module.h" // For export macro
 #include "vtkShader.h"                 // for methods
 #include "vtkStateStorage.h"           // used for ivars
 
-#include <map>    //for methods
-#include <vector> //for ivars
+#include <map>    // for map
+#include <tuple>  // for tuple
+#include <vector> // for vector
 
 class vtkCellArray;
 class vtkGenericOpenGLResourceFreeCallback;
@@ -60,14 +62,14 @@ public:
    */
   void RenderPiece(vtkRenderer* ren, vtkActor* act) override;
 
-  //@{
+  ///@{
   /**
    * Implemented by sub classes. Actual rendering is done here.
    */
   virtual void RenderPieceStart(vtkRenderer* ren, vtkActor* act);
   virtual void RenderPieceDraw(vtkRenderer* ren, vtkActor* act);
   virtual void RenderPieceFinish(vtkRenderer* ren, vtkActor* act);
-  //@}
+  ///@}
 
   /**
    * Release any graphics resources that are being consumed by this mapper.
@@ -92,7 +94,7 @@ public:
   // other polydata (not the input)
   vtkPolyData* CurrentInput;
 
-  //@{
+  ///@{
   /**
    * By default, this class uses the dataset's point and cell ids during
    * rendering. However, one can override those by specifying cell and point
@@ -103,9 +105,9 @@ public:
   vtkGetStringMacro(PointIdArrayName);
   vtkSetStringMacro(CellIdArrayName);
   vtkGetStringMacro(CellIdArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this class should override the process id using a data-array,
    * set this variable to the name of the array to use. It must be a
@@ -113,9 +115,9 @@ public:
    */
   vtkSetStringMacro(ProcessIdArrayName);
   vtkGetStringMacro(ProcessIdArrayName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Generally, this class can render the composite id when iterating
    * over composite datasets. However in some cases (as in AMR), the rendered
@@ -127,10 +129,9 @@ public:
    */
   vtkSetStringMacro(CompositeIdArrayName);
   vtkGetStringMacro(CompositeIdArrayName);
-  //@}
+  ///@}
 
-#ifndef VTK_LEGACY_REMOVE
-  //@{
+  ///@{
   /**
    * This function enables you to apply your own substitutions
    * to the shader creation process. The shader code in this class
@@ -141,17 +142,21 @@ public:
    * @deprecated Replaced By vtkShaderProperty::{Add,Clear,ClearAll}ShaderReplacements as of
    * VTK 9.0.
    */
-  VTK_LEGACY(void AddShaderReplacement(vtkShader::Type shaderType, // vertex, fragment, etc
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::AddShaderReplacement")
+  void AddShaderReplacement(vtkShader::Type shaderType, // vertex, fragment, etc
     const std::string& originalValue,
     bool replaceFirst, // do this replacement before the default
-    const std::string& replacementValue, bool replaceAll);)
-  VTK_LEGACY(void ClearShaderReplacement(vtkShader::Type shaderType, // vertex, fragment, etc
-    const std::string& originalValue, bool replaceFirst);)
-  VTK_LEGACY(void ClearAllShaderReplacements(vtkShader::Type shaderType);)
-  VTK_LEGACY(void ClearAllShaderReplacements();)
-  //@}
+    const std::string& replacementValue, bool replaceAll);
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::ClearShaderReplacement")
+  void ClearShaderReplacement(vtkShader::Type shaderType, // vertex, fragment, etc
+    const std::string& originalValue, bool replaceFirst);
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::ClearAllShaderReplacements")
+  void ClearAllShaderReplacements(vtkShader::Type shaderType);
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::ClearAllShaderReplacements")
+  void ClearAllShaderReplacements();
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Allow the program to set the shader codes used directly
    * instead of using the built in templates. Be aware, if
@@ -160,14 +165,19 @@ public:
    *
    * @deprecated Replaced By vtkShaderProperty::Get*ShaderCode as of VTK 9.0.
    */
-  VTK_LEGACY(virtual void SetVertexShaderCode(const char* code);)
-  VTK_LEGACY(virtual char* GetVertexShaderCode();)
-  VTK_LEGACY(virtual void SetFragmentShaderCode(const char* code);)
-  VTK_LEGACY(virtual char* GetFragmentShaderCode();)
-  VTK_LEGACY(virtual void SetGeometryShaderCode(const char* code);)
-  VTK_LEGACY(virtual char* GetGeometryShaderCode();)
-  //@}
-#endif
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::SetVertexShaderCode")
+  virtual void SetVertexShaderCode(const char* code);
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::GetVertexShaderCode")
+  virtual char* GetVertexShaderCode();
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::SetFragmentShaderCode")
+  virtual void SetFragmentShaderCode(const char* code);
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::GetFragmentShaderCode")
+  virtual char* GetFragmentShaderCode();
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::SetGeometryShaderCode")
+  virtual void SetGeometryShaderCode(const char* code);
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOpenGLShaderProperty::GetGeometryShaderCode")
+  virtual char* GetGeometryShaderCode();
+  ///@}
 
   /**
    * Make a shallow copy of this mapper.
@@ -180,7 +190,26 @@ public:
   /**\brief A convenience method for enabling/disabling
    *   the VBO's shift+scale transform.
    */
-  void SetVBOShiftScaleMethod(int m);
+  virtual void SetVBOShiftScaleMethod(int m);
+  virtual int GetVBOShiftScaleMethod() { return this->ShiftScaleMethod; }
+
+  /**\brief Pause per-render updates to VBO shift+scale parameters.
+   *
+   * For large datasets, re-uploading the VBO during user interaction
+   * can cause stutters in the framerate. Interactors can use this
+   * method to force UpdateCameraShiftScale to return immediately
+   * (without changes) while users are zooming/rotating/etc. and then
+   * re-enable shift-scale just before a still render.
+   *
+   * This setting has no effect unless the shift-scale method is set
+   * to NEAR_PLANE_SHIFT_SCALE or FOCAL_POINT_SHIFT_SCALE.
+   *
+   * Changing this setting does **not** mark the mapper as modified as
+   * that would force a VBO upload – defeating its own purpose.
+   */
+  virtual void SetPauseShiftScale(bool pauseShiftScale) { this->PauseShiftScale = pauseShiftScale; }
+  vtkGetMacro(PauseShiftScale, bool);
+  vtkBooleanMacro(PauseShiftScale, bool);
 
   enum PrimitiveTypes
   {
@@ -189,8 +218,6 @@ public:
     PrimitiveLines,
     PrimitiveTris,
     PrimitiveTriStrips,
-    PrimitiveTrisEdges,
-    PrimitiveTriStripsEdges,
     PrimitiveVertices,
     PrimitiveEnd
   };
@@ -246,6 +273,9 @@ protected:
   // what coordinate should be used for this texture
   std::string GetTextureCoordinateName(const char* tname);
 
+  // handle updating shift scale based on pose changes
+  virtual void UpdateCameraShiftScale(vtkRenderer* ren, vtkActor* actor);
+
   /**
    * helper function to get the appropriate coincident params
    */
@@ -287,7 +317,7 @@ protected:
   virtual void ReplaceShaderValues(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act);
 
-  //@{
+  ///@{
   /**
    * Perform string replacements on the shader templates, called from
    * ReplaceShaderValues
@@ -297,6 +327,8 @@ protected:
   virtual void ReplaceShaderCustomUniforms(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkActor* act);
   virtual void ReplaceShaderColor(
+    std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act);
+  virtual void ReplaceShaderEdges(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act);
   virtual void ReplaceShaderLight(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act);
@@ -316,7 +348,7 @@ protected:
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act);
   virtual void ReplaceShaderDepth(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act);
-  //@}
+  ///@}
 
   /**
    * Set the value of user-defined uniform variables, called by UpdateShader
@@ -365,13 +397,35 @@ protected:
    */
   virtual void BuildIBO(vtkRenderer* ren, vtkActor* act, vtkPolyData* poly);
 
+  /**
+   * Build the selection IBO, called by UpdateBufferObjects
+   */
+  virtual void BuildSelectionIBO(
+    vtkPolyData* poly, std::vector<unsigned int> (&indices)[4], vtkIdType offset);
+
+  /**
+   * Build the selection cache, used to map value ids to indices values
+   */
+  virtual void BuildSelectionCache(const char* arrayName, bool selectingPoints, vtkPolyData* poly);
+
   // The VBO and its layout.
   vtkOpenGLVertexBufferObjectGroup* VBOs;
 
   // Structures for the various cell types we render.
   vtkOpenGLHelper Primitives[PrimitiveEnd];
+  vtkOpenGLHelper SelectionPrimitives[PrimitiveEnd];
   vtkOpenGLHelper* LastBoundBO;
-  bool DrawingEdgesOrVertices;
+  bool DrawingVertices;
+  bool DrawingSelection = false;
+  int SelectionType;
+  vtkMTimeType SelectionTime = 0;
+
+  std::map<std::tuple<unsigned int, unsigned int, vtkIdType>, std::vector<vtkIdType>>
+    SelectionCache;
+  std::string SelectionCacheName;
+  bool SelectionCacheForPoints = false;
+  vtkMTimeType SelectionCacheTime = 0;
+  vtkPolyData* SelectionPolyData = nullptr;
 
   // do we have wide lines that require special handling
   virtual bool HaveWideLines(vtkRenderer*, vtkActor*);
@@ -387,27 +441,36 @@ protected:
   //  ColorInternalTexture
   //  Actors texture
   //  Properties textures
-  virtual std::vector<std::pair<vtkTexture*, std::string> > GetTextures(vtkActor* actor);
+  virtual std::vector<std::pair<vtkTexture*, std::string>> GetTextures(vtkActor* actor);
 
   // do we have textures coordinates that require special handling
   virtual bool HaveTCoords(vtkPolyData* poly);
 
   // values we use to determine if we need to rebuild shaders
-  std::map<const vtkOpenGLHelper*, int> LastLightComplexity;
-  std::map<const vtkOpenGLHelper*, int> LastLightCount;
-  std::map<const vtkOpenGLHelper*, vtkTimeStamp> LightComplexityChanged;
+  // stored in a map keyed on the vtkOpenGLHelper, so one
+  // typically entry per type of primitive we render which
+  // matches the shader programs we use
+  class primitiveInfo
+  {
+  public:
+    int LastLightComplexity;
+    int LastLightCount;
+    vtkTimeStamp LightComplexityChanged;
 
+    // Caches the vtkOpenGLRenderPass::RenderPasses() information.
+    // Note: Do not dereference the pointers held by this object. There is no
+    // guarantee that they are still valid!
+    vtkNew<vtkInformation> LastRenderPassInfo;
+  };
+  std::map<const vtkOpenGLHelper*, primitiveInfo> PrimitiveInfo;
+
+  bool PointPicking;
   int LastSelectionState;
   vtkTimeStamp SelectionStateChanged;
 
-  // Caches the vtkOpenGLRenderPass::RenderPasses() information.
-  // Note: Do not dereference the pointers held by this object. There is no
-  // guarantee that they are still valid!
-  vtkNew<vtkInformation> LastRenderPassInfo;
-
   // Check the renderpasses in actor's property keys to see if they've changed
   // render stages:
-  vtkMTimeType GetRenderPassStageMTime(vtkActor* actor);
+  vtkMTimeType GetRenderPassStageMTime(vtkActor* actor, const vtkOpenGLHelper* cellBO);
 
   bool UsingScalarColoring;
   vtkTimeStamp VBOBuildTime;     // When was the OpenGL VBO updated?
@@ -425,6 +488,7 @@ protected:
   vtkNew<vtkTransform> VBOInverseTransform;
   vtkNew<vtkMatrix4x4> VBOShiftScale;
   int ShiftScaleMethod; // for points
+  bool PauseShiftScale;
 
   // if set to true, tcoords will be passed to the
   // VBO even if the mapper knows of no texture maps
@@ -446,6 +510,11 @@ protected:
   vtkOpenGLBufferObject* CellNormalBuffer;
   bool HaveCellNormals;
 
+  vtkTextureObject* EdgeTexture;
+  vtkOpenGLBufferObject* EdgeBuffer;
+  std::vector<unsigned char> EdgeValues;
+  virtual bool DrawingEdges(vtkRenderer*, vtkActor*);
+
   // additional picking indirection
   char* PointIdArrayName;
   char* CellIdArrayName;
@@ -464,10 +533,10 @@ protected:
 
   // Store shader properties on this class by legacy shader replacement functions
   // This should disappear when the functions are deprecated
-#ifndef VTK_LEGACY_REMOVE
+  // VTK_DEPRECATED_IN_9_0_0("legacy support functions")
   vtkOpenGLShaderProperty* GetLegacyShaderProperty();
+  // VTK_DEPRECATED_IN_9_0_0("legacy support functions")
   vtkSmartPointer<vtkOpenGLShaderProperty> LegacyShaderProperty;
-#endif
 
   vtkOpenGLRenderTimer* TimerQuery;
 
@@ -491,6 +560,13 @@ protected:
 
   // compute and set the maximum point and cell ID used in selection
   virtual void UpdateMaximumPointCellIds(vtkRenderer* ren, vtkActor* actor);
+
+  void AddPointIdsToSelectionPrimitives(vtkPolyData* poly, const char* arrayName,
+    unsigned int processId, unsigned int compositeIndex, vtkIdType selectedId);
+  void AddCellIdsToSelectionPrimitives(vtkPolyData* poly, const char* arrayName,
+    unsigned int processId, unsigned int compositeIndex, vtkIdType selectedId);
+
+  vtkNew<vtkCellArray> SelectionArrays[4];
 
 private:
   vtkOpenGLPolyDataMapper(const vtkOpenGLPolyDataMapper&) = delete;

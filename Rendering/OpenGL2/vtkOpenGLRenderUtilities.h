@@ -42,7 +42,7 @@ public:
   vtkTypeMacro(vtkOpenGLRenderUtilities, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Helper function that draws a quad on the screen
    * at the specified vertex coordinates and if
@@ -51,19 +51,19 @@ public:
    */
   static void RenderQuad(
     float* verts, float* tcoords, vtkShaderProgram* program, vtkOpenGLVertexArrayObject* vao);
-  static void RenderTriangles(float* verts, unsigned int numVerts, GLuint* indices,
+  static void RenderTriangles(float* verts, unsigned int numVerts, GLuint* iboData,
     unsigned int numIndices, float* tcoords, vtkShaderProgram* program,
     vtkOpenGLVertexArrayObject* vao);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Draw a full-screen quad:
    *
    * * VertexShader and GeometryShader should be used as-is when building the
    * ShaderProgram.
-   * * FragmentShaderTemplate supports the replacements //VTK::FSQ::Decl and
-   * //VTK::FSQ::Impl for declaring variables and the shader body,
+   * * FragmentShaderTemplate supports the replacements @code //VTK::FSQ::Decl @endcode and
+   * @code //VTK::FSQ::Impl @endcode for declaring variables and the shader body,
    * respectively.
    * * The varying texCoord is available to the fragment shader for texture
    * lookups into full-screen textures, ie. texture2D(textureName, texCoord).
@@ -108,11 +108,11 @@ public:
   static bool PrepFullScreenVAO(
     vtkOpenGLRenderWindow* renWin, vtkOpenGLVertexArrayObject* vao, vtkShaderProgram* prog);
   static void DrawFullScreenQuad();
-  //@}
+  ///@}
 
   // older signsature, we suggest you use the newer signature above
   static bool PrepFullScreenVAO(
-    vtkOpenGLBufferObject* verts, vtkOpenGLVertexArrayObject* vao, vtkShaderProgram* prog);
+    vtkOpenGLBufferObject* vertBuf, vtkOpenGLVertexArrayObject* vao, vtkShaderProgram* prog);
 
   /**
    * Pass a debugging mark to the render engine to assist development via tools

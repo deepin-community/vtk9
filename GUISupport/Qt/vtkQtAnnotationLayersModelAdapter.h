@@ -32,7 +32,6 @@
 #ifndef vtkQtAnnotationLayersModelAdapter_h
 #define vtkQtAnnotationLayersModelAdapter_h
 
-#include "vtkConfigure.h"
 #include "vtkGUISupportQtModule.h" // For export macro
 #include "vtkQtAbstractModelAdapter.h"
 
@@ -48,15 +47,15 @@ public:
   vtkQtAnnotationLayersModelAdapter(vtkAnnotationLayers* ann, QObject* parent = nullptr);
   ~vtkQtAnnotationLayersModelAdapter() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the VTK data object as input to this adapter
    */
   void SetVTKDataObject(vtkDataObject* data) override;
   vtkDataObject* GetVTKDataObject() const override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Selection conversion from VTK land to Qt land
    */
@@ -65,12 +64,12 @@ public:
   virtual QItemSelection VTKAnnotationLayersToQItemSelection(vtkAnnotationLayers* vtkann) const;
   vtkSelection* QModelIndexListToVTKIndexSelection(const QModelIndexList qmil) const override;
   QItemSelection VTKIndexSelectionToQItemSelection(vtkSelection* vtksel) const override;
-  //@}
+  ///@}
 
   void SetKeyColumnName(const char* name) override;
   void SetColorColumnName(const char* name) override;
 
-  //@{
+  ///@{
   /**
    * Set up the model based on the current table.
    */
@@ -95,7 +94,7 @@ public:
     const; virtual QStringList mimeTypes () const ;
   */
 private:
-  //@}
+  ///@}
 
   bool noAnnotationsCheck() const;
 

@@ -33,6 +33,7 @@ class VTKCOMMONCORE_EXPORT vtkIdListCollection : public vtkCollection
 public:
   static vtkIdListCollection* New();
   vtkTypeMacro(vtkIdListCollection, vtkCollection);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Add an IdList to the bottom of the list.
@@ -59,8 +60,8 @@ public:
   }
 
 protected:
-  vtkIdListCollection() {}
-  ~vtkIdListCollection() override {}
+  vtkIdListCollection() = default;
+  ~vtkIdListCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
@@ -72,4 +73,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkIdListCollection.h

@@ -14,18 +14,21 @@
 =========================================================================*/
 #include "vtkTIFFWriter.h"
 
+#include "vtkDataArray.h"
 #include "vtkErrorCode.h"
 #include "vtkImageData.h"
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
+#include "vtkSetGet.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtk_tiff.h"
 
+#include <sstream>
 #include <vector>
 
 vtkStandardNewMacro(vtkTIFFWriter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTIFFWriter::vtkTIFFWriter()
   : TIFFPtr(nullptr)
   , Compression(PackBits)
@@ -35,9 +38,12 @@ vtkTIFFWriter::vtkTIFFWriter()
   , XResolution(-1.0)
   , YResolution(-1.0)
 {
+  // by default process active point scalars
+  this->SetInputArrayToProcess(
+    0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, vtkDataSetAttributes::SCALARS);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTIFFWriter::Write()
 {
   // make sure the latest input is available.
@@ -112,14 +118,16 @@ void vtkTIFFWriter::Write()
   this->InternalFileName = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTIFFWriter::WriteFileHeader(ostream*, vtkImageData* data, int wExt[6])
 {
+  vtkDataArray* scalarArray = this->GetInputArrayToProcess(0, this->GetInput());
+
   int dims[3];
   data->GetDimensions(dims);
-  int scomponents = data->GetNumberOfScalarComponents();
-  int stype = data->GetScalarType();
-  uint32 rowsperstrip = (uint32)-1;
+  int scomponents = scalarArray->GetNumberOfComponents();
+  int stype = scalarArray->GetDataType();
+  uint32_t rowsperstrip = (uint32_t)-1;
 
   int bps;
   switch (stype)
@@ -137,7 +145,7 @@ void vtkTIFFWriter::WriteFileHeader(ostream*, vtkImageData* data, int wExt[6])
       bps = 32;
       break;
     default:
-      vtkErrorMacro(<< "Unsupported data type: " << data->GetScalarTypeAsString());
+      vtkErrorMacro(<< "Unsupported data type: " << vtkImageScalarTypeNameMacro(stype));
       this->SetErrorCode(vtkErrorCode::FileFormatError);
       return;
   }
@@ -154,7 +162,16 @@ void vtkTIFFWriter::WriteFileHeader(ostream*, vtkImageData* data, int wExt[6])
   this->XResolution = 10.0 / data->GetSpacing()[0];
   this->YResolution = 10.0 / data->GetSpacing()[1];
 
-  TIFF* tif = TIFFOpen(this->InternalFileName, "w");
+  std::stringstream writeMode;
+  writeMode << "w";
+  vtkTypeInt64 len =
+    static_cast<vtkTypeInt64>(this->Width) * this->Height * this->Pages * scomponents * (bps / 8);
+  if (len > VTK_INT_MAX)
+  {
+    // Large image detected, use BigTIFF mode
+    writeMode << "8";
+  }
+  TIFF* tif = TIFFOpen(this->InternalFileName, writeMode.str().c_str());
 
   if (!tif)
   {
@@ -169,8 +186,8 @@ void vtkTIFFWriter::WriteFileHeader(ostream*, vtkImageData* data, int wExt[6])
     return;
   }
 
-  uint32 w = this->Width;
-  uint32 h = this->Height;
+  uint32_t w = this->Width;
+  uint32_t h = this->Height;
   TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, w);
   TIFFSetField(tif, TIFFTAG_IMAGELENGTH, h);
   TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
@@ -186,8 +203,8 @@ void vtkTIFFWriter::WriteFileHeader(ostream*, vtkImageData* data, int wExt[6])
   {
     // if number of scalar components is greater than 3, that means we assume
     // there is alpha.
-    uint16 extra_samples = scomponents - 3;
-    std::vector<uint16> sample_info(scomponents - 3);
+    uint16_t extra_samples = scomponents - 3;
+    std::vector<uint16_t> sample_info(scomponents - 3);
     sample_info[0] = EXTRASAMPLE_ASSOCALPHA;
     int cc;
     for (cc = 1; cc < scomponents - 3; cc++)
@@ -217,7 +234,7 @@ void vtkTIFFWriter::WriteFileHeader(ostream*, vtkImageData* data, int wExt[6])
   }
   // compression = COMPRESSION_JPEG;
   TIFFSetField(tif, TIFFTAG_COMPRESSION, compression); // Fix for compression
-  uint16 photometric = (scomponents == 1 ? PHOTOMETRIC_MINISBLACK : PHOTOMETRIC_RGB);
+  uint16_t photometric = (scomponents == 1 ? PHOTOMETRIC_MINISBLACK : PHOTOMETRIC_RGB);
   if (compression == COMPRESSION_JPEG)
   {
     TIFFSetField(tif, TIFFTAG_JPEGQUALITY, 75); // Parameter
@@ -246,11 +263,13 @@ void vtkTIFFWriter::WriteFileHeader(ostream*, vtkImageData* data, int wExt[6])
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTIFFWriter::WriteFile(ostream*, vtkImageData* data, int extent[6], int*)
 {
+  vtkDataArray* scalarArray = this->GetInputArrayToProcess(0, this->GetInput());
+
   // Make sure we actually have data.
-  if (!data->GetPointData()->GetScalars())
+  if (!scalarArray)
   {
     vtkErrorMacro(<< "Could not get data from input.");
     return;
@@ -264,9 +283,9 @@ void vtkTIFFWriter::WriteFile(ostream*, vtkImageData* data, int extent[6], int*)
     return;
   }
 
+  int dataType = scalarArray->GetDataType();
   // take into consideration the scalar type
-  if (data->GetScalarType() != VTK_UNSIGNED_CHAR && data->GetScalarType() != VTK_UNSIGNED_SHORT &&
-    data->GetScalarType() != VTK_FLOAT)
+  if (dataType != VTK_UNSIGNED_CHAR && dataType != VTK_UNSIGNED_SHORT && dataType != VTK_FLOAT)
   {
     vtkErrorMacro("TIFFWriter only accepts unsigned char/short or float scalars!");
     return;
@@ -275,9 +294,9 @@ void vtkTIFFWriter::WriteFile(ostream*, vtkImageData* data, int extent[6], int*)
   if (this->Pages > 1)
   {
     // Call the correct templated function for the input
-    void* inPtr = data->GetScalarPointer();
+    void* inPtr = scalarArray->GetVoidPointer(0);
 
-    switch (data->GetScalarType())
+    switch (dataType)
     {
       vtkTemplateMacro(this->WriteVolume((VTK_TT*)(inPtr)));
       default:
@@ -292,7 +311,8 @@ void vtkTIFFWriter::WriteFile(ostream*, vtkImageData* data, int extent[6], int*)
     {
       for (int idx1 = extent[3]; idx1 >= extent[2]; idx1--)
       {
-        void* ptr = data->GetScalarPointer(extent[0], idx1, idx2);
+        int coords[3] = { extent[0], idx1, idx2 };
+        void* ptr = data->GetArrayPointer(scalarArray, coords);
         if (TIFFWriteScanline(tif, static_cast<unsigned char*>(ptr), row, 0) < 0)
         {
           this->SetErrorCode(vtkErrorCode::OutOfDiskSpaceError);
@@ -304,7 +324,7 @@ void vtkTIFFWriter::WriteFile(ostream*, vtkImageData* data, int extent[6], int*)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T>
 void vtkTIFFWriter::WriteVolume(T* buffer)
 {
@@ -319,8 +339,8 @@ void vtkTIFFWriter::WriteVolume(T* buffer)
   int height = this->Height;
   int pages = this->Pages;
 
-  uint32 w = width;
-  uint32 h = height;
+  uint32_t w = width;
+  uint32_t h = height;
   int bitsPerSample = sizeof(T) * 8;
 
   for (int page = 0; page < pages; ++page)
@@ -370,7 +390,7 @@ void vtkTIFFWriter::WriteVolume(T* buffer)
     }
 
     TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-    uint32 rowsperstrip = (uint32)-1;
+    uint32_t rowsperstrip = (uint32_t)-1;
     TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif, rowsperstrip));
     if (this->XResolution > 0.0 && this->YResolution > 0.0)
     {
@@ -402,7 +422,7 @@ void vtkTIFFWriter::WriteVolume(T* buffer)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTIFFWriter::WriteFileTrailer(ostream*, vtkImageData*)
 {
   TIFF* tif = reinterpret_cast<TIFF*>(this->TIFFPtr);
@@ -419,7 +439,7 @@ void vtkTIFFWriter::WriteFileTrailer(ostream*, vtkImageData*)
   this->TIFFPtr = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTIFFWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

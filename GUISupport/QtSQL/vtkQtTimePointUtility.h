@@ -36,6 +36,7 @@ class VTKGUISUPPORTQTSQL_EXPORT vtkQtTimePointUtility : public vtkObject
 {
 public:
   vtkTypeMacro(vtkQtTimePointUtility, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   static QDateTime TimePointToQDateTime(vtkTypeUInt64 time);
   static vtkTypeUInt64 QDateTimeToTimePoint(QDateTime time);
@@ -43,8 +44,8 @@ public:
   static vtkTypeUInt64 QTimeToTimePoint(QTime time);
 
 protected:
-  vtkQtTimePointUtility() {}
-  ~vtkQtTimePointUtility() override {}
+  vtkQtTimePointUtility() = default;
+  ~vtkQtTimePointUtility() override = default;
 
 private:
   vtkQtTimePointUtility(const vtkQtTimePointUtility&) = delete;
@@ -52,4 +53,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkQtTimePointUtility.h

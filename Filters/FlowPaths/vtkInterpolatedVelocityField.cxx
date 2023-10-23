@@ -18,10 +18,10 @@
 #include "vtkGenericCell.h"
 #include "vtkObjectFactory.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkInterpolatedVelocityField);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInterpolatedVelocityField::AddDataSet(vtkDataSet* dataset)
 {
   if (!dataset)
@@ -41,7 +41,7 @@ void vtkInterpolatedVelocityField::AddDataSet(vtkDataSet* dataset)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInterpolatedVelocityField::SetLastCellId(vtkIdType c, int dataindex)
 {
   this->LastCellId = c;
@@ -57,7 +57,7 @@ void vtkInterpolatedVelocityField::SetLastCellId(vtkIdType c, int dataindex)
   this->LastDataSetIndex = dataindex;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInterpolatedVelocityField::FunctionValues(double* x, double* f)
 {
   vtkDataSet* ds;
@@ -81,7 +81,7 @@ int vtkInterpolatedVelocityField::FunctionValues(double* x, double* f)
          this->LastDataSetIndex++)
     {
       ds = this->DataSets->operator[](this->LastDataSetIndex);
-      if (ds && ds != this->LastDataSet)
+      if (ds && ds->GetNumberOfPoints() > 0 && ds != this->LastDataSet)
       {
         this->ClearLastCellId();
         retVal = this->FunctionValues(ds, x, f);
@@ -101,7 +101,7 @@ int vtkInterpolatedVelocityField::FunctionValues(double* x, double* f)
   return retVal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkInterpolatedVelocityField::SnapPointOnCell(double* pOrigin, double* pSnap)
 {
   if (this->LastDataSet == nullptr)
@@ -118,7 +118,7 @@ int vtkInterpolatedVelocityField::SnapPointOnCell(double* pOrigin, double* pSnap
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInterpolatedVelocityField::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

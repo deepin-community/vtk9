@@ -22,10 +22,12 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkFloatArray.h"
 #include "vtkHardwareSelector.h"
 #include "vtkHiddenLineRemovalPass.h"
+#include "vtkImageData.h"
 #include "vtkLight.h"
 #include "vtkLightCollection.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
+#include "vtkOpaquePass.h"
 #include "vtkOpenGLCamera.h"
 #include "vtkOpenGLError.h"
 #include "vtkOpenGLFXAAFilter.h"
@@ -42,9 +44,12 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkRenderPass.h"
 #include "vtkRenderState.h"
 #include "vtkRenderTimerLog.h"
+#include "vtkSSAOPass.h"
 #include "vtkShaderProgram.h"
 #include "vtkShadowMapBakerPass.h"
 #include "vtkShadowMapPass.h"
+#include "vtkSphericalHarmonics.h"
+#include "vtkTable.h"
 #include "vtkTexture.h"
 #include "vtkTextureObject.h"
 #include "vtkTexturedActor2D.h"
@@ -74,6 +79,7 @@ vtkOpenGLRenderer::vtkOpenGLRenderer()
 {
   this->FXAAFilter = nullptr;
   this->DepthPeelingPass = nullptr;
+  this->SSAOPass = nullptr;
   this->TranslucentPass = nullptr;
   this->ShadowMapPass = nullptr;
   this->DepthPeelingHigherLayer = 0;
@@ -84,6 +90,7 @@ vtkOpenGLRenderer::vtkOpenGLRenderer()
   this->EnvMapLookupTable = nullptr;
   this->EnvMapIrradiance = nullptr;
   this->EnvMapPrefiltered = nullptr;
+  this->UseSphericalHarmonics = true;
 }
 
 // Ask lights to load themselves into graphics pipeline.
@@ -212,7 +219,7 @@ int vtkOpenGLRenderer::UpdateLights()
   return this->LightingCount;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Is rendering at translucent geometry stage using depth peeling and
 // rendering a layer other than the first one? (Boolean value)
@@ -223,17 +230,50 @@ int vtkOpenGLRenderer::GetDepthPeelingHigherLayer()
   return this->DepthPeelingHigherLayer;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Concrete open gl render method.
 void vtkOpenGLRenderer::DeviceRender()
 {
   vtkTimerLog::MarkStartEvent("OpenGL Dev Render");
 
-  if (this->UseImageBasedLighting && this->EnvironmentTexture)
+  bool computeIBLTextures = !(this->Pass && this->Pass->IsA("vtkOSPRayPass")) &&
+    this->UseImageBasedLighting && this->EnvironmentTexture;
+  if (computeIBLTextures)
   {
     this->GetEnvMapLookupTable()->Load(this);
-    this->GetEnvMapIrradiance()->Load(this);
     this->GetEnvMapPrefiltered()->Load(this);
+
+    bool useSH = this->UseSphericalHarmonics;
+
+    if (useSH && this->EnvironmentTexture->GetCubeMap())
+    {
+      vtkWarningMacro(
+        "Cannot compute spherical harmonics of a cubemap, fall back to irradiance texture");
+      useSH = false;
+    }
+
+    vtkImageData* img = this->EnvironmentTexture->GetInput();
+    if (useSH && !img)
+    {
+      vtkWarningMacro("Cannot retrieve vtkImageData, fall back to texture");
+      useSH = false;
+    }
+
+    if (useSH)
+    {
+      if (!this->SphericalHarmonics || img->GetMTime() > this->SphericalHarmonics->GetMTime())
+      {
+        vtkNew<vtkSphericalHarmonics> sh;
+        sh->SetInputData(img);
+        sh->Update();
+        this->SphericalHarmonics = vtkFloatArray::SafeDownCast(
+          vtkTable::SafeDownCast(sh->GetOutputDataObject(0))->GetColumn(0));
+      }
+    }
+    else
+    {
+      this->GetEnvMapIrradiance()->Load(this);
+    }
   }
 
   if (this->Pass != nullptr)
@@ -260,7 +300,7 @@ void vtkOpenGLRenderer::DeviceRender()
     vtkOpenGLCheckErrorMacro("failed after DeviceRender");
   }
 
-  if (this->UseImageBasedLighting && this->EnvironmentTexture)
+  if (computeIBLTextures)
   {
     this->GetEnvMapLookupTable()->PostRender(this);
     this->GetEnvMapIrradiance()->PostRender(this);
@@ -414,7 +454,7 @@ int vtkOpenGLRenderer::UpdateGeometry(vtkFrameBufferObjectBase* fbo)
   return this->NumberOfPropsRendered;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTexture* vtkOpenGLRenderer::GetCurrentTexturedBackground()
 {
   if (!this->GetRenderWindow()->GetStereoRender() && this->BackgroundTexture)
@@ -436,7 +476,7 @@ vtkTexture* vtkOpenGLRenderer::GetCurrentTexturedBackground()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::DeviceRenderOpaqueGeometry(vtkFrameBufferObjectBase* fbo)
 {
   // Do we need hidden line removal?
@@ -454,11 +494,32 @@ void vtkOpenGLRenderer::DeviceRenderOpaqueGeometry(vtkFrameBufferObjectBase* fbo
   }
   else
   {
-    this->Superclass::DeviceRenderOpaqueGeometry();
+    if (this->UseSSAO)
+    {
+      if (!this->SSAOPass)
+      {
+        this->SSAOPass = vtkSSAOPass::New();
+        vtkNew<vtkOpaquePass> opaqueP;
+        this->SSAOPass->SetDelegatePass(opaqueP);
+      }
+      vtkRenderState s(this);
+      s.SetPropArrayAndCount(this->PropArray, this->PropArrayCount);
+      s.SetFrameBuffer(fbo);
+      this->SSAOPass->SetRadius(this->SSAORadius);
+      this->SSAOPass->SetBias(this->SSAOBias);
+      this->SSAOPass->SetKernelSize(this->SSAOKernelSize);
+      this->SSAOPass->SetBlur(this->SSAOBlur);
+      this->SSAOPass->Render(&s);
+      this->NumberOfPropsRendered += this->SSAOPass->GetNumberOfRenderedProps();
+    }
+    else
+    {
+      this->Superclass::DeviceRenderOpaqueGeometry();
+    }
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Render translucent polygonal geometry. Default implementation just call
 // UpdateTranslucentPolygonalGeometry().
@@ -564,7 +625,7 @@ void vtkOpenGLRenderer::DeviceRenderTranslucentPolygonalGeometry(vtkFrameBufferO
   vtkOpenGLCheckErrorMacro("failed after DeviceRenderTranslucentPolygonalGeometry");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -698,6 +759,10 @@ void vtkOpenGLRenderer::ReleaseGraphicsResources(vtkWindow* w)
   {
     this->DepthPeelingPass->ReleaseGraphicsResources(w);
   }
+  if (w && this->SSAOPass)
+  {
+    this->SSAOPass->ReleaseGraphicsResources(w);
+  }
   if (w && this->TranslucentPass)
   {
     this->TranslucentPass->ReleaseGraphicsResources(w);
@@ -746,6 +811,12 @@ vtkOpenGLRenderer::~vtkOpenGLRenderer()
   {
     this->DepthPeelingPass->Delete();
     this->DepthPeelingPass = nullptr;
+  }
+
+  if (this->SSAOPass)
+  {
+    this->SSAOPass->Delete();
+    this->SSAOPass = nullptr;
   }
 
   if (this->TranslucentPass)
@@ -1030,19 +1101,25 @@ void vtkOpenGLRenderer::UpdateLightingUniforms(vtkShaderProgram* program)
   program->SetUniformGroupUpdateTime(vtkShaderProgram::LightingGroup, ltime);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::SetUserLightTransform(vtkTransform* transform)
 {
   this->UserLightTransform = transform;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTransform* vtkOpenGLRenderer::GetUserLightTransform()
 {
   return this->UserLightTransform;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkFloatArray* vtkOpenGLRenderer::GetSphericalHarmonics()
+{
+  return this->SphericalHarmonics;
+}
+
+//------------------------------------------------------------------------------
 void vtkOpenGLRenderer::SetEnvironmentTexture(vtkTexture* texture, bool isSRGB)
 {
   this->Superclass::SetEnvironmentTexture(texture);
@@ -1064,7 +1141,7 @@ void vtkOpenGLRenderer::SetEnvironmentTexture(vtkTexture* texture, bool isSRGB)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPBRLUTTexture* vtkOpenGLRenderer::GetEnvMapLookupTable()
 {
   if (!this->EnvMapLookupTable)
@@ -1074,7 +1151,7 @@ vtkPBRLUTTexture* vtkOpenGLRenderer::GetEnvMapLookupTable()
   return this->EnvMapLookupTable;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPBRIrradianceTexture* vtkOpenGLRenderer::GetEnvMapIrradiance()
 {
   if (!this->EnvMapIrradiance)
@@ -1084,7 +1161,7 @@ vtkPBRIrradianceTexture* vtkOpenGLRenderer::GetEnvMapIrradiance()
   return this->EnvMapIrradiance;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPBRPrefilterTexture* vtkOpenGLRenderer::GetEnvMapPrefiltered()
 {
   if (!this->EnvMapPrefiltered)

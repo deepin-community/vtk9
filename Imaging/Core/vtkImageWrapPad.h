@@ -36,12 +36,13 @@ class VTKIMAGINGCORE_EXPORT vtkImageWrapPad : public vtkImagePadFilter
 public:
   static vtkImageWrapPad* New();
   vtkTypeMacro(vtkImageWrapPad, vtkImagePadFilter);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
-  vtkImageWrapPad() {}
-  ~vtkImageWrapPad() override {}
+  vtkImageWrapPad() = default;
+  ~vtkImageWrapPad() override = default;
 
-  void ComputeInputUpdateExtent(int inExt[6], int outExt[6], int wExt[6]) override;
+  void ComputeInputUpdateExtent(int inExt[6], int outExt[6], int wholeExtent[6]) override;
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData, int ext[6],
     int id) override;
@@ -52,5 +53,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageWrapPad.h

@@ -20,6 +20,7 @@
 =========================================================================*/
 
 #include "vtkTableToSparseArray.h"
+#include "vtkArrayData.h"
 #include "vtkDoubleArray.h"
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
@@ -43,11 +44,11 @@ public:
   bool ExplicitOutputExtents;
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkTableToSparseArray);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkTableToSparseArray::vtkTableToSparseArray()
   : Implementation(new implementation())
@@ -58,14 +59,14 @@ vtkTableToSparseArray::vtkTableToSparseArray()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkTableToSparseArray::~vtkTableToSparseArray()
 {
   delete this->Implementation;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkTableToSparseArray::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -94,7 +95,7 @@ void vtkTableToSparseArray::AddCoordinateColumn(const char* name)
     return;
   }
 
-  this->Implementation->Coordinates.push_back(name);
+  this->Implementation->Coordinates.emplace_back(name);
   this->Modified();
 }
 
@@ -140,7 +141,7 @@ int vtkTableToSparseArray::FillInputPortInformation(int port, vtkInformation* in
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkTableToSparseArray::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)

@@ -19,6 +19,10 @@ and third arguments, respectively.
 _vtk_module_wrap_java_sources(<module> <sources> <classes>)
 ~~~
 #]==]
+
+cmake_policy(PUSH)
+cmake_policy(SET CMP0053 NEW)
+
 function (_vtk_module_wrap_java_sources module sources java_sources)
   _vtk_module_get_module_property("${module}"
     PROPERTY  "exclude_wrap"
@@ -36,7 +40,17 @@ function (_vtk_module_wrap_java_sources module sources java_sources)
   _vtk_module_get_module_property("${module}"
     PROPERTY  "private_depends"
     VARIABLE  _vtk_java_private_depends)
-  list(APPEND _vtk_java_hierarchy_depends ${_vtk_java_private_depends})
+  list(APPEND _vtk_java_hierarchy_depends
+    ${_vtk_java_private_depends})
+  _vtk_module_get_module_property("${module}"
+    PROPERTY  "optional_depends"
+    VARIABLE  _vtk_java_optional_depends)
+  foreach (_vtk_java_optional_depend IN LISTS _vtk_java_optional_depends)
+    if (TARGET "${_vtk_java_optional_depend}")
+      list(APPEND _vtk_java_hierarchy_depends
+        "${_vtk_java_optional_depend}")
+    endif ()
+  endforeach ()
 
   set(_vtk_java_command_depends)
   foreach (_vtk_java_hierarchy_depend IN LISTS _vtk_java_hierarchy_depends)
@@ -242,6 +256,13 @@ function (_vtk_module_wrap_java_library name)
   # logic for loading wrapped modules from other packages.
   add_library("${_vtk_java_target}" SHARED
     ${_vtk_java_library_sources})
+
+  if (_vtk_java_UTILITY_TARGET)
+    target_link_libraries("${_vtk_java_target}"
+      PRIVATE
+        "${_vtk_java_UTILITY_TARGET}")
+  endif ()
+
   add_custom_target("${_vtk_java_target}-java-sources"
     DEPENDS
       ${_vtk_java_library_java_sources})
@@ -295,12 +316,21 @@ vtk_module_wrap_java(
   MODULES <module>...
   [WRAPPED_MODULES <varname>]
 
-  [JAVA_OUTPUT <destination>])
+  [UTILITY_TARGET <target>]
+
+  [JAVA_OUTPUT <destination>]
+
+  [LIBRARY_DESTINATION <destination>]
+  [JNILIB_DESTINATION <destination>]
+  [JNILIB_COMPONENT <component>])
 ~~~
 
   * `MODULES`: (Required) The list of modules to wrap.
   * `WRAPPED_MODULES`: (Recommended) Not all modules are wrappable. This
     variable will be set to contain the list of modules which were wrapped.
+  * `UTILITY_TARGET`: If specified, all libraries made by the Java wrapping
+    will link privately to this target. This may be used to add compile flags
+    to the Java libraries.
   * `JAVA_OUTPUT`: Defaults to
     `${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/vtkJava`. Java source files are
     written to this directory. After generation, the files may be compiled as
@@ -319,11 +349,10 @@ For dependency purposes, the `<module>Java-java-sources` target may also be
 used.
 #]==]
 function (vtk_module_wrap_java)
-  cmake_parse_arguments(_vtk_java
+  cmake_parse_arguments(PARSE_ARGV 0 _vtk_java
     ""
-    "JAVA_OUTPUT;WRAPPED_MODULES;LIBRARY_DESTINATION;JNILIB_DESTINATION;JNILIB_COMPONENT"
-    "MODULES"
-    ${ARGN})
+    "JAVA_OUTPUT;WRAPPED_MODULES;LIBRARY_DESTINATION;JNILIB_DESTINATION;JNILIB_COMPONENT;UTILITY_TARGET"
+    "MODULES")
 
   if (_vtk_java_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -376,6 +405,11 @@ function (vtk_module_wrap_java)
     return ()
   endif ()
 
+  # Disable CMake's automoc support for these targets.
+  set(CMAKE_AUTOMOC 0)
+  set(CMAKE_AUTORCC 0)
+  set(CMAKE_AUTOUIC 0)
+
   set(_vtk_java_all_wrapped_modules)
   foreach (_vtk_java_module IN LISTS _vtk_java_MODULES)
     _vtk_module_get_module_property("${_vtk_java_module}"
@@ -403,3 +437,5 @@ function (vtk_module_wrap_java)
       PARENT_SCOPE)
   endif ()
 endfunction ()
+
+cmake_policy(POP)

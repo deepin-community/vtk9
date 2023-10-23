@@ -36,11 +36,11 @@ class VTKCOMMONCORE_EXPORT vtkInformationObjectBaseVectorKey : public vtkInforma
 public:
   vtkTypeMacro(vtkInformationObjectBaseVectorKey, vtkInformationKey);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@{
+  ///@{
   /**
    * The name of the static instance and the class in which
    * it is defined(location) should be passed to the constructor.
-   * Providing "requiredClass" name one can insure that only
+   * Providing "requiredClass" name one can ensure that only
    * objects of type "requiredClass" are stored in vectors
    * associated with the instance of this key type created.
    * These should be string literals as they are not copied.
@@ -49,7 +49,7 @@ public:
     const char* name, const char* location, const char* requiredClass = nullptr);
   //
   ~vtkInformationObjectBaseVectorKey() override;
-  //@}
+  ///@}
 
   /**
    * This method simply returns a new vtkInformationObjectBaseVectorKey, given a
@@ -69,10 +69,10 @@ public:
   void Clear(vtkInformation* info);
 
   /**
-   * Resize (extend) the vector to hold n objects. Any new elements
+   * Resize (extend) the vector to hold size objects. Any new elements
    * created will be null initialized.
    */
-  void Resize(vtkInformation* info, int n);
+  void Resize(vtkInformation* info, int size);
 
   /**
    * Get the vector's length.
@@ -91,7 +91,7 @@ public:
    */
   void Set(vtkInformation* info, vtkObjectBase* value, int i);
 
-  //@{
+  ///@{
   /**
    * Remove all instances of val from the list. If using the indexed overload,
    * the object at the specified position is removed.
@@ -99,7 +99,7 @@ public:
   void Remove(vtkInformation* info, vtkObjectBase* val);
   void Remove(vtkInformation* info, int idx);
   using Superclass::Remove; // Don't hide base class methods
-  //@}
+  ///@}
 
   /**
    * Copy n values from the range in source defined by [from  from+n-1]
@@ -131,7 +131,7 @@ public:
    * object to another.  If there is no entry in the first information
    * object for this key, the value is removed from the second.
    */
-  void ShallowCopy(vtkInformation* from, vtkInformation* to) override;
+  void ShallowCopy(vtkInformation* source, vtkInformation* dest) override;
 
   /**
    * Print the key's value in an information object to a stream.

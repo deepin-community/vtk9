@@ -1,3 +1,6 @@
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkConditionVariable.h"
 #include "vtkMultiThreader.h"
 #include "vtksys/SystemTools.hxx"
@@ -5,13 +8,14 @@
 #include <atomic>
 #include <cstdlib>
 
-typedef struct
+struct vtkThreadUserData_t
 {
   vtkMutexLock* Lock;
   vtkConditionVariable* Condition;
   std::atomic<int32_t> Done;
   int NumberOfWorkers;
-} vtkThreadUserData;
+};
+using vtkThreadUserData = struct vtkThreadUserData_t;
 
 VTK_THREAD_RETURN_TYPE vtkTestCondVarThread(void* arg)
 {

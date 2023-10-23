@@ -22,7 +22,6 @@
 
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkToolkits.h"
 
 // Include the MPI headers and then determine if MPIIO is available.
 #include "vtkMPI.h"
@@ -80,7 +79,7 @@ vtkStandardNewMacro(vtkMPIImageReader);
 vtkCxxSetObjectMacro(vtkMPIImageReader, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkMPIImageReader, GroupedController, vtkMultiProcessController);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 template <class T>
 inline void vtkMPIImageReaderMaskBits(T* data, vtkIdType length, vtkTypeUInt64 _mask)
@@ -101,16 +100,14 @@ inline void vtkMPIImageReaderMaskBits(T* data, vtkIdType length, vtkTypeUInt64 _
 template <>
 void vtkMPIImageReaderMaskBits(float*, vtkIdType, vtkTypeUInt64)
 {
-  return;
 }
 template <>
 void vtkMPIImageReaderMaskBits(double*, vtkIdType, vtkTypeUInt64)
 {
-  return;
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 namespace
 {
@@ -150,7 +147,7 @@ void vtkMPIImageReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMPIImageReader::GetDataScalarTypeSize()
 {
   switch (this->GetDataScalarType())
@@ -162,7 +159,7 @@ int vtkMPIImageReader::GetDataScalarTypeSize()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 void vtkMPIImageReader::PartitionController(const int extent[6])
 {
@@ -201,7 +198,7 @@ void vtkMPIImageReader::PartitionController(const int*)
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Technically we should be returning a 64 bit number, but I doubt any header
 // will be bigger than the value stored in an unsigned int.  Thus, we just
 // follow the convention of the superclass.
@@ -230,7 +227,7 @@ unsigned long vtkMPIImageReader::GetHeaderSize(vtkMPIOpaqueFileHandle&)
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 void vtkMPIImageReader::SetupFileView(vtkMPIOpaqueFileHandle& file, const int extent[6])
 {
@@ -267,7 +264,7 @@ void vtkMPIImageReader::SetupFileView(vtkMPIOpaqueFileHandle&, const int[6])
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 void vtkMPIImageReader::ReadSlice(int slice, const int extent[6], void* buffer)
 {
@@ -326,7 +323,7 @@ void vtkMPIImageReader::ReadSlice(int, const int[6], void*)
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_MPI_IO
 // This method could be made a lot more efficient.
 void vtkMPIImageReader::TransformData(vtkImageData* data)
@@ -393,7 +390,7 @@ void vtkMPIImageReader::TransformData(vtkImageData*)
 }
 #endif // VTK_USE_MPI_IO
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMPIImageReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
 {
 #ifdef VTK_USE_MPI_IO

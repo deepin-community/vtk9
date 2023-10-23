@@ -41,13 +41,13 @@ public:
    */
   static vtkQWidgetWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard vtkObject methods
    */
   vtkTypeMacro(vtkQWidgetWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkQWidgetRepresentation used to represent this
@@ -75,6 +75,7 @@ public:
    * Set the QWidget that will receive the events.
    */
   void SetWidget(QWidget* w);
+  QWidget* GetWidget() { return this->Widget; }
 
 protected:
   vtkQWidgetWidget();
@@ -90,6 +91,8 @@ protected:
 
   QWidget* Widget;
   QPointF LastWidgetCoordinates;
+  QPointF SteadyWidgetCoordinates;
+  double SelectStartTime;
 
   // These methods handle events
   static void SelectAction3D(vtkAbstractWidget*);

@@ -1,4 +1,5 @@
 vtk_add_test_cxx(vtkFiltersCoreCxxTests tests
+  Test3DLinearGridPlaneCutterCellData.cxx
   TestAppendArcLength.cxx,NO_VALID
   TestAppendDataSets.cxx,NO_VALID
   TestAppendFilter.cxx,NO_VALID
@@ -18,6 +19,7 @@ vtk_add_test_cxx(vtkFiltersCoreCxxTests tests
   TestClipPolyData.cxx,NO_VALID
   TestConnectivityFilter.cxx,NO_VALID
   TestCutter.cxx,NO_VALID
+  TestDataObjectToPartitionedDataSetCollection.cxx,NO_VALID
   TestDecimatePolylineFilter.cxx
   TestDecimatePro.cxx,NO_VALID
   TestDelaunay2D.cxx
@@ -31,12 +33,15 @@ vtk_add_test_cxx(vtkFiltersCoreCxxTests tests
   TestFeatureEdges.cxx,NO_VALID
   TestFlyingEdges.cxx
   TestGlyph3D.cxx
+  TestGlyph3DFollowCamera.cxx,NO_VALID
   TestHedgeHog.cxx,NO_VALID
   TestImageDataToExplicitStructuredGrid.cxx
   TestImplicitPolyDataDistance.cxx
   TestImplicitProjectOnPlaneDistance.cxx
   TestMaskPoints.cxx,NO_VALID
+  TestMaskPointsModes.cxx
   TestNamedComponents.cxx,NO_VALID
+  TestPartitionedDataSetCollectionConvertors.cxx,NO_VALID
   TestPointDataToCellData.cxx,NO_VALID
   TestPolyDataConnectivityFilter.cxx,NO_VALID
   TestPolyDataTangents.cxx
@@ -51,15 +56,19 @@ vtk_add_test_cxx(vtkFiltersCoreCxxTests tests
   TestRemoveDuplicatePolys.cxx,NO_VALID
   TestSmoothPolyDataFilter.cxx,NO_VALID
   TestSMPPipelineContour.cxx,NO_VALID
+  TestSlicePlanePrecision.cxx,NO_VALID
   TestStripper.cxx,NO_VALID
   TestStructuredGridAppend.cxx,NO_VALID
   TestThreshold.cxx,NO_VALID
   TestThresholdPoints.cxx,NO_VALID
   TestTransposeTable.cxx,NO_VALID
   TestTriangleMeshPointNormals.cxx
+  TestTubeBender.cxx
   TestTubeFilter.cxx
   TestUnstructuredGridQuadricDecimation.cxx,NO_VALID
   TestUnstructuredGridToExplicitStructuredGrid.cxx
+  TestUnstructuredGridToExplicitStructuredGridEmpty.cxx
+  TestVaryRadiusTubeFilter.cxx
   UnitTestMaskPoints.cxx,NO_VALID
   UnitTestMergeFilter.cxx,NO_VALID
   )

@@ -1,19 +1,20 @@
-  if(VTK_LEGACY_REMOVE)
-  set(legacy_srcs)
-  else()
-  set(legacy_srcs
-    TestDataArrayDispatcher.cxx
-    TestDispatchers.cxx
+set(memkind_tests)
+if(VTK_USE_MEMKIND)
+  set(memkind_tests
+    TestMemkindData.cxx
     )
 endif()
 
 vtk_add_test_cxx(vtkCommonDataModelCxxTests tests
   NO_DATA NO_VALID NO_OUTPUT
-  ${legacy_srcs}
+  TestDataArrayDispatcher.cxx
+  TestDispatchers.cxx
+  ${memkind_tests}
   LagrangeHexahedron.cxx
   BezierInterpolation.cxx
   TestBezier.cxx
   TestAngularPeriodicDataArray.cxx
+  TestCellInflation.cxx
   TestColor.cxx
   TestVector.cxx
   TestVectorOperators.cxx
@@ -24,6 +25,8 @@ vtk_add_test_cxx(vtkCommonDataModelCxxTests tests
   TestCompositeDataSets.cxx
   TestCompositeDataSetRange.cxx
   TestComputeBoundingSphere.cxx
+  TestDataAssembly.cxx
+  TestDataAssemblyUtilities.cxx
   TestDataObject.cxx
   TestDataObjectTreeRange.cxx
   TestFieldList.cxx
@@ -32,6 +35,8 @@ vtk_add_test_cxx(vtkCommonDataModelCxxTests tests
   TestGraph2.cxx
   TestGraphAttributes.cxx
   TestHigherOrderCell.cxx
+  TestHyperTreeGridBitmask.cxx
+  TestHyperTreeGridElderChildIndex.cxx
   TestImageDataFindCell.cxx
   TestImageDataInterpolation.cxx
   TestImageDataOrientation.cxx
@@ -41,6 +46,7 @@ vtk_add_test_cxx(vtkCommonDataModelCxxTests tests
   TestMappedGridDeepCopy.cxx
   TestPath.cxx
   TestPentagonalPrism.cxx
+  TestPiecewiseFunction.cxx
   TestPiecewiseFunctionLogScale.cxx
   TestPixelExtent.cxx
   TestPointLocators.cxx
@@ -57,9 +63,11 @@ vtk_add_test_cxx(vtkCommonDataModelCxxTests tests
   TestRect.cxx
   TestSelectionExpression.cxx
   TestSelectionSubtract.cxx
+  TestSimpleIncrementalOctreePointLocator.cxx
   TestSortFieldData.cxx
   TestStaticCellLocator.cxx
   TestTable.cxx
+  TestThreadedCopy.cxx
   TestTreeBFSIterator.cxx
   TestTreeDFSIterator.cxx
   TestTriangle.cxx
@@ -97,6 +105,7 @@ vtk_add_test_cxx(vtkCommonDataModelCxxTests data_tests
   quadraticIntersection.cxx
   TestCellIterators.cxx,NO_VALID,NO_OUTPUT
   TestCellLocator.cxx,NO_DATA
+  TestIncrementalOctreePointLocator.cxx,NO_VALID
   TestMeanValueCoordinatesInterpolation1.cxx
   TestMeanValueCoordinatesInterpolation2.cxx
   TestPolyhedron4.cxx,NO_VALID,NO_OUTPUT

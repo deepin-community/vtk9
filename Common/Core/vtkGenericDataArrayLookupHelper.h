@@ -25,6 +25,7 @@
 #include "vtkIdList.h"
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <unordered_map>
 #include <vector>
 
@@ -99,7 +100,7 @@ public:
     }
   }
 
-  //@{
+  ///@{
   /**
    * Release any allocated memory for internal data-structures.
    */
@@ -108,7 +109,7 @@ public:
     this->ValueMap.clear();
     this->NanIndices.clear();
   }
-  //@}
+  ///@}
 
 private:
   vtkGenericDataArrayLookupHelper(const vtkGenericDataArrayLookupHelper&) = delete;
@@ -153,7 +154,7 @@ private:
   }
 
   ArrayTypeT* AssociatedArray{ nullptr };
-  std::unordered_map<ValueType, std::vector<vtkIdType> > ValueMap;
+  std::unordered_map<ValueType, std::vector<vtkIdType>> ValueMap;
   std::vector<vtkIdType> NanIndices;
 };
 

@@ -25,9 +25,10 @@ PURPOSE.  See the above copyright Nonice for more information.
 
 vtkStandardNewMacro(vtkHyperTreeGridNonOrientedVonNeumannSuperCursor);
 
+// NOLINTNEXTLINE(bugprone-suspicious-include)
 #include "vtkHyperTreeGridNonOrientedVonNeumannSuperCursorData.cxx"
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridNonOrientedVonNeumannSuperCursor::Initialize(
   vtkHyperTreeGrid* grid, vtkIdType treeIndex, bool create)
 {
@@ -300,17 +301,15 @@ void vtkHyperTreeGridNonOrientedVonNeumannSuperCursor::Initialize(
   } // switch Dimension
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridNonOrientedVonNeumannSuperCursor::PrintSelf(ostream& os, vtkIndent indent)
 {
   os << indent << "--vtkHyperTreeGridNonOrientedVonNeumannSuperCursor--" << endl;
   vtkHyperTreeGridNonOrientedSuperCursor::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHyperTreeGridNonOrientedVonNeumannSuperCursor::
-  ~vtkHyperTreeGridNonOrientedVonNeumannSuperCursor()
-{
-}
+  ~vtkHyperTreeGridNonOrientedVonNeumannSuperCursor() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------

@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkCellPicker.h"
 #include "vtkObjectFactory.h"
 
@@ -50,7 +54,7 @@
 
 vtkStandardNewMacro(vtkCellPicker);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellPicker::vtkCellPicker()
 {
   // List of locators for accelerating polydata picking
@@ -76,7 +80,7 @@ vtkCellPicker::vtkCellPicker()
   this->ResetCellPickerInfo();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCellPicker::~vtkCellPicker()
 {
   this->Gradients->Delete();
@@ -85,7 +89,7 @@ vtkCellPicker::~vtkCellPicker()
   this->Locators->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellPicker::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -127,14 +131,14 @@ void vtkCellPicker::PrintSelf(ostream& os, vtkIndent indent)
      << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellPicker::Initialize()
 {
   this->ResetPickInfo();
   this->Superclass::Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellPicker::ResetPickInfo()
 {
   // First, reset information from the superclass, since
@@ -148,7 +152,7 @@ void vtkCellPicker::ResetPickInfo()
   this->ResetCellPickerInfo();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellPicker::ResetCellPickerInfo()
 {
   this->Texture = nullptr;
@@ -180,7 +184,7 @@ void vtkCellPicker::ResetCellPickerInfo()
   this->PickNormal[2] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellPicker::AddLocator(vtkAbstractCellLocator* locator)
 {
   if (!this->Locators->IsItemPresent(locator))
@@ -189,19 +193,19 @@ void vtkCellPicker::AddLocator(vtkAbstractCellLocator* locator)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellPicker::RemoveLocator(vtkAbstractCellLocator* locator)
 {
   this->Locators->RemoveItem(locator);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCellPicker::RemoveAllLocators()
 {
   this->Locators->RemoveAllItems();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCellPicker::Pick(
   double selectionX, double selectionY, double selectionZ, vtkRenderer* renderer)
 {
@@ -237,7 +241,7 @@ int vtkCellPicker::Pick(
   return pickResult;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCellPicker::Pick3DRay(double pos[3], double orient[4], vtkRenderer* renderer)
 {
   int pickResult = 0;
@@ -272,7 +276,7 @@ int vtkCellPicker::Pick3DRay(double pos[3], double orient[4], vtkRenderer* rende
   return pickResult;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Tolerance for parametric coordinate matching an intersection with a plane
 #define VTKCELLPICKER_PLANE_TOL 1e-14
 
@@ -292,7 +296,8 @@ double vtkCellPicker::IntersectWithLine(const double p1[3], const double p2[3], 
   // This limits the pick search to the inside of the clipped region.
   int clippingPlaneId = -1;
   if (m &&
-    !this->ClipLineWithPlanes(m, this->Transform->GetMatrix(), p1, p2, t1, t2, clippingPlaneId))
+    !vtkCellPicker::ClipLineWithPlanes(
+      m, this->Transform->GetMatrix(), p1, p2, t1, t2, clippingPlaneId))
   {
     return VTK_DOUBLE_MAX;
   }
@@ -365,7 +370,7 @@ double vtkCellPicker::IntersectWithLine(const double p1[3], const double p2[3], 
   return tMin;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkCellPicker::IntersectActorWithLine(const double p1[3], const double p2[3], double t1,
   double t2, double tol, vtkProp3D* prop, vtkMapper* mapper)
 {
@@ -480,10 +485,10 @@ double vtkCellPicker::IntersectActorWithLine(const double p1[3], const double p2
     {
       int cellType = data->GetCellType(minCellId);
 
-      if (this->HasSubCells(cellType))
+      if (vtkCellPicker::HasSubCells(cellType))
       {
         data->GetCellPoints(minCellId, this->PointIds);
-        this->GetSubCell(data, this->PointIds, minSubId, cellType, cell);
+        vtkCellPicker::GetSubCell(data, this->PointIds, minSubId, cellType, cell);
       }
       else
       {
@@ -537,7 +542,7 @@ double vtkCellPicker::IntersectActorWithLine(const double p1[3], const double p2
 
       // Use the texture coord to set the information
       double tcoord[3];
-      if (dimensionsAreValid && this->ComputeSurfaceTCoord(data, cell, weights, tcoord))
+      if (dimensionsAreValid && vtkCellPicker::ComputeSurfaceTCoord(data, cell, weights, tcoord))
       {
         // Take the border into account when computing coordinates
         double x[3];
@@ -584,7 +589,7 @@ double vtkCellPicker::IntersectActorWithLine(const double p1[3], const double p2
     this->MapperPosition[2] = minXYZ[2];
 
     // Compute the normal
-    if (!this->ComputeSurfaceNormal(data, cell, weights, this->MapperNormal))
+    if (!vtkCellPicker::ComputeSurfaceNormal(data, cell, weights, this->MapperNormal))
     {
       // By default, the normal points back along view ray
       this->MapperNormal[0] = p1[0] - p2[0];
@@ -654,7 +659,7 @@ bool vtkCellPicker::IntersectDataSetWithLine(vtkDataSet* dataSet, const double p
       }
 
       // If cell is a strip, then replace cell with a sub-cell
-      this->SubCellFromCell(this->Cell, subId);
+      vtkCellPicker::SubCellFromCell(this->Cell, subId);
 
       if (t <= (tMin + this->Tolerance) && t >= t1 && t <= t2)
       {
@@ -687,12 +692,12 @@ bool vtkCellPicker::IntersectDataSetWithLine(vtkDataSet* dataSet, const double p
 
       // If it is a strip, we need to iterate over the subIds
       int cellType = dataSet->GetCellType(cellId);
-      int useSubCells = this->HasSubCells(cellType);
+      int useSubCells = vtkCellPicker::HasSubCells(cellType);
       if (useSubCells)
       {
         // Get the pointIds for the strip and the length of the strip
         dataSet->GetCellPoints(cellId, pointIds);
-        numSubIds = this->GetNumberOfSubCells(pointIds, cellType);
+        numSubIds = vtkCellPicker::GetNumberOfSubCells(pointIds, cellType);
       }
 
       // This will only loop once unless we need to deal with a strip
@@ -701,7 +706,7 @@ bool vtkCellPicker::IntersectDataSetWithLine(vtkDataSet* dataSet, const double p
         if (useSubCells)
         {
           // Get a sub-cell from a the strip
-          this->GetSubCell(dataSet, pointIds, subId, cellType, this->Cell);
+          vtkCellPicker::GetSubCell(dataSet, pointIds, subId, cellType, this->Cell);
         }
         else
         {
@@ -757,7 +762,7 @@ bool vtkCellPicker::IntersectDataSetWithLine(vtkDataSet* dataSet, const double p
   return cellWasPicked;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkCellPicker::IntersectHyperTreeGridWithLine(const double p1[3], const double p2[3],
   double t1, double t2, vtkAbstractHyperTreeGridMapper* mapper)
 {
@@ -937,7 +942,7 @@ double vtkCellPicker::IntersectHyperTreeGridWithLine(const double p1[3], const d
   return tMin;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCellPicker::RecursivelyProcessTree(
   vtkHyperTreeGridNonOrientedGeometryCursor* cursor, int level)
 {
@@ -980,7 +985,7 @@ bool vtkCellPicker::RecursivelyProcessTree(
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Intersect a vtkVolume with a line by ray casting.
 
 // For algorithm stability: choose a tolerance that is larger than
@@ -1015,7 +1020,7 @@ double vtkCellPicker::IntersectVolumeWithLine(const double p1[3], const double p
   // Clip the ray with the extent, results go in s1 and s2
   int planeId;
   double s1, s2;
-  if (!this->ClipLineWithExtent(extent, x1, x2, s1, s2, planeId))
+  if (!vtkCellPicker::ClipLineWithExtent(extent, x1, x2, s1, s2, planeId))
   {
     return VTK_DOUBLE_MAX;
   }
@@ -1279,7 +1284,7 @@ double vtkCellPicker::IntersectVolumeWithLine(const double p1[3], const double p
   return tMin;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkCellPicker::IntersectImageWithLine(const double p1[3], const double p2[3], double t1,
   double t2, vtkProp3D* prop, vtkImageMapper3D* imageMapper)
 {
@@ -1390,7 +1395,7 @@ double vtkCellPicker::IntersectImageWithLine(const double p1[3], const double p2
   return tMin;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is a catch-all for Prop3D types that vtkCellPicker does not
 // recognize.  It can be overridden in subclasses to provide support
 // for picking new Prop3D types.
@@ -1401,7 +1406,7 @@ double vtkCellPicker::IntersectProp3DWithLine(
   return VTK_DOUBLE_MAX;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip a line with a collection of clipping planes, or return zero if
 // the line does not intersect the volume enclosed by the planes.
 // The result of the clipping is returned in t1 and t2, which will have
@@ -1472,7 +1477,7 @@ int vtkCellPicker::ClipLineWithPlanes(vtkAbstractMapper3D* mapper, vtkMatrix4x4*
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip a line in structured coordinates with an extent.  If the line
 // does not intersect the extent, the return value will be zero.
 // The fractional position of the new x1 with respect to the original line
@@ -1495,7 +1500,7 @@ int vtkCellPicker::ClipLineWithExtent(
   return vtkBox::IntersectWithLine(bounds, x1, x2, t1, t2, nullptr, nullptr, planeId, p2);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute the cell normal either by interpolating the point normals,
 // or by computing the plane normal for 2D cells.
 
@@ -1530,7 +1535,7 @@ int vtkCellPicker::ComputeSurfaceNormal(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Use weights to compute the texture coordinates of a point on the cell.
 
 int vtkCellPicker::ComputeSurfaceTCoord(
@@ -1560,7 +1565,7 @@ int vtkCellPicker::ComputeSurfaceTCoord(
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Do an in-place replacement of a cell with a subcell of that cell
 void vtkCellPicker::SubCellFromCell(vtkGenericCell* cell, int subId)
 {
@@ -1630,7 +1635,7 @@ void vtkCellPicker::SubCellFromCell(vtkGenericCell* cell, int subId)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCellPicker::HasSubCells(int cellType)
 {
   switch (cellType)
@@ -1644,7 +1649,7 @@ int vtkCellPicker::HasSubCells(int cellType)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Extract a single subcell from a cell in a data set
 int vtkCellPicker::GetNumberOfSubCells(vtkIdList* pointIds, int cellType)
 {
@@ -1663,7 +1668,7 @@ int vtkCellPicker::GetNumberOfSubCells(vtkIdList* pointIds, int cellType)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Extract a single subcell from a cell in a data set.  This method
 // requires a vtkIdList that contains the pointIds for the cell.
 void vtkCellPicker::GetSubCell(
@@ -1735,7 +1740,7 @@ void vtkCellPicker::GetSubCell(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set all Cell and Point information, given a structured coordinate
 // and the extent of the data.
 
@@ -1780,7 +1785,7 @@ void vtkCellPicker::SetImageDataPickInfo(const double x[3], const int extent[6])
   this->SubId = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given a structured position within the volume, and the point scalars,
 // compute the local opacity of the volume.
 

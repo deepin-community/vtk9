@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkQuadraticPyramid.h"
 
 #include "vtkCellData.h"
@@ -28,7 +32,7 @@
 
 vtkStandardNewMacro(vtkQuadraticPyramid);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct the pyramid with 13 points + 1 extra point for internal
 // computation.
 //
@@ -56,7 +60,7 @@ vtkQuadraticPyramid::vtkQuadraticPyramid()
   this->Scalars->SetNumberOfTuples(5); // num of vertices
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadraticPyramid::~vtkQuadraticPyramid()
 {
   this->Edge->Delete();
@@ -71,7 +75,7 @@ vtkQuadraticPyramid::~vtkQuadraticPyramid()
   this->CellScalars->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // point id 13 is created to make it easier to subdivide this cell and it is
 // located at the center of the quadrilateral face of the pyramid. LinearPyramid
 // is only used by the Subdivide(), Contour() and Clip() methods.
@@ -109,18 +113,18 @@ static constexpr vtkIdType PyramidEdges[8][3] = {
   { 3, 4, 12 },
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkQuadraticPyramid::GetEdgeArray(vtkIdType edgeId)
 {
   return PyramidEdges[edgeId];
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const vtkIdType* vtkQuadraticPyramid::GetFaceArray(vtkIdType faceId)
 {
   return PyramidFaces[faceId];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkQuadraticPyramid::GetEdge(int edgeId)
 {
   edgeId = (edgeId < 0 ? 0 : (edgeId > 7 ? 7 : edgeId));
@@ -134,7 +138,7 @@ vtkCell* vtkQuadraticPyramid::GetEdge(int edgeId)
   return this->Edge;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCell* vtkQuadraticPyramid::GetFace(int faceId)
 {
   faceId = (faceId < 0 ? 0 : (faceId > 4 ? 4 : faceId));
@@ -162,12 +166,12 @@ vtkCell* vtkQuadraticPyramid::GetFace(int faceId)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
-static const double VTK_DIVERGED = 1.e6;
-static const int VTK_PYRAMID_MAX_ITERATION = 20;
-static const double VTK_PYRAMID_CONVERGED = 1.e-03;
+const double VTK_DIVERGED = 1.e6;
+const int VTK_PYRAMID_MAX_ITERATION = 20;
+const double VTK_PYRAMID_CONVERGED = 1.e-03;
 }
 
 int vtkQuadraticPyramid::EvaluatePosition(const double* x, double closestPoint[3], int& subId,
@@ -204,7 +208,7 @@ int vtkQuadraticPyramid::EvaluatePosition(const double* x, double closestPoint[3
   {
     pcoords[0] = pcoords[1] = 0;
     pcoords[2] = 1;
-    this->InterpolationFunctions(pcoords, weights);
+    vtkQuadraticPyramid::InterpolationFunctions(pcoords, weights);
     if (closestPoint)
     {
       memcpy(closestPoint, x, 3 * sizeof(double));
@@ -242,8 +246,8 @@ int vtkQuadraticPyramid::EvaluatePosition(const double* x, double closestPoint[3
   for (int iteration = 0; !converged && (iteration < VTK_PYRAMID_MAX_ITERATION); iteration++)
   {
     //  calculate element interpolation functions and derivatives
-    this->InterpolationFunctions(pcoords, weights);
-    this->InterpolationDerivs(pcoords, derivs);
+    vtkQuadraticPyramid::InterpolationFunctions(pcoords, weights);
+    vtkQuadraticPyramid::InterpolationDerivs(pcoords, derivs);
 
     //  calculate newton functions
     double fcol[3] = { 0, 0, 0 }, rcol[3] = { 0, 0, 0 }, scol[3] = { 0, 0, 0 },
@@ -309,7 +313,7 @@ int vtkQuadraticPyramid::EvaluatePosition(const double* x, double closestPoint[3
     return -1;
   }
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkQuadraticPyramid::InterpolationFunctions(pcoords, weights);
 
   // This is correct in that the XY parametric coordinate plane "shrinks"
   // while Z increases and X and Y always are between 0 and 1.
@@ -353,14 +357,14 @@ int vtkQuadraticPyramid::EvaluatePosition(const double* x, double closestPoint[3
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticPyramid::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
   int i, j;
   double pt[3];
 
-  this->InterpolationFunctions(pcoords, weights);
+  vtkQuadraticPyramid::InterpolationFunctions(pcoords, weights);
 
   x[0] = x[1] = x[2] = 0.0;
   for (i = 0; i < 13; i++)
@@ -373,13 +377,13 @@ void vtkQuadraticPyramid::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraticPyramid::CellBoundary(int subId, const double pcoords[3], vtkIdList* pts)
 {
   return this->Pyramid->CellBoundary(subId, pcoords, pts);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticPyramid::Subdivide(
   vtkPointData* inPd, vtkCellData* inCd, vtkIdType cellId, vtkDataArray* cellScalars)
 {
@@ -413,7 +417,7 @@ void vtkQuadraticPyramid::Subdivide(
 
   // New midpoint is at center of the quadrilateral face
   double midPoint[3] = { 0.5, 0.5, 0.0 };
-  this->InterpolationFunctions(midPoint, weights);
+  vtkQuadraticPyramid::InterpolationFunctions(midPoint, weights);
 
   double x[3] = { 0., 0., 0. };
   double s = 0.0;
@@ -431,7 +435,7 @@ void vtkQuadraticPyramid::Subdivide(
   this->PointData->InterpolatePoint(inPd, 13, this->PointIds, weights);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticPyramid::ResizeArrays(vtkIdType newSize)
 {
   if (newSize != 13 && newSize != 14)
@@ -445,7 +449,7 @@ void vtkQuadraticPyramid::ResizeArrays(vtkIdType newSize)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticPyramid::Contour(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* verts, vtkCellArray* lines,
   vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
@@ -485,7 +489,7 @@ void vtkQuadraticPyramid::Contour(double value, vtkDataArray* cellScalars,
   this->ResizeArrays(13);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Line-hex intersection. Intersection has to occur within [0,1] parametric
 // coordinates and with specified tolerance.
 //
@@ -575,7 +579,7 @@ int vtkQuadraticPyramid::IntersectWithLine(
   return intersection;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkQuadraticPyramid::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
 {
   // split into 14 tets
@@ -613,7 +617,7 @@ int vtkQuadraticPyramid::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vt
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Given parametric coordinates compute inverse Jacobian transformation
 // matrix. Returns 9 elements of 3x3 inverse Jacobian plus interpolation
 // function derivatives.
@@ -626,7 +630,7 @@ void vtkQuadraticPyramid::JacobianInverse(
   double x[3];
 
   // compute interpolation function derivatives
-  this->InterpolationDerivs(pcoords, derivs);
+  vtkQuadraticPyramid::InterpolationDerivs(pcoords, derivs);
 
   // create Jacobian matrix
   m[0] = m0;
@@ -656,7 +660,7 @@ void vtkQuadraticPyramid::JacobianInverse(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticPyramid::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
@@ -687,7 +691,7 @@ void vtkQuadraticPyramid::Derivatives(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Clip this quadratic pyramid using scalar value provided. Like contouring,
 // except that it cuts the pyramid to produce tetrahedra.
 //
@@ -728,7 +732,7 @@ void vtkQuadraticPyramid::Clip(double value, vtkDataArray* cellScalars,
   this->ResizeArrays(13);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Compute interpolation functions for the fifteen nodes.
 //
 void vtkQuadraticPyramid::InterpolationFunctions(const double pcoords[3], double weights[13])
@@ -765,7 +769,7 @@ void vtkQuadraticPyramid::InterpolationFunctions(const double pcoords[3], double
   weights[12] = (1 - r) * (1 + s) * (1 - t2) / 4.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Derivatives in parametric space.
 //
 void vtkQuadraticPyramid::InterpolationDerivs(const double pcoords[3], double derivs[39])
@@ -867,13 +871,13 @@ static double vtkQPyramidCellPCoords[39] = {
   0.0, 1.0, 0.5  //
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkQuadraticPyramid::GetParametricCoords()
 {
   return vtkQPyramidCellPCoords;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadraticPyramid::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

@@ -1,5 +1,5 @@
 usr/lib/python3
 usr/bin/pvtkpython
 usr/bin/vtkpython-9.0
-usr/bin/vtkWrapPython-9.0
-usr/bin/vtkWrapPythonInit-9.0
+usr/bin/vtkWrapPython-9.1
+usr/bin/vtkWrapPythonInit-9.1

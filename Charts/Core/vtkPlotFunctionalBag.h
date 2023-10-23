@@ -95,13 +95,13 @@ public:
    */
   void GetUnscaledInputBounds(double bounds[4]) override;
 
-  //@{
+  ///@{
   /**
    * Specify a lookup table for the mapper to use.
    */
   void SetLookupTable(vtkScalarsToColors* lut);
   vtkScalarsToColors* GetLookupTable();
-  //@}
+  ///@}
 
   /**
    * Create default lookup table. Generally used to create one when none
@@ -115,16 +115,8 @@ public:
    * -1.
    */
   vtkIdType GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
-    vtkVector2f* location,
-#ifndef VTK_LEGACY_REMOVE
-    vtkIdType* segmentId) override;
-#else
-    vtkIdType* segmentId = nullptr) override;
-#endif // VTK_LEGACY_REMOVE
-
-#ifndef VTK_LEGACY_REMOVE
+    vtkVector2f* location, vtkIdType* segmentId) override;
   using vtkPlot::GetNearestPoint;
-#endif // VTK_LEGACY_REMOVE
 
   /**
    * Select all points in the specified rectangle.

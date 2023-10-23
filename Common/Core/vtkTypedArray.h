@@ -62,21 +62,22 @@ public:
   using vtkArray::GetVariantValue;
   using vtkArray::SetVariantValue;
 
-  void PrintSelf(ostream& os, vtkIndent indent) override;
+  inline void PrintSelf(ostream& os, vtkIndent indent) override;
 
   // vtkArray API
-  vtkVariant GetVariantValue(const vtkArrayCoordinates& coordinates) override;
-  vtkVariant GetVariantValueN(const SizeT n) override;
-  void SetVariantValue(const vtkArrayCoordinates& coordinates, const vtkVariant& value) override;
-  void SetVariantValueN(const SizeT n, const vtkVariant& value) override;
-  void CopyValue(vtkArray* source, const vtkArrayCoordinates& source_coordinates,
+  inline vtkVariant GetVariantValue(const vtkArrayCoordinates& coordinates) override;
+  inline vtkVariant GetVariantValueN(const SizeT n) override;
+  inline void SetVariantValue(
+    const vtkArrayCoordinates& coordinates, const vtkVariant& value) override;
+  inline void SetVariantValueN(const SizeT n, const vtkVariant& value) override;
+  inline void CopyValue(vtkArray* source, const vtkArrayCoordinates& source_coordinates,
     const vtkArrayCoordinates& target_coordinates) override;
-  void CopyValue(vtkArray* source, const SizeT source_index,
+  inline void CopyValue(vtkArray* source, const SizeT source_index,
     const vtkArrayCoordinates& target_coordinates) override;
-  void CopyValue(vtkArray* source, const vtkArrayCoordinates& source_coordinates,
+  inline void CopyValue(vtkArray* source, const vtkArrayCoordinates& source_coordinates,
     const SizeT target_index) override;
 
-  //@{
+  ///@{
   /**
    * Returns the value stored in the array at the given coordinates.
    * Note that the number of dimensions in the supplied coordinates must
@@ -86,7 +87,7 @@ public:
   virtual const T& GetValue(CoordinateT i, CoordinateT j) = 0;
   virtual const T& GetValue(CoordinateT i, CoordinateT j, CoordinateT k) = 0;
   virtual const T& GetValue(const vtkArrayCoordinates& coordinates) = 0;
-  //@}
+  ///@}
 
   /**
    * Returns the n-th value stored in the array, where n is in the
@@ -97,7 +98,7 @@ public:
    */
   virtual const T& GetValueN(const SizeT n) = 0;
 
-  //@{
+  ///@{
   /**
    * Overwrites the value stored in the array at the given coordinates.
    * Note that the number of dimensions in the supplied coordinates must
@@ -107,7 +108,7 @@ public:
   virtual void SetValue(CoordinateT i, CoordinateT j, const T& value) = 0;
   virtual void SetValue(CoordinateT i, CoordinateT j, CoordinateT k, const T& value) = 0;
   virtual void SetValue(const vtkArrayCoordinates& coordinates, const T& value) = 0;
-  //@}
+  ///@}
 
   /**
    * Overwrites the n-th value stored in the array, where n is in the
@@ -119,8 +120,8 @@ public:
   virtual void SetValueN(const SizeT n, const T& value) = 0;
 
 protected:
-  vtkTypedArray() {}
-  ~vtkTypedArray() override {}
+  vtkTypedArray() = default;
+  ~vtkTypedArray() override = default;
 
 private:
   vtkTypedArray(const vtkTypedArray&) = delete;

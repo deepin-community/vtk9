@@ -16,6 +16,9 @@
   Copyright 2016 Menno Deij - van Rijswijk (MARIN)
 -------------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkTecplotTableReader.h"
 #include "vtkCommand.h"
 #include "vtkDataSetAttributes.h"
@@ -52,6 +55,7 @@
 namespace
 {
 
+// FIXME(#18327): Port away from `vtkUnicodeString`.
 class DelimitedTextIterator : public vtkTextCodec::OutputIterator
 {
 public:
@@ -61,13 +65,12 @@ public:
   typedef value_type* pointer;
   typedef value_type& reference;
 
-  DelimitedTextIterator(vtkTable* const outputTable, const vtkIdType maxRecords,
-    const vtkIdType headerLines, const vtkIdType columnHeadersOnLine,
-    const vtkIdType skipColumnNames)
+  DelimitedTextIterator(vtkTable* outputTable, vtkIdType maxRecords, vtkIdType headerLines,
+    vtkIdType columnHeadersOnLine, vtkIdType skipColumnNames)
     : MaxRecords(maxRecords)
+    // first two lines are title + column names
     , MaxRecordIndex(maxRecords + headerLines)
-    , // first two lines are title + column names
-    WhiteSpaceOnlyString(true)
+    , WhiteSpaceOnlyString(true)
     , OutputTable(outputTable)
     , CurrentRecordIndex(0)
     , CurrentFieldIndex(0)
@@ -111,10 +114,6 @@ public:
     }
   }
 
-  DelimitedTextIterator& operator++(int) override { return *this; }
-
-  DelimitedTextIterator& operator*() override { return *this; }
-
   // Handle windows files that do not have a carriage return line feed on the last line of the file
   // ...
   void ReachedEndOfInput()
@@ -131,7 +130,7 @@ public:
     }
   }
 
-  DelimitedTextIterator& operator=(const vtkUnicodeString::value_type value) override
+  DelimitedTextIterator& operator=(const vtkTypeUInt32& value) override
   {
     // If we've already read our maximum number of records, we're done ...
     if (this->MaxRecords && this->CurrentRecordIndex == this->MaxRecordIndex)

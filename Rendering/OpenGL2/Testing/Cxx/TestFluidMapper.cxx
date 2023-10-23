@@ -57,14 +57,14 @@ constexpr static double g_DragonPos[3]{ 2, -0.5, 3 };
 
 constexpr static float g_ParticleRadius = 0.03f;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Enable this for interactive demonstration
 //#define INTERACTIVE_DEMO
 #ifdef INTERACTIVE_DEMO
 #include "TestFluidDemo.cxx"
 #endif
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestFluidMapper(int argc, char* argv[])
 {
   vtkNew<vtkOpenGLRenderer> renderer;
@@ -101,9 +101,6 @@ int TestFluidMapper(int argc, char* argv[])
   //------------------------------------------------------------
   vtkSmartPointer<vtkPBRIrradianceTexture> irradiance = renderer->GetEnvMapIrradiance();
   irradiance->SetIrradianceStep(0.3);
-  vtkSmartPointer<vtkPBRPrefilterTexture> prefilter = renderer->GetEnvMapPrefiltered();
-  prefilter->SetPrefilterSamples(64);
-  prefilter->SetPrefilterSize(64);
 
   vtkNew<vtkOpenGLTexture> textureCubemap;
   textureCubemap->CubeMapOn();

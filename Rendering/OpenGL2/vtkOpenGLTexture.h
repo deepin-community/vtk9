@@ -66,21 +66,21 @@ public:
    */
   void CopyTexImage(int x, int y, int width, int height);
 
-  //@{
+  ///@{
   /**
    * Provide for specifying a format for the texture
    */
   vtkGetMacro(IsDepthTexture, int);
   vtkSetMacro(IsDepthTexture, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * What type of texture map GL_TEXTURE_2D versus GL_TEXTURE_RECTANGLE
    */
   vtkGetMacro(TextureType, int);
   vtkSetMacro(TextureType, int);
-  //@}
+  ///@}
 
   vtkGetObjectMacro(TextureObject, vtkTextureObject);
   void SetTextureObject(vtkTextureObject*);
@@ -114,7 +114,7 @@ protected:
 
   // used when the texture exceeds the GL limit
   unsigned char* ResampleToPowerOfTwo(
-    int& xsize, int& ysize, unsigned char* dptr, int bpp, int maxTexSize);
+    int& xsize, int& ysize, unsigned char* dptr, int bpp, int maxDimGL);
 
 private:
   vtkOpenGLTexture(const vtkOpenGLTexture&) = delete;

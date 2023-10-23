@@ -26,7 +26,8 @@
 #ifndef vtkXMLGenericDataObjectReader_h
 #define vtkXMLGenericDataObjectReader_h
 
-#include "vtkIOXMLModule.h" // For export macro
+#include "vtkIOXMLModule.h"  // For export macro
+#include "vtkSmartPointer.h" // for API
 #include "vtkXMLDataReader.h"
 
 class vtkHierarchicalBoxDataSet;
@@ -44,15 +45,15 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkXMLGenericDataObjectReader* New();
 
-  //@{
+  ///@{
   /**
    * Get the reader's output.
    */
   vtkDataObject* GetOutput();
   vtkDataObject* GetOutput(int idx);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the output as various concrete types. This method is typically used
    * when you know exactly what type of data is being read.  Otherwise, use
@@ -67,7 +68,7 @@ public:
   vtkRectilinearGrid* GetRectilinearGridOutput();
   vtkStructuredGrid* GetStructuredGridOutput();
   vtkUnstructuredGrid* GetUnstructuredGridOutput();
-  //@}
+  ///@}
 
   /**
    * Overridden method.
@@ -89,6 +90,12 @@ public:
    * needing to read the whole file.
    */
   virtual int ReadOutputType(const char* name, bool& parallel);
+
+  /**
+   * Helper to create a reader based on the data object type.
+   * Returns null if the reader cannot be determined.
+   */
+  static vtkSmartPointer<vtkXMLReader> CreateReader(int data_object_type, bool parallel);
 
 protected:
   vtkXMLGenericDataObjectReader();

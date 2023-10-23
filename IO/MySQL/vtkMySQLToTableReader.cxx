@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkMySQLToTableReader.h
+  Module:    vtkMySQLToTableReader.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -26,16 +26,16 @@
 
 #include "vtkMySQLToTableReader.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkMySQLToTableReader);
 
-//----------------------------------------------------------------------------
-vtkMySQLToTableReader::vtkMySQLToTableReader() {}
+//------------------------------------------------------------------------------
+vtkMySQLToTableReader::vtkMySQLToTableReader() = default;
 
-//----------------------------------------------------------------------------
-vtkMySQLToTableReader::~vtkMySQLToTableReader() {}
+//------------------------------------------------------------------------------
+vtkMySQLToTableReader::~vtkMySQLToTableReader() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMySQLToTableReader::RequestData(
   vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector)
 {
@@ -50,7 +50,7 @@ int vtkMySQLToTableReader::RequestData(
     vtkErrorMacro(<< "Wrong type of database for this reader");
     return 1;
   }
-  if (this->TableName == "")
+  if (this->TableName.empty())
   {
     vtkErrorMacro(<< "No table selected");
     return 1;
@@ -88,7 +88,7 @@ int vtkMySQLToTableReader::RequestData(
       vtkSmartPointer<vtkIntArray> column = vtkSmartPointer<vtkIntArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("int");
+      columnTypes.emplace_back("int");
     }
     else if ((columnType.find("float") != std::string::npos) ||
       (columnType.find("FLOAT") != std::string::npos) ||
@@ -104,14 +104,14 @@ int vtkMySQLToTableReader::RequestData(
       vtkSmartPointer<vtkDoubleArray> column = vtkSmartPointer<vtkDoubleArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("double");
+      columnTypes.emplace_back("double");
     }
     else
     {
       vtkSmartPointer<vtkStringArray> column = vtkSmartPointer<vtkStringArray>::New();
       column->SetName(columnName.c_str());
       output->AddColumn(column);
-      columnTypes.push_back("string");
+      columnTypes.emplace_back("string");
     }
   }
 
@@ -151,7 +151,7 @@ int vtkMySQLToTableReader::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMySQLToTableReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

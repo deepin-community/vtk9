@@ -20,10 +20,11 @@
 #include "vtkGenericDataSet.h"
 #include "vtkObjectFactory.h"
 #include <cassert>
+#include <cmath>
 
 vtkStandardNewMacro(vtkAttributesErrorMetric);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAttributesErrorMetric::vtkAttributesErrorMetric()
 {
   this->AttributeTolerance = 0.1;         // arbitrary
@@ -34,10 +35,10 @@ vtkAttributesErrorMetric::vtkAttributesErrorMetric()
   this->DefinedByAbsolute = 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAttributesErrorMetric::~vtkAttributesErrorMetric() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set the absolute attribute accuracy to `value'. See
 // GetAbsoluteAttributeTolerance() for details.
@@ -56,7 +57,7 @@ void vtkAttributesErrorMetric::SetAbsoluteAttributeTolerance(double value)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Set the relative attribute accuracy to `value'. See
 // GetAttributeTolerance() for details.
@@ -72,7 +73,7 @@ void vtkAttributesErrorMetric::SetAttributeTolerance(double value)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAttributesErrorMetric::RequiresEdgeSubdivision(
   double* leftPoint, double* midPoint, double* rightPoint, double alpha)
 {
@@ -154,7 +155,7 @@ int vtkAttributesErrorMetric::RequiresEdgeSubdivision(
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Return the error at the mid-point. The type of error depends on the state
 // of the concrete error metric. For instance, it can return an absolute
@@ -230,7 +231,7 @@ double vtkAttributesErrorMetric::GetError(
   return result;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAttributesErrorMetric::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -238,7 +239,7 @@ void vtkAttributesErrorMetric::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "AbsoluteAttributeTolerance: " << this->AbsoluteAttributeTolerance << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Compute the absolute attribute tolerance, only if the cached value is
 // obsolete.

@@ -208,6 +208,12 @@
  *  - most of the objects return nullptr
  * - vtkCommand::FifthButtonReleaseEvent
  *  - most of the objects return nullptr
+ * - vtkCommand::MouseWheelLeftEvent
+ *  - most of the objects return nullptr
+ *  - GUISupport/Qt/QVTKOpenGLWidget returns a QWheelEvent*
+ * - vtkCommand::MouseWheelRightEvent
+ *  - most of the objects return nullptr
+ *  - GUISupport/Qt/QVTKOpenGLWidget returns a QWheelEvent*
  * - vtkCommand::ErrorEvent
  *  - vtkOutputWindow fires this with `char char*` for the error message
  * - vtkCommand::WarningEvent
@@ -363,7 +369,17 @@
     _vtk_add_event(Button3DEvent)                                                                  \
     _vtk_add_event(TextEvent)                                                                      \
     _vtk_add_event(LeftButtonDoubleClickEvent)                                                     \
-    _vtk_add_event(RightButtonDoubleClickEvent)
+    _vtk_add_event(MiddleButtonDoubleClickEvent)                                                   \
+    _vtk_add_event(RightButtonDoubleClickEvent)                                                    \
+    _vtk_add_event(MouseWheelLeftEvent)                                                            \
+    _vtk_add_event(MouseWheelRightEvent)                                                           \
+    _vtk_add_event(ViewerMovement3DEvent)                                                          \
+    _vtk_add_event(Menu3DEvent)                                                                    \
+    _vtk_add_event(NextPose3DEvent)                                                                \
+    _vtk_add_event(Clip3DEvent)                                                                    \
+    _vtk_add_event(PositionProp3DEvent)                                                            \
+    _vtk_add_event(Pick3DEvent)                                                                    \
+    _vtk_add_event(Select3DEvent)
 // clang-format on
 
 #define vtkEventDeclarationMacro(_enum_name)                                                       \
@@ -401,14 +417,14 @@ public:
    */
   virtual void Execute(vtkObject* caller, unsigned long eventId, void* callData) = 0;
 
-  //@{
+  ///@{
   /**
    * Convenience methods for translating between event names and event
    * ids.
    */
   static const char* GetStringFromEventId(unsigned long event);
   static unsigned long GetEventIdFromString(const char* event);
-  //@}
+  ///@}
 
   /**
    * Does this event type contain vtkEventData
@@ -450,7 +466,7 @@ protected:
   int PassiveObserver;
 
   vtkCommand();
-  ~vtkCommand() override {}
+  ~vtkCommand() override = default;
 
   friend class vtkSubjectHelper;
 

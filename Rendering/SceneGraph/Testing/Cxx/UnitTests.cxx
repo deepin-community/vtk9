@@ -26,24 +26,23 @@
 #include "vtkRenderer.h"
 #include "vtkRendererNode.h"
 #include "vtkSphereSource.h"
-#include "vtkViewNodeCollection.h"
 #include "vtkViewNodeFactory.h"
 #include "vtkWindowNode.h"
 
 #include <string>
 namespace
 {
-std::string resultS = "";
+std::string resultS;
 }
 
-//-----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // ViewNode subclasses specialized for this test
 class vtkMyActorNode : public vtkActorNode
 {
 public:
   static vtkMyActorNode* New();
   vtkTypeMacro(vtkMyActorNode, vtkActorNode);
-  virtual void Render(bool prepass) override
+  void Render(bool prepass) override
   {
     if (prepass)
     {
@@ -53,8 +52,8 @@ public:
       resultS += "\n";
     }
   }
-  vtkMyActorNode() {}
-  ~vtkMyActorNode() override {}
+  vtkMyActorNode() = default;
+  ~vtkMyActorNode() override = default;
 };
 vtkStandardNewMacro(vtkMyActorNode);
 
@@ -63,7 +62,7 @@ class vtkMyCameraNode : public vtkCameraNode
 public:
   static vtkMyCameraNode* New();
   vtkTypeMacro(vtkMyCameraNode, vtkCameraNode);
-  virtual void Render(bool prepass) override
+  void Render(bool prepass) override
   {
     if (prepass)
     {
@@ -73,8 +72,8 @@ public:
       resultS += "\n";
     }
   }
-  vtkMyCameraNode() {}
-  ~vtkMyCameraNode() override {}
+  vtkMyCameraNode() = default;
+  ~vtkMyCameraNode() override = default;
 };
 vtkStandardNewMacro(vtkMyCameraNode);
 
@@ -83,7 +82,7 @@ class vtkMyLightNode : public vtkLightNode
 public:
   static vtkMyLightNode* New();
   vtkTypeMacro(vtkMyLightNode, vtkLightNode);
-  virtual void Render(bool prepass) override
+  void Render(bool prepass) override
   {
     if (prepass)
     {
@@ -93,8 +92,8 @@ public:
       resultS += "\n";
     }
   }
-  vtkMyLightNode() {}
-  ~vtkMyLightNode() override {}
+  vtkMyLightNode() = default;
+  ~vtkMyLightNode() override = default;
 };
 vtkStandardNewMacro(vtkMyLightNode);
 
@@ -103,7 +102,7 @@ class vtkMyMapperNode : public vtkMapperNode
 public:
   static vtkMyMapperNode* New();
   vtkTypeMacro(vtkMyMapperNode, vtkMapperNode);
-  virtual void Render(bool prepass) override
+  void Render(bool prepass) override
   {
     if (prepass)
     {
@@ -113,8 +112,10 @@ public:
       resultS += "\n";
     }
   }
-  vtkMyMapperNode(){};
-  ~vtkMyMapperNode() override{};
+  vtkMyMapperNode() = default;
+  ;
+  ~vtkMyMapperNode() override = default;
+  ;
 };
 vtkStandardNewMacro(vtkMyMapperNode);
 
@@ -123,7 +124,7 @@ class vtkMyRendererNode : public vtkRendererNode
 public:
   static vtkMyRendererNode* New();
   vtkTypeMacro(vtkMyRendererNode, vtkRendererNode);
-  virtual void Render(bool prepass) override
+  void Render(bool prepass) override
   {
     if (prepass)
     {
@@ -133,8 +134,8 @@ public:
       resultS += "\n";
     }
   }
-  vtkMyRendererNode() {}
-  ~vtkMyRendererNode() override {}
+  vtkMyRendererNode() = default;
+  ~vtkMyRendererNode() override = default;
 };
 vtkStandardNewMacro(vtkMyRendererNode);
 
@@ -143,7 +144,7 @@ class vtkMyWindowNode : public vtkWindowNode
 public:
   static vtkMyWindowNode* New();
   vtkTypeMacro(vtkMyWindowNode, vtkWindowNode);
-  virtual void Render(bool prepass) override
+  void Render(bool prepass) override
   {
     if (prepass)
     {
@@ -153,8 +154,8 @@ public:
       resultS += "\n";
     }
   }
-  vtkMyWindowNode() {}
-  ~vtkMyWindowNode() override {}
+  vtkMyWindowNode() = default;
+  ~vtkMyWindowNode() override = default;
 };
 vtkStandardNewMacro(vtkMyWindowNode);
 
@@ -214,19 +215,12 @@ int UnitTests(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 {
   vtkWindowNode* wvn = vtkWindowNode::New();
   cerr << "made " << wvn << endl;
-
-  vtkViewNodeCollection* vnc = vtkViewNodeCollection::New();
-  cerr << "made " << vnc << endl;
-  vnc->AddItem(wvn);
-  vnc->PrintSelf(cerr, vtkIndent(0));
   wvn->Delete();
-  vnc->Delete();
 
   vtkViewNode* vn = nullptr;
   vtkViewNodeFactory* vnf = vtkViewNodeFactory::New();
   cerr << "CREATE pre override" << endl;
-  vnc = nullptr;
-  vn = vnf->CreateNode(vnc);
+  vn = vnf->CreateNode(nullptr);
   if (vn)
   {
     cerr << "Shouldn't have made anything" << endl;

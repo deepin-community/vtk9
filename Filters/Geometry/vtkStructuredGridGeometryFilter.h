@@ -54,13 +54,13 @@ public:
   vtkTypeMacro(vtkStructuredGridGeometryFilter, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the extent in topological coordinate range (imin,imax, jmin,jmax,
    * kmin,kmax).
    */
   vtkGetVectorMacro(Extent, int, 6);
-  //@}
+  ///@}
 
   /**
    * Specify (imin,imax, jmin,jmax, kmin,kmax) indices.
@@ -74,7 +74,7 @@ public:
 
 protected:
   vtkStructuredGridGeometryFilter();
-  ~vtkStructuredGridGeometryFilter() override {}
+  ~vtkStructuredGridGeometryFilter() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;

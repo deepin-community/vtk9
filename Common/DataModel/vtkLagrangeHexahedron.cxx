@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkLagrangeHexahedron.h"
 
 #include "vtkCellData.h"
@@ -32,10 +36,7 @@
 
 vtkStandardNewMacro(vtkLagrangeHexahedron);
 
-vtkLagrangeHexahedron::vtkLagrangeHexahedron()
-  : vtkHigherOrderHexahedron()
-{
-}
+vtkLagrangeHexahedron::vtkLagrangeHexahedron() = default;
 
 vtkLagrangeHexahedron::~vtkLagrangeHexahedron() = default;
 
@@ -126,15 +127,15 @@ void vtkLagrangeHexahedron::InterpolateDerivs(const double pcoords[3], double* d
 {
   vtkLagrangeInterpolation::Tensor3ShapeDerivatives(this->GetOrder(), pcoords, derivs);
 }
-vtkHigherOrderCurve* vtkLagrangeHexahedron::getEdgeCell()
+vtkHigherOrderCurve* vtkLagrangeHexahedron::GetEdgeCell()
 {
   return EdgeCell;
 }
-vtkHigherOrderQuadrilateral* vtkLagrangeHexahedron::getFaceCell()
+vtkHigherOrderQuadrilateral* vtkLagrangeHexahedron::GetFaceCell()
 {
   return FaceCell;
 }
-vtkHigherOrderInterpolation* vtkLagrangeHexahedron::getInterp()
+vtkHigherOrderInterpolation* vtkLagrangeHexahedron::GetInterpolation()
 {
   return Interp;
 };

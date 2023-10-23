@@ -36,13 +36,13 @@ public:
   vtkTypeMacro(vtkPMaskPoints, vtkMaskPoints);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the communicator object for interprocess communication
    */
   virtual vtkMultiProcessController* GetController();
   virtual void SetController(vtkMultiProcessController*);
-  //@}
+  ///@}
 
 protected:
   vtkPMaskPoints();
@@ -50,6 +50,8 @@ protected:
 
   void InternalScatter(unsigned long*, unsigned long*, int, int) override;
   void InternalGather(unsigned long*, unsigned long*, int, int) override;
+  void InternalBroadcast(double*, int, int) override;
+  void InternalGather(double*, double*, int, int) override;
   int InternalGetNumberOfProcesses() override;
   int InternalGetLocalProcessId() override;
   void InternalBarrier() override;

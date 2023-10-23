@@ -34,6 +34,8 @@ PURPOSE.  See the above copyright notice for more information.
 #ifndef vtkStatisticsAlgorithmPrivate_h
 #define vtkStatisticsAlgorithmPrivate_h
 
+#ifndef __VTK_WRAP__
+
 #include "vtkStdString.h"
 
 #include <set> // used to iterate over internal organs
@@ -41,15 +43,13 @@ PURPOSE.  See the above copyright notice for more information.
 class vtkStatisticsAlgorithmPrivate
 {
 public:
-  vtkStatisticsAlgorithmPrivate() {}
-  ~vtkStatisticsAlgorithmPrivate() {}
   // --------------------------------------------------------------------
   /**
    * Empty current set of requests
    */
   void ResetRequests() { this->Requests.clear(); }
   // --------------------------------------------------------------------
-  //@{
+  ///@{
   /**
    * Empty current buffer
    */
@@ -83,8 +83,8 @@ public:
     return result ? 1 : 0;
   }
   // --------------------------------------------------------------------
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * This function does not use the buffer like other column selection methods.
    */
@@ -102,8 +102,8 @@ public:
     return 0;
   }
   // --------------------------------------------------------------------
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * This function does not use the buffer like other column selection methods.
    */
@@ -122,13 +122,13 @@ public:
     return 0;
   }
   // --------------------------------------------------------------------
-  //@}
+  ///@}
   /**
    * Return the number of currently-defined requests
    */
   vtkIdType GetNumberOfRequests() { return static_cast<vtkIdType>(this->Requests.size()); }
   // --------------------------------------------------------------------
-  //@{
+  ///@{
   /**
    * Return the number of columns associated with request \a r.
    */
@@ -138,7 +138,7 @@ public:
     {
       return 0;
     }
-    std::set<std::set<vtkStdString> >::iterator it = this->Requests.begin();
+    std::set<std::set<vtkStdString>>::iterator it = this->Requests.begin();
     for (vtkIdType i = 0; i < r; ++i)
     {
       ++it;
@@ -146,8 +146,8 @@ public:
     return static_cast<vtkIdType>(it->size());
   }
   // --------------------------------------------------------------------
-  //@}
-  //@{
+  ///@}
+  ///@{
   /**
    * Provide the name of the \a c-th column of the \a r-th request in \a columnName.
    * Returns false if the request or column does not exist and true otherwise.
@@ -158,7 +158,7 @@ public:
     {
       return false;
     }
-    std::set<std::set<vtkStdString> >::const_iterator it = this->Requests.begin();
+    std::set<std::set<vtkStdString>>::const_iterator it = this->Requests.begin();
     for (vtkIdType i = 0; i < r; ++i)
     {
       ++it;
@@ -175,11 +175,13 @@ public:
     columnName = *cit;
     return true;
   }
-  //@}
+  ///@}
 
-  std::set<std::set<vtkStdString> > Requests;
+  std::set<std::set<vtkStdString>> Requests;
   std::set<vtkStdString> Buffer;
 };
+
+#endif // __VTK_WRAP__
 
 #endif // vtkStatisticsAlgorithmPrivate_h
 

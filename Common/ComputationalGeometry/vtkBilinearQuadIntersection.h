@@ -34,7 +34,7 @@ public:
     const vtkVector3d& Pt10, const vtkVector3d& Pt11);
   vtkBilinearQuadIntersection() = default;
 
-  //@{
+  ///@{
   /**
    * Get direct access to the underlying point data
    */
@@ -51,9 +51,9 @@ public:
   vtkVector3d ComputeCartesianCoordinates(double u, double v);
 
   /**
-   * Compute the intersection between a ray r->d and the quad
+   * Compute the intersection between a ray r->q and the quad
    */
-  bool RayIntersection(const vtkVector3d& r, const vtkVector3d& d, vtkVector3d& uv);
+  bool RayIntersection(const vtkVector3d& r, const vtkVector3d& q, vtkVector3d& uv);
 
 private:
   vtkVector3d Point00;

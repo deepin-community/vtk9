@@ -27,7 +27,7 @@
 #include "vtkWidgetEventTranslator.h"
 
 vtkStandardNewMacro(vtkSplineWidget2);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSplineWidget2::vtkSplineWidget2()
 {
   this->WidgetState = vtkSplineWidget2::Start;
@@ -48,21 +48,19 @@ vtkSplineWidget2::vtkSplineWidget2()
     vtkWidgetEvent::EndScale, this, vtkSplineWidget2::EndSelectAction);
   this->CallbackMapper->SetCallbackMethod(
     vtkCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkSplineWidget2::MoveAction);
-  this->CallbackMapper->SetCallbackMethod(
-    vtkCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkSplineWidget2::MoveAction);
 
   this->KeyEventCallbackCommand = vtkCallbackCommand::New();
   this->KeyEventCallbackCommand->SetClientData(this);
   this->KeyEventCallbackCommand->SetCallback(vtkSplineWidget2::ProcessKeyEvents);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSplineWidget2::~vtkSplineWidget2()
 {
   this->KeyEventCallbackCommand->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::SetEnabled(int enabling)
 {
   int enabled = this->Enabled;
@@ -101,7 +99,7 @@ void vtkSplineWidget2::SetEnabled(int enabling)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::SelectAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -159,14 +157,14 @@ void vtkSplineWidget2::SelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::TranslateAction(vtkAbstractWidget* w)
 {
   // Not sure this should be any different that SelectAction
   vtkSplineWidget2::SelectAction(w);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::ScaleAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -209,7 +207,7 @@ void vtkSplineWidget2::ScaleAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::MoveAction(vtkAbstractWidget* w)
 {
   vtkSplineWidget2* self = reinterpret_cast<vtkSplineWidget2*>(w);
@@ -236,7 +234,7 @@ void vtkSplineWidget2::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkSplineWidget2* self = reinterpret_cast<vtkSplineWidget2*>(w);
@@ -268,7 +266,7 @@ void vtkSplineWidget2::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -277,7 +275,7 @@ void vtkSplineWidget2::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::ProcessKeyEvents(vtkObject*, unsigned long event, void* clientdata, void*)
 {
   vtkSplineWidget2* self = static_cast<vtkSplineWidget2*>(clientdata);
@@ -324,7 +322,7 @@ void vtkSplineWidget2::ProcessKeyEvents(vtkObject*, unsigned long event, void* c
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget2::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

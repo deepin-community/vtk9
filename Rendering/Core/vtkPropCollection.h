@@ -37,6 +37,7 @@ class VTKRENDERINGCORE_EXPORT vtkPropCollection : public vtkCollection
 public:
   static vtkPropCollection* New();
   vtkTypeMacro(vtkPropCollection, vtkCollection);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Add a Prop to the bottom of the list.
@@ -71,8 +72,8 @@ public:
   }
 
 protected:
-  vtkPropCollection() {}
-  ~vtkPropCollection() override {}
+  vtkPropCollection() = default;
+  ~vtkPropCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
@@ -106,5 +107,3 @@ inline vtkProp* vtkPropCollection::GetLastProp()
 }
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkPropCollection.h

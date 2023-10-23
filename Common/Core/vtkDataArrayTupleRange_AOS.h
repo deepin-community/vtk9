@@ -22,6 +22,7 @@
 #include "vtkAOSDataArrayTemplate.h"
 #include "vtkDataArrayMeta.h"
 #include "vtkDataArrayTupleRange_Generic.h"
+#include "vtkDebugRangeIterators.h"
 
 #include <algorithm>
 #include <cassert>
@@ -71,7 +72,10 @@ public:
   using const_iterator = const ValueType*;
 
   VTK_ITER_INLINE
-  ConstTupleReference() noexcept : Tuple{ nullptr } {}
+  ConstTupleReference() noexcept
+    : Tuple{ nullptr }
+  {
+  }
 
   VTK_ITER_INLINE
   ConstTupleReference(const ValueType* tuple, NumCompsType numComps) noexcept
@@ -253,7 +257,10 @@ public:
   using const_reference = ValueType const&;
 
   VTK_ITER_INLINE
-  TupleReference() noexcept : Tuple{ nullptr } {}
+  TupleReference() noexcept
+    : Tuple{ nullptr }
+  {
+  }
 
   VTK_ITER_INLINE
   TupleReference(ValueType* tuple, NumCompsType numComps) noexcept
@@ -542,35 +549,32 @@ protected:
 // Const tuple iterator
 template <typename ValueType, ComponentIdType TupleSize>
 struct ConstTupleIterator<vtkAOSDataArrayTemplate<ValueType>, TupleSize>
-  : public std::iterator<std::random_access_iterator_tag,
-      ConstTupleReference<vtkAOSDataArrayTemplate<ValueType>, TupleSize>, TupleIdType,
-      ConstTupleReference<vtkAOSDataArrayTemplate<ValueType>, TupleSize>,
-      ConstTupleReference<vtkAOSDataArrayTemplate<ValueType>, TupleSize> >
 {
 private:
   using ArrayType = vtkAOSDataArrayTemplate<ValueType>;
   using NumCompsType = GenericTupleSize<TupleSize>;
-  using Superclass = std::iterator<std::random_access_iterator_tag,
-    ConstTupleReference<ArrayType, TupleSize>, TupleIdType,
-    ConstTupleReference<ArrayType, TupleSize>, ConstTupleReference<ArrayType, TupleSize> >;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = ConstTupleReference<ArrayType, TupleSize>;
+  using difference_type = TupleIdType;
+  using pointer = ConstTupleReference<ArrayType, TupleSize>;
+  using reference = ConstTupleReference<ArrayType, TupleSize>;
 
   VTK_ITER_INLINE
   ConstTupleIterator() noexcept = default;
 
   VTK_ITER_INLINE
-  ConstTupleIterator(const ValueType* tuple, NumCompsType numComps) noexcept : Ref(tuple, numComps)
+  ConstTupleIterator(const ValueType* tuple, NumCompsType numComps) noexcept
+    : Ref(tuple, numComps)
   {
   }
 
   VTK_ITER_INLINE
-  ConstTupleIterator(const TupleIterator<ArrayType, TupleSize>& o) noexcept : Ref{ o.Ref } {}
+  ConstTupleIterator(const TupleIterator<ArrayType, TupleSize>& o) noexcept
+    : Ref{ o.Ref }
+  {
+  }
 
   VTK_ITER_INLINE
   ConstTupleIterator(const ConstTupleIterator& o) noexcept = default;
@@ -698,30 +702,26 @@ private:
 // Tuple iterator
 template <typename ValueType, ComponentIdType TupleSize>
 struct TupleIterator<vtkAOSDataArrayTemplate<ValueType>, TupleSize>
-  : public std::iterator<std::random_access_iterator_tag,
-      TupleReference<vtkAOSDataArrayTemplate<ValueType>, TupleSize>, TupleIdType,
-      TupleReference<vtkAOSDataArrayTemplate<ValueType>, TupleSize>,
-      TupleReference<vtkAOSDataArrayTemplate<ValueType>, TupleSize> >
 {
 private:
   using ArrayType = vtkAOSDataArrayTemplate<ValueType>;
   using NumCompsType = GenericTupleSize<TupleSize>;
-  using Superclass =
-    std::iterator<std::random_access_iterator_tag, TupleReference<ArrayType, TupleSize>,
-      TupleIdType, TupleReference<ArrayType, TupleSize>, TupleReference<ArrayType, TupleSize> >;
 
 public:
-  using iterator_category = typename Superclass::iterator_category;
-  using value_type = typename Superclass::value_type;
-  using difference_type = typename Superclass::difference_type;
-  using pointer = typename Superclass::pointer;
-  using reference = typename Superclass::reference;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = TupleReference<ArrayType, TupleSize>;
+  using difference_type = TupleIdType;
+  using pointer = TupleReference<ArrayType, TupleSize>;
+  using reference = TupleReference<ArrayType, TupleSize>;
 
   VTK_ITER_INLINE
   TupleIterator() noexcept = default;
 
   VTK_ITER_INLINE
-  TupleIterator(ValueType* tuple, NumCompsType numComps) noexcept : Ref(tuple, numComps) {}
+  TupleIterator(ValueType* tuple, NumCompsType numComps) noexcept
+    : Ref(tuple, numComps)
+  {
+  }
 
   VTK_ITER_INLINE
   TupleIterator(const TupleIterator& o) noexcept = default;
@@ -774,8 +774,8 @@ public:
   pointer& operator->() noexcept { return this->Ref; }
 
 #define VTK_TMP_MAKE_OPERATOR(OP)                                                                  \
-  friend VTK_ITER_INLINE bool operator OP(const TupleIterator& lhs, const TupleIterator& rhs)      \
-    noexcept                                                                                       \
+  friend VTK_ITER_INLINE bool operator OP(                                                         \
+    const TupleIterator& lhs, const TupleIterator& rhs) noexcept                                   \
   {                                                                                                \
     return lhs.GetTuple() OP rhs.GetTuple();                                                       \
   }

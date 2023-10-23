@@ -30,6 +30,7 @@
     bool contextInitialised = renderWindow->Superclass::InitializeFromCurrentContext();
     assert(contextInitialised);
     (void)contextInitialised;
+    renderWindow->SetFrameBlitModeToBlitToCurrent();
     renderWindow->Render();
   }
 

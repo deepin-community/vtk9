@@ -41,13 +41,13 @@ public:
    */
   static vtkTestingInteractor* New();
 
-  //@{
+  ///@{
   /**
    * Type and printing information.
    */
   vtkTypeMacro(vtkTestingInteractor, vtkRenderWindowInteractor);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   void Start() override;
 
@@ -58,7 +58,7 @@ public:
   static std::string DataDirectory; // Location of VTKData
 
 protected:
-  vtkTestingInteractor() {}
+  vtkTestingInteractor() = default;
 
 private:
   vtkTestingInteractor(const vtkTestingInteractor&) = delete;

@@ -14,26 +14,24 @@
 =========================================================================*/
 #include "vtkAMReXGridReader.h"
 
+#include "vtkAMRBox.h"
+#include "vtkAMRDataSetCache.h"
+#include "vtkAMReXGridReaderInternal.h"
 #include "vtkAOSDataArrayTemplate.h"
 #include "vtkCellArray.h"
 #include "vtkCommand.h"
+#include "vtkCompositeDataPipeline.h"
 #include "vtkDataArraySelection.h"
 #include "vtkIdTypeArray.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
-
-#include "vtkAMRBox.h"
-#include "vtkAMRDataSetCache.h"
-#include "vtkAMReXGridReaderInternal.h"
-#include "vtkCompositeDataPipeline.h"
 #include "vtkOverlappingAMR.h"
-#include "vtkUniformGrid.h"
-
 #include "vtkPointData.h"
 #include "vtkPolyData.h"
 #include "vtkSOADataArrayTemplate.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
+#include "vtkUniformGrid.h"
 #include "vtksys/SystemTools.hxx"
 
 #include <algorithm>
@@ -43,10 +41,8 @@
 #include <iomanip>
 #include <sstream>
 
-using vtksystools = vtksys::SystemTools;
-
 vtkStandardNewMacro(vtkAMReXGridReader);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAMReXGridReader::vtkAMReXGridReader()
 {
   this->IsReady = false;
@@ -54,14 +50,14 @@ vtkAMReXGridReader::vtkAMReXGridReader()
   this->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAMReXGridReader::~vtkAMReXGridReader()
 {
   delete this->Internal;
   this->Internal = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMReXGridReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -92,36 +88,35 @@ void vtkAMReXGridReader::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//-----------------------------------------------------------------------------
-void vtkAMReXGridReader::SetFileName(const char* fileName)
+//------------------------------------------------------------------------------
+void vtkAMReXGridReader::SetFileName(const char* arg)
 {
-  if (fileName && strcmp(fileName, "") &&
-    ((this->FileName == nullptr) || strcmp(fileName, this->FileName)))
+  // both nullptr just return
+  if (this->FileName == nullptr && arg == nullptr)
   {
-    if (this->FileName)
-    {
-      delete[] this->FileName;
-      this->FileName = nullptr;
-      this->Internal->SetFileName(nullptr);
-    }
-
-    this->FileName = new char[strlen(fileName) + 1];
-    strcpy(this->FileName, fileName);
-    this->FileName[strlen(fileName)] = '\0';
-    this->Internal->SetFileName(this->FileName);
-
-    this->LoadedMetaData = false;
+    return;
   }
 
+  // both set to the same value, just return
+  if (this->FileName && arg && strcmp(this->FileName, arg) == 0)
+  {
+    return;
+  }
+
+  delete[] this->FileName;
+  this->FileName = vtksys::SystemTools::DuplicateString(arg);
+  this->Internal->SetFileName(this->FileName);
+  this->LoadedMetaData = false;
   this->Modified();
 }
 
+//------------------------------------------------------------------------------
 void vtkAMReXGridReader::ReadMetaData()
 {
   this->Internal->ReadMetaData();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMReXGridReader::FillMetaData()
 {
   this->ReadMetaData();
@@ -182,7 +177,7 @@ int vtkAMReXGridReader::FillMetaData()
       {
         boxLo = this->Internal->LevelHeader[i]->levelBoxArrays[j][0][k];
         boxHi = this->Internal->LevelHeader[i]->levelBoxArrays[j][1][k];
-        blockOrigin[k] = boxLo * spacing[k];
+        blockOrigin[k] = origin[k] + boxLo * spacing[k];
         blockDimension[k] =
           ((boxHi - boxLo) + 1) + 1; // block dimension - '(hi - lo + 1)' is the number of cells '+
                                      // 1' is the number of points
@@ -200,11 +195,15 @@ int vtkAMReXGridReader::FillMetaData()
       this->Metadata->SetAMRBlockSourceIndex(i, j, globalID++);
     }
   }
+
+  // Add time information.
+  auto info = this->Metadata->GetInformation();
+  info->Set(vtkDataObject::DATA_TIME_STEP(), this->Internal->Header->time);
   return (1);
   // TODO: Need to handle Ghost Cells - Patrick O'Leary
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkUniformGrid* vtkAMReXGridReader::GetAMRGrid(const int blockIdx)
 {
   if (!this->Internal->headersAreRead)
@@ -222,17 +221,13 @@ vtkUniformGrid* vtkAMReXGridReader::GetAMRGrid(const int blockIdx)
 
   // The vtkUniformGrid always has 3 dimensions
   double spacing[3] = { 0.0, 0.0, 0.0 };
-  double origin[3] = { 0.0, 0.0, 0.0 };
   for (int i = 0; i < dimension; ++i)
   {
     spacing[i] = this->Internal->Header->cellSize[level][i];
   }
   if (dimension == 2)
     spacing[2] = spacing[1]; // Add spacing for the 3rd dimension
-  for (int k = 0; k < dimension; ++k)
-  {
-    origin[k] = this->Internal->LevelHeader[level]->levelBoxArrays[blockID][0][k] * spacing[k];
-  }
+
   vtkAMRBox block = this->Metadata->GetAMRBox(level, blockID);
   int boxLo[3];
   int boxHi[3];
@@ -245,6 +240,9 @@ vtkUniformGrid* vtkAMReXGridReader::GetAMRGrid(const int blockIdx)
   }
   vtkUniformGrid* uniformGrid = vtkUniformGrid::New();
   uniformGrid->Initialize();
+
+  double origin[3] = { 0.0, 0.0, 0.0 };
+  vtkAMRBox::GetBoxOrigin(block, this->Metadata->GetOrigin(), spacing, origin);
   uniformGrid->SetOrigin(origin);
   uniformGrid->SetSpacing(spacing);
   uniformGrid->SetDimensions(dimensions);
@@ -252,19 +250,19 @@ vtkUniformGrid* vtkAMReXGridReader::GetAMRGrid(const int blockIdx)
   // TODO: Need to handle Ghost Cells - Patrick O'Leary
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMReXGridReader::GetDimension()
 {
   return this->Internal->headersAreRead ? this->Internal->Header->dim : -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMReXGridReader::GetNumberOfLevels()
 {
   return this->Internal->headersAreRead ? this->Internal->Header->finestLevel : -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMReXGridReader::GetNumberOfBlocks()
 {
   if (!this->Internal->headersAreRead)
@@ -281,7 +279,7 @@ int vtkAMReXGridReader::GetNumberOfBlocks()
   return (numberOfBlocks);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMReXGridReader::GetBlockLevel(const int blockIdx)
 {
   if (!this->Internal->headersAreRead)
@@ -304,7 +302,7 @@ int vtkAMReXGridReader::GetBlockLevel(const int blockIdx)
   return (-1);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAMReXGridReader::GetLevelBlockID(const int blockIdx)
 {
   if (!this->Internal->headersAreRead)
@@ -327,7 +325,7 @@ int vtkAMReXGridReader::GetLevelBlockID(const int blockIdx)
   return (-1);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMReXGridReader::GetAMRGridData(
   const int blockIdx, vtkUniformGrid* block, const char* field)
 {
@@ -338,16 +336,15 @@ void vtkAMReXGridReader::GetAMRGridData(
   this->Internal->GetBlockAttribute(field, blockIdx, block);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAMReXGridReader::SetUpDataArraySelections()
 {
   if (!this->Internal->headersAreRead)
   {
     return;
   }
-  int numberOfVariables = this->Internal->Header->variableNamesSize;
-  for (int i = 0; i < numberOfVariables; ++i)
+  for (const auto& variable : this->Internal->Header->parsedVariableNames)
   {
-    this->CellDataArraySelection->AddArray(this->Internal->Header->variableNames[i].c_str());
+    this->CellDataArraySelection->AddArray(variable.first.c_str());
   }
 }

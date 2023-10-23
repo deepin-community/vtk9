@@ -72,13 +72,13 @@ class vtkContinuousValueWidgetRepresentation;
 class VTKINTERACTIONWIDGETS_EXPORT vtkContinuousValueWidget : public vtkAbstractWidget
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard macros.
    */
   vtkTypeMacro(vtkContinuousValueWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -98,17 +98,17 @@ public:
     return reinterpret_cast<vtkContinuousValueWidgetRepresentation*>(this->WidgetRep);
   }
 
-  //@{
+  ///@{
   /**
    * Get the value for this widget.
    */
   double GetValue();
   void SetValue(double v);
-  //@}
+  ///@}
 
 protected:
   vtkContinuousValueWidget();
-  ~vtkContinuousValueWidget() override {}
+  ~vtkContinuousValueWidget() override = default;
 
   // These are the events that are handled
   static void SelectAction(vtkAbstractWidget*);

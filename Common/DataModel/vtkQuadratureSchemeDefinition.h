@@ -66,11 +66,11 @@ public:
    * Put the object into an XML representation. The element
    * passed in is assumed to be empty.
    */
-  int SaveState(vtkXMLDataElement* e);
+  int SaveState(vtkXMLDataElement* root);
   /**
    * Restore the object from an XML representation.
    */
-  int RestoreState(vtkXMLDataElement* e);
+  int RestoreState(vtkXMLDataElement* root);
 
   /**
    * Release all allocated resources and set the
@@ -111,7 +111,7 @@ public:
    * "NumberOfNodes" weights for each quadrature point.
    */
   const double* GetShapeFunctionWeights() const { return this->ShapeFunctionWeights; }
-  //@{
+  ///@{
   /**
    * Get the array of shape function weights associated with a
    * single quadrature point.
@@ -121,7 +121,7 @@ public:
     int idx = quadraturePointId * this->NumberOfNodes;
     return this->ShapeFunctionWeights + idx;
   }
-  //@}
+  ///@}
   /**
    * Access to the quadrature weights.
    */

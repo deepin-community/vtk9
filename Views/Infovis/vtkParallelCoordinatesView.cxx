@@ -51,7 +51,7 @@ PURPOSE.  See the above copyright notice for more information.
 
 vtkStandardNewMacro(vtkParallelCoordinatesView);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkParallelCoordinatesView::vtkParallelCoordinatesView()
 {
@@ -106,11 +106,8 @@ vtkParallelCoordinatesView::vtkParallelCoordinatesView()
   //  this->ApplyViewTheme(theme);
 }
 
-// ----------------------------------------------------------------------
-vtkParallelCoordinatesView::~vtkParallelCoordinatesView()
-{
-  // nothing to do
-}
+//------------------------------------------------------------------------------
+vtkParallelCoordinatesView::~vtkParallelCoordinatesView() = default;
 
 void vtkParallelCoordinatesView::PrepareForRendering()
 {
@@ -143,7 +140,7 @@ void vtkParallelCoordinatesView::PrepareForRendering()
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParallelCoordinatesView::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -154,7 +151,7 @@ void vtkParallelCoordinatesView::PrintSelf(ostream& os, vtkIndent indent)
   os << "CurrentBrushClass: " << this->CurrentBrushClass << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The frustum selection code is borrowed from vtkRenderView.
 void vtkParallelCoordinatesView::ProcessEvents(
   vtkObject* caller, unsigned long eventId, void* callData)
@@ -281,9 +278,9 @@ int vtkParallelCoordinatesView::SetAxisHighlightPosition(
 }
 
 int vtkParallelCoordinatesView::SetAxisHighlightPosition(
-  vtkParallelCoordinatesRepresentation* rep, double xpos)
+  vtkParallelCoordinatesRepresentation* rep, double position)
 {
-  int nearestPosition = rep->GetPositionNearXCoordinate(xpos);
+  int nearestPosition = rep->GetPositionNearXCoordinate(position);
 
   return this->SetAxisHighlightPosition(rep, nearestPosition);
 }
@@ -394,7 +391,7 @@ void vtkParallelCoordinatesView::ClearBrushPoints()
   this->BrushData->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParallelCoordinatesView::AddLassoBrushPoint(double* p)
 {
   if (this->NumberOfBrushPoints >= this->MaximumNumberOfBrushPoints)
@@ -426,13 +423,13 @@ int vtkParallelCoordinatesView::SetAngleBrushLine(double* p1, double* p2)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParallelCoordinatesView::SetFunctionBrushLine1(double* p1, double* p2)
 {
   this->SetBrushLine(2, p1, p2);
   return 1;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkParallelCoordinatesView::SetFunctionBrushLine2(double* p1, double* p2)
 {
   this->SetBrushLine(3, p1, p2);
@@ -552,7 +549,7 @@ int vtkParallelCoordinatesView::SetBrushLine(int line, double* p1, double* p2)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkParallelCoordinatesView::GetBrushLine(int line, vtkIdType& npts, vtkIdType const*& ptids)
 {
   int cellNum = 0;

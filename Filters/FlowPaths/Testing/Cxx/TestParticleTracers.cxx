@@ -33,7 +33,6 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include <cassert>
 #include <vector>
-using namespace std;
 
 class TestTimeSource : public vtkAlgorithm
 {
@@ -217,7 +216,7 @@ private:
   TestTimeSource(const TestTimeSource&) = delete;
   void operator=(const TestTimeSource&) = delete;
 
-  vector<double> TimeSteps;
+  std::vector<double> TimeSteps;
   int Extent[6];
   double BoundingBox[6];
   int NumRequestData;
@@ -410,7 +409,7 @@ int TestParticleTracers(int, char*[])
   vtkNew<vtkParticleTracer> filter;
   filter->SetInputConnection(0, imageSource->GetOutputPort());
   filter->SetInputConnection(1, ps->GetOutputPort());
-  filter->SetComputeVorticity(0);
+  filter->SetComputeVorticity(false);
 
   filter->SetStartTime(0.1);
   filter->SetTerminationTime(4.5);

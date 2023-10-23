@@ -161,48 +161,48 @@ public:
    */
   vtkQuaternion<T> NormalizedWithAngleInDegrees() const;
 
-  //@{
+  ///@{
   /**
    * Set/Get the w, x, y and z components of the quaternion.
    */
   void Set(const T& w, const T& x, const T& y, const T& z);
   void Set(T quat[4]);
   void Get(T quat[4]) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the w component of the quaternion, i.e. element 0.
    */
   void SetW(const T& w);
   const T& GetW() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the x component of the quaternion, i.e. element 1.
    */
   void SetX(const T& x);
   const T& GetX() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the y component of the quaternion, i.e. element 2.
    */
   void SetY(const T& y);
   const T& GetY() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the y component of the quaternion, i.e. element 3.
    */
   void SetZ(const T& z);
   const T& GetZ() const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the angle (in radians) and the axis corresponding to
    * the axis-angle rotation of this quaternion.
@@ -210,7 +210,7 @@ public:
   T GetRotationAngleAndAxis(T axis[3]) const;
   void SetRotationAngleAndAxis(T angle, T axis[3]);
   void SetRotationAngleAndAxis(const T& angle, const T& x, const T& y, const T& z);
-  //@}
+  ///@}
 
   /**
    * Cast the quaternion to the specified type and return the result.
@@ -283,12 +283,12 @@ public:
    */
   vtkQuaternion<T> operator/(const T& scalar) const;
 
-  //@{
+  ///@{
   /**
    * Performs in place division of the quaternions by a scalar value.
    */
   void operator/=(const T& scalar);
-  //@}
+  ///@}
 };
 
 /**
@@ -344,39 +344,35 @@ public:
   inline quaternionType operator+(const quaternionType& q) const                                   \
   {                                                                                                \
     return quaternionType(                                                                         \
-      (static_cast<vtkQuaternion<type> >(*this) + static_cast<vtkQuaternion<type> >(q))            \
-        .GetData());                                                                               \
+      (static_cast<vtkQuaternion<type>>(*this) + static_cast<vtkQuaternion<type>>(q)).GetData());  \
   }
 #define vtkQuaternionOperatorMinus(quaternionType, type)                                           \
   inline quaternionType operator-(const quaternionType& q) const                                   \
   {                                                                                                \
     return quaternionType(                                                                         \
-      (static_cast<vtkQuaternion<type> >(*this) - static_cast<vtkQuaternion<type> >(q))            \
-        .GetData());                                                                               \
+      (static_cast<vtkQuaternion<type>>(*this) - static_cast<vtkQuaternion<type>>(q)).GetData());  \
   }
 #define vtkQuaternionOperatorMultiply(quaternionType, type)                                        \
   inline quaternionType operator*(const quaternionType& q) const                                   \
   {                                                                                                \
     return quaternionType(                                                                         \
-      (static_cast<vtkQuaternion<type> >(*this) * static_cast<vtkQuaternion<type> >(q))            \
-        .GetData());                                                                               \
+      (static_cast<vtkQuaternion<type>>(*this) * static_cast<vtkQuaternion<type>>(q)).GetData());  \
   }
 #define vtkQuaternionOperatorMultiplyScalar(quaternionType, type)                                  \
   inline quaternionType operator*(const type& scalar) const                                        \
   {                                                                                                \
-    return quaternionType((static_cast<vtkQuaternion<type> >(*this) * scalar).GetData());          \
+    return quaternionType((static_cast<vtkQuaternion<type>>(*this) * scalar).GetData());           \
   }
 #define vtkQuaternionOperatorDivide(quaternionType, type)                                          \
   inline quaternionType operator/(const quaternionType& q) const                                   \
   {                                                                                                \
     return quaternionType(                                                                         \
-      (static_cast<vtkQuaternion<type> >(*this) / static_cast<vtkQuaternion<type> >(q))            \
-        .GetData());                                                                               \
+      (static_cast<vtkQuaternion<type>>(*this) / static_cast<vtkQuaternion<type>>(q)).GetData());  \
   }
 #define vtkQuaternionOperatorDivideScalar(quaternionType, type)                                    \
   inline quaternionType operator/(const type& scalar) const                                        \
   {                                                                                                \
-    return quaternionType((static_cast<vtkQuaternion<type> >(*this) / scalar).GetData());          \
+    return quaternionType((static_cast<vtkQuaternion<type>>(*this) / scalar).GetData());           \
   }
 
 #define vtkQuaternionOperatorMacro(quaternionType, type)                                           \
@@ -405,7 +401,7 @@ public:
 class vtkQuaternionf : public vtkQuaternion<float>
 {
 public:
-  vtkQuaternionf() {}
+  vtkQuaternionf() = default;
   explicit vtkQuaternionf(float w, float x, float y, float z)
     : vtkQuaternion<float>(w, x, y, z)
   {
@@ -430,7 +426,7 @@ public:
 class vtkQuaterniond : public vtkQuaternion<double>
 {
 public:
-  vtkQuaterniond() {}
+  vtkQuaterniond() = default;
   explicit vtkQuaterniond(double w, double x, double y, double z)
     : vtkQuaternion<double>(w, x, y, z)
   {

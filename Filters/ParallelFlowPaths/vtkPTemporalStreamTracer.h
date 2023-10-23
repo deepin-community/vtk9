@@ -32,10 +32,7 @@
 #ifndef vtkPTemporalStreamTracer_h
 #define vtkPTemporalStreamTracer_h
 
-#include "vtkConfigure.h" // For legacy defines
-#include "vtkSetGet.h"    // For legacy macros
-#ifndef VTK_LEGACY_REMOVE
-
+#include "vtkDeprecation.h"                    // For VTK_DEPRECATED_IN_9_0_0
 #include "vtkFiltersParallelFlowPathsModule.h" // For export macro
 #include "vtkSmartPointer.h"                   // For protected ivars.
 #include "vtkTemporalStreamTracer.h"
@@ -56,9 +53,10 @@ class vtkCellArray;
 class vtkDoubleArray;
 class vtkFloatArray;
 class vtkIntArray;
-class vtkCharArray;
 class vtkAbstractParticleWriter;
 
+VTK_DEPRECATED_IN_9_0_0("Use one of vtkParticleTracerBase, vtkParticleTracer, "
+                        "vtkParticlePathFilter, or vtkStreaklineFilter")
 class VTKFILTERSPARALLELFLOWPATHS_EXPORT vtkPTemporalStreamTracer : public vtkTemporalStreamTracer
 {
 public:
@@ -70,17 +68,17 @@ public:
    */
   static vtkPTemporalStreamTracer* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the controller used when sending particles between processes
    * The controller must be an instance of vtkMPIController.
    */
   virtual void SetController(vtkMultiProcessController* controller);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
 protected:
-  VTK_LEGACY(vtkPTemporalStreamTracer());
+  vtkPTemporalStreamTracer();
   ~vtkPTemporalStreamTracer();
 
   //
@@ -120,10 +118,6 @@ protected:
 
   void AddParticleToMPISendList(vtkTemporalStreamTracerNamespace::ParticleInformation& info);
 
-  //
-
-  //
-
   // MPI controller needed when running in parallel
   vtkMultiProcessController* Controller;
 
@@ -131,7 +125,5 @@ private:
   vtkPTemporalStreamTracer(const vtkPTemporalStreamTracer&) = delete;
   void operator=(const vtkPTemporalStreamTracer&) = delete;
 };
-
-#endif // VTK_LEGACY_REMOVE
 
 #endif

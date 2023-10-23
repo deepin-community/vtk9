@@ -14,9 +14,7 @@
  =========================================================================*/
 /**
  * @class   vtkStructuredAMRNeighbor
- *
- *
- *  An internal, light-weight object used to store neighbor information for
+ * @brief   An internal, light-weight object used to store neighbor information for
  *  AMR grids.
  *
  * @sa
@@ -78,7 +76,7 @@ public:
   /**
    * Destructor.
    */
-  ~vtkStructuredAMRNeighbor() override {}
+  ~vtkStructuredAMRNeighbor() override = default;
 
   /**
    * Overload assignment operator.
@@ -96,7 +94,7 @@ public:
    */
   std::string GetRelationShipString();
 
-  //@{
+  ///@{
   /**
    * Computes the SendExtent and RcvExtent for this neighbor. The method assumes
    * that the overlap extent and orientation are already computed. Using this
@@ -105,7 +103,7 @@ public:
    */
   void ComputeSendAndReceiveExtent(int gridRealExtent[6], int gridGhostedExtent[6],
     int neiRealExtent[6], int WholeExtent[6], const int N) override;
-  //@}
+  ///@}
 };
 
 #endif /* vtkStructuredAMRNeighbor_h */

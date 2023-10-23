@@ -14,6 +14,13 @@ ifneq (,$(filter $(DEB_HOST_ARCH), armel m68k mips mipsel powerpc sh4))
   export DEB_LDFLAGS_MAINT_APPEND += -Wl,--no-as-needed -latomic -Wl,--as-needed
 endif
 
+notbb_archs=hurd-i386 kfreebsd-i386 kfreebsd-amd64 alpha ia64
+ifneq ($(DEB_BUILD_ARCH),$(filter $(DEB_BUILD_ARCH), $(notbb_archs)))
+  extra_flags += -DVTK_SMP_IMPLEMENTATION_TYPE:STRING="TBB"
+else
+  extra_flags += -DVTK_SMP_IMPLEMENTATION_TYPE:STRING="OpenMP"
+endif
+
 %:
 	dh $@ --buildsystem=cmake --builddirectory=$(BUILDDIR)
 
@@ -32,6 +39,7 @@ extra_flags +=  \
 	-DVTK_EXTRA_COMPILER_WARNINGS=ON \
 	-DVTK_GROUP_ENABLE_Qt:STRING="YES" \
 	-DVTK_MODULE_ENABLE_VTK_GUISupportQtSQL:STRING="NO" \
+	-DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick:STRING="DONT_WANT" \
 	-DVTK_GROUP_ENABLE_Rendering:STRING="YES" \
 	-DVTK_GROUP_ENABLE_StandAlone:STRING="YES" \
 	-DVTK_GROUP_ENABLE_Views:STRING="YES" \
@@ -63,7 +71,6 @@ extra_flags +=  \
 	-DVTK_MODULE_USE_EXTERNAL_VTK_tiff:BOOL=ON \
 	-DVTK_MODULE_USE_EXTERNAL_VTK_utf8:BOOL=ON \
 	-DVTK_MODULE_USE_EXTERNAL_VTK_zlib:BOOL=ON \
-	-DVTK_SMP_IMPLEMENTATION_TYPE:STRING="TBB" \
 	-DVTK_PYTHON_VERSION:STRING=3 \
 	-DVTK_USE_TK=ON \
 	-DVTK_WRAP_PYTHON=ON \
@@ -91,13 +98,16 @@ ifneq ($(JAVA_HOME),)
 	# Correct headers for paraview
 	mv $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/java/vtk.jar $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/java/vtk9.jar
 endif
-	sed -i -e "s/FATAL_ERROR/STATUS/g" $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/cmake/vtk-9.0/VTK-targets.cmake
+	sed -i -e "s/FATAL_ERROR/STATUS/g" $(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/cmake/vtk-9.1/VTK-targets.cmake
 
 execute_after_dh_install:
 	rm -rf $(CURDIR)/debian/tmp/usr/share/licenses
 	find $(CURDIR)/debian/libvtk9-dev/ -name "*Qt*" -exec rm {} \; || true
 	find $(CURDIR)/debian/libvtk9-dev/ -name "libvtkRenderingPythonTkWidgets.so" -exec rm {} \; || true
 	find $(CURDIR)/debian/libvtk9-dev/usr/include/ -name "Q*" -exec rm {} \; || true
-	find $(CURDIR)/debian/libvtk9/ -name "*Qt*" -exec rm {} \; || true
+	find $(CURDIR)/debian/libvtk9.1/ -name "*Qt*" -exec rm {} \; || true
 	find $(CURDIR)/debian/tmp/usr/share/doc/vtk-9.0/doxygen -name "_formulas.log" -exec rm {} \; || true
 	find $(CURDIR)/debian/build/Utilities/Doxygen/doc/html -name "_formulas.log" -exec rm {} \; || true
+
+execute_after_dh_installdocs-indep:
+	find $(CURDIR)/debian/vtk9-doc/ -type f -print0 | xargs -0 sed -i 's/https:\/\/raw\.githubusercontent\.com//g'

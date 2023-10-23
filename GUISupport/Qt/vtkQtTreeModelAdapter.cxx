@@ -17,6 +17,10 @@
   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
+
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkQtTreeModelAdapter.h"
 
 #include "vtkAdjacentVertexIterator.h"
@@ -151,7 +155,7 @@ void vtkQtTreeModelAdapter::setTree(vtkTree* t)
     {
       tempSGMacroVar->UnRegister(nullptr);
     }
-    emit reset();
+    Q_EMIT reset();
   }
 
   // Okay it's the same pointer but the contents
@@ -173,7 +177,7 @@ void vtkQtTreeModelAdapter::treeModified()
     this->GenerateVTKIndexToQtModelIndex(root, this->createIndex(0, 0, static_cast<int>(root)));
   }
   this->TreeMTime = this->Tree->GetMTime();
-  emit reset();
+  Q_EMIT reset();
 }
 
 // Description:
@@ -250,7 +254,7 @@ void vtkQtTreeModelAdapter::GenerateVTKIndexToQtModelIndex(
   it->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QVariant vtkQtTreeModelAdapterArrayValue(vtkAbstractArray* arr, vtkIdType i, vtkIdType j)
 {
   int comps = arr->GetNumberOfComponents();
@@ -348,7 +352,7 @@ QVariant vtkQtTreeModelAdapter::data(const QModelIndex& idx, int role) const
       }
       return QVariant(pixmap);
     }
-    else if (role == Qt::TextColorRole)
+    else if (role == Qt::ForegroundRole)
     {
       // return QVariant(QColor(rgb[0],rgb[1],rgb[2]));
     }
@@ -362,7 +366,7 @@ bool vtkQtTreeModelAdapter::setData(const QModelIndex& idx, const QVariant& valu
   if (role == Qt::DecorationRole)
   {
     this->IndexToDecoration[idx] = value;
-    emit this->dataChanged(idx, idx);
+    Q_EMIT this->dataChanged(idx, idx);
     return true;
   }
   return false;
@@ -547,7 +551,7 @@ QMimeData* vtkQtTreeModelAdapter::mimeData(const QModelIndexList& indexes) const
 {
   // Only supports dragging single item right now ...
 
-  if (indexes.size() == 0)
+  if (indexes.empty())
   {
     return nullptr;
   }

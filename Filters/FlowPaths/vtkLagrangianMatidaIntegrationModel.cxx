@@ -28,7 +28,7 @@
 
 vtkObjectFactoryNewMacro(vtkLagrangianMatidaIntegrationModel);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLagrangianMatidaIntegrationModel::vtkLagrangianMatidaIntegrationModel()
 {
   // Fill the helper array
@@ -43,16 +43,16 @@ vtkLagrangianMatidaIntegrationModel::vtkLagrangianMatidaIntegrationModel()
   this->NumIndepVars = 7; // x, y, z, u, v, w, t
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLagrangianMatidaIntegrationModel::~vtkLagrangianMatidaIntegrationModel() = default;
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLagrangianMatidaIntegrationModel::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLagrangianMatidaIntegrationModel::FunctionValues(vtkLagrangianParticle* particle,
   vtkDataSet* dataSet, vtkIdType cellId, double* weights, double* x, double* f)
 {
@@ -140,9 +140,10 @@ int vtkLagrangianMatidaIntegrationModel::FunctionValues(vtkLagrangianParticle* p
   // Compute function values
   for (int i = 0; i < 3; i++)
   {
-    double drag = this->GetDragCoefficient(
+    double drag = vtkLagrangianMatidaIntegrationModel::GetDragCoefficient(
       flowVelocity, particle->GetVelocity(), flowDynamicViscosity, particleDiameter, flowDensity);
-    double relax = this->GetRelaxationTime(flowDynamicViscosity, particleDiameter, particleDensity);
+    double relax = vtkLagrangianMatidaIntegrationModel::GetRelaxationTime(
+      flowDynamicViscosity, particleDiameter, particleDensity);
     // Matida Equation
     f[i + 3] = (relax == 0) ? std::numeric_limits<double>::infinity()
                             : (flowVelocity[i] - x[i + 3]) * drag / relax;
@@ -154,7 +155,7 @@ int vtkLagrangianMatidaIntegrationModel::FunctionValues(vtkLagrangianParticle* p
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkLagrangianMatidaIntegrationModel::GetRelaxationTime(
   double dynVisc, double diameter, double density)
 {
@@ -162,7 +163,7 @@ double vtkLagrangianMatidaIntegrationModel::GetRelaxationTime(
                         : (density * diameter * diameter) / (18.0 * dynVisc);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkLagrangianMatidaIntegrationModel::GetDragCoefficient(const double* flowVelocity,
   const double* particleVelocity, double dynVisc, double particleDiameter, double flowDensity)
 {

@@ -100,7 +100,7 @@ vtkImageTracerWidget::vtkImageTracerWidget()
   this->LineData = vtkPolyData::New();
 
   lineMapper->SetInputData(this->LineData);
-  lineMapper->SetResolveCoincidentTopologyToPolygonOffset();
+  vtkPolyDataMapper::SetResolveCoincidentTopologyToPolygonOffset();
   lineMapper->ScalarVisibilityOff();
   this->LineActor->SetMapper(lineMapper);
   this->LineActor->PickableOff();
@@ -191,7 +191,7 @@ vtkImageTracerWidget::~vtkImageTracerWidget()
   this->HandleGenerator->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkImageTracerWidget::SetViewProp(vtkProp* prop)
 {
   if (this->ViewProp != prop)

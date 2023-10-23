@@ -31,9 +31,11 @@
 #include <vector> // For C++ vector
 
 // Forward declarations
+class vtkDataArray;
 class vtkFieldData;
 class vtkOverlappingAMR;
 class vtkUniformGrid;
+class vtkUnsignedCharArray;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkAMRUtilities : public vtkObject
 {
@@ -68,8 +70,8 @@ public:
   static void BlankCells(vtkOverlappingAMR* amr);
 
 protected:
-  vtkAMRUtilities() {}
-  ~vtkAMRUtilities() override {}
+  vtkAMRUtilities() = default;
+  ~vtkAMRUtilities() override = default;
 
   /**
    * Given the real-extent w.r.t. the ghosted grid, this method copies the
@@ -94,11 +96,13 @@ protected:
   static vtkUniformGrid* StripGhostLayersFromGrid(vtkUniformGrid* grid, int ghost[6]);
 
   static void BlankGridsAtLevel(vtkOverlappingAMR* amr, int levelIdx,
-    std::vector<std::vector<unsigned int> >& children, const std::vector<int>& processMap);
+    std::vector<std::vector<unsigned int>>& children, const std::vector<int>& processMap);
 
 private:
   vtkAMRUtilities(const vtkAMRUtilities&) = delete;
   void operator=(const vtkAMRUtilities&) = delete;
+
+  static void MergeGhostArrays(vtkDataArray* existingArray, vtkUnsignedCharArray* ghosts);
 };
 
 #endif /* vtkAMRUtilities_h */

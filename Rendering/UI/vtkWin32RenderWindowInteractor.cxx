@@ -25,11 +25,12 @@
 #define _WIN32_WINNT 0x0601 // for touch support, 0x0601 means target Windows 7 or later
 #endif
 
+#include "vtkHardwareWindow.h"
 #include "vtkRenderWindow.h"
+#include "vtkStringArray.h"
 #include "vtkWin32RenderWindowInteractor.h"
 #include "vtkWindows.h"
-
-#include "vtkStringArray.h"
+#include "vtksys/Encoding.hxx"
 
 #include <shellapi.h> // for drag and drop
 #include <winuser.h>  // for touch support
@@ -80,11 +81,11 @@ typedef bool(WINAPI* CloseTouchInputHandleType)(HTOUCHINPUT);
 
 vtkStandardNewMacro(vtkWin32RenderWindowInteractor);
 
-void (*vtkWin32RenderWindowInteractor::ClassExitMethod)(void*) = (void (*)(void*))nullptr;
+void (*vtkWin32RenderWindowInteractor::ClassExitMethod)(void*) = (void (*)(void*)) nullptr;
 void* vtkWin32RenderWindowInteractor::ClassExitMethodArg = (void*)nullptr;
-void (*vtkWin32RenderWindowInteractor::ClassExitMethodArgDelete)(void*) = (void (*)(void*))nullptr;
+void (*vtkWin32RenderWindowInteractor::ClassExitMethodArgDelete)(void*) = (void (*)(void*)) nullptr;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object so that light follows camera motion.
 vtkWin32RenderWindowInteractor::vtkWin32RenderWindowInteractor()
 {
@@ -98,7 +99,7 @@ vtkWin32RenderWindowInteractor::vtkWin32RenderWindowInteractor()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWin32RenderWindowInteractor::~vtkWin32RenderWindowInteractor()
 {
   vtkRenderWindow* tmp;
@@ -129,7 +130,7 @@ vtkWin32RenderWindowInteractor::~vtkWin32RenderWindowInteractor()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32RenderWindowInteractor::ProcessEvents()
 {
   // No need to do anything if this is a 'mapped' interactor
@@ -146,7 +147,7 @@ void vtkWin32RenderWindowInteractor::ProcessEvents()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32RenderWindowInteractor::StartEventLoop()
 {
   // No need to do anything if this is a 'mapped' interactor
@@ -165,7 +166,7 @@ void vtkWin32RenderWindowInteractor::StartEventLoop()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Begin processing keyboard strokes.
 void vtkWin32RenderWindowInteractor::Initialize()
 {
@@ -189,13 +190,25 @@ void vtkWin32RenderWindowInteractor::Initialize()
   ren->End();
   size = ren->GetSize();
   ren->GetPosition();
+
   this->WindowId = (HWND)(ren->GetGenericWindowId());
+  if (this->HardwareWindow)
+  {
+    this->WindowId = (HWND)(this->HardwareWindow->GetGenericWindowId());
+    size = this->HardwareWindow->GetSize();
+    vtkSetWindowLong(this->WindowId, sizeof(vtkLONG), (intptr_t)ren);
+  }
+  else
+  {
+    this->WindowId = (HWND)(ren->GetGenericWindowId());
+  }
+
   this->Enable();
   this->Size[0] = size[0];
   this->Size[1] = size[1];
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32RenderWindowInteractor::Enable()
 {
   vtkRenderWindow* ren;
@@ -255,7 +268,7 @@ void vtkWin32RenderWindowInteractor::Enable()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32RenderWindowInteractor::Disable()
 {
   vtkRenderWindow* tmp;
@@ -294,7 +307,7 @@ void vtkWin32RenderWindowInteractor::Disable()
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32RenderWindowInteractor::TerminateApp(void)
 {
   this->Done = true;
@@ -307,7 +320,7 @@ void vtkWin32RenderWindowInteractor::TerminateApp(void)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::InternalCreateTimer(
   int timerId, int vtkNotUsed(timerType), unsigned long duration)
 {
@@ -316,7 +329,7 @@ int vtkWin32RenderWindowInteractor::InternalCreateTimer(
   return timerId;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::InternalDestroyTimer(int platformTimerId)
 {
   return KillTimer(this->WindowId, platformTimerId);
@@ -391,7 +404,7 @@ int vtkWin32RenderWindowInteractor::OnMouseMove(HWND hWnd, UINT nFlags, int X, i
   return this->InvokeEvent(vtkCommand::MouseMoveEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnNCMouseMove(HWND, UINT nFlags, int X, int Y)
 {
   if (!this->Enabled || !this->MouseInWindow)
@@ -407,7 +420,7 @@ int vtkWin32RenderWindowInteractor::OnNCMouseMove(HWND, UINT nFlags, int X, int 
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnMouseWheelForward(HWND, UINT nFlags, int X, int Y)
 {
   if (!this->Enabled)
@@ -419,7 +432,7 @@ int vtkWin32RenderWindowInteractor::OnMouseWheelForward(HWND, UINT nFlags, int X
   return this->InvokeEvent(vtkCommand::MouseWheelForwardEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnMouseWheelBackward(HWND, UINT nFlags, int X, int Y)
 {
   if (!this->Enabled)
@@ -431,7 +444,7 @@ int vtkWin32RenderWindowInteractor::OnMouseWheelBackward(HWND, UINT nFlags, int 
   return this->InvokeEvent(vtkCommand::MouseWheelBackwardEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnLButtonDown(HWND wnd, UINT nFlags, int X, int Y, int repeat)
 {
   if (!this->Enabled)
@@ -452,7 +465,7 @@ int vtkWin32RenderWindowInteractor::OnLButtonDown(HWND wnd, UINT nFlags, int X, 
   return this->InvokeEvent(vtkCommand::LeftButtonPressEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnLButtonUp(HWND, UINT nFlags, int X, int Y)
 {
   if (!this->Enabled)
@@ -471,7 +484,7 @@ int vtkWin32RenderWindowInteractor::OnLButtonUp(HWND, UINT nFlags, int X, int Y)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnMButtonDown(HWND wnd, UINT nFlags, int X, int Y, int repeat)
 {
   if (!this->Enabled)
@@ -485,7 +498,7 @@ int vtkWin32RenderWindowInteractor::OnMButtonDown(HWND wnd, UINT nFlags, int X, 
   return this->InvokeEvent(vtkCommand::MiddleButtonPressEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnMButtonUp(HWND, UINT nFlags, int X, int Y)
 {
   if (!this->Enabled)
@@ -499,7 +512,7 @@ int vtkWin32RenderWindowInteractor::OnMButtonUp(HWND, UINT nFlags, int X, int Y)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnRButtonDown(HWND wnd, UINT nFlags, int X, int Y, int repeat)
 {
   if (!this->Enabled)
@@ -513,7 +526,7 @@ int vtkWin32RenderWindowInteractor::OnRButtonDown(HWND wnd, UINT nFlags, int X, 
   return this->InvokeEvent(vtkCommand::RightButtonPressEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnRButtonUp(HWND, UINT nFlags, int X, int Y)
 {
   if (!this->Enabled)
@@ -527,7 +540,7 @@ int vtkWin32RenderWindowInteractor::OnRButtonUp(HWND, UINT nFlags, int X, int Y)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnSize(HWND, UINT, int X, int Y)
 {
   this->UpdateSize(X, Y);
@@ -538,7 +551,7 @@ int vtkWin32RenderWindowInteractor::OnSize(HWND, UINT, int X, int Y)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnTimer(HWND, UINT timerId)
 {
   if (!this->Enabled)
@@ -557,7 +570,7 @@ int vtkWin32RenderWindowInteractor::OnTimer(HWND, UINT timerId)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnKeyDown(HWND, UINT vCode, UINT nRepCnt, UINT nFlags)
 {
   if (!this->Enabled)
@@ -592,7 +605,7 @@ int vtkWin32RenderWindowInteractor::OnKeyDown(HWND, UINT vCode, UINT nRepCnt, UI
   return this->InvokeEvent(vtkCommand::KeyPressEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnKeyUp(HWND, UINT vCode, UINT nRepCnt, UINT nFlags)
 {
   if (!this->Enabled)
@@ -627,7 +640,7 @@ int vtkWin32RenderWindowInteractor::OnKeyUp(HWND, UINT vCode, UINT nRepCnt, UINT
   return this->InvokeEvent(vtkCommand::KeyReleaseEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnChar(HWND, UINT nChar, UINT nRepCnt, UINT)
 {
   if (!this->Enabled)
@@ -642,7 +655,7 @@ int vtkWin32RenderWindowInteractor::OnChar(HWND, UINT nChar, UINT nRepCnt, UINT)
   return this->InvokeEvent(vtkCommand::CharEvent, nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnFocus(HWND, UINT)
 {
   if (!this->Enabled)
@@ -661,7 +674,7 @@ int vtkWin32RenderWindowInteractor::OnFocus(HWND, UINT)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnKillFocus(HWND, UINT)
 {
   if (!this->Enabled)
@@ -679,7 +692,7 @@ int vtkWin32RenderWindowInteractor::OnKillFocus(HWND, UINT)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnTouch(HWND hWnd, UINT wParam, UINT lParam)
 {
   if (!this->Enabled)
@@ -754,7 +767,7 @@ int vtkWin32RenderWindowInteractor::OnTouch(HWND hWnd, UINT wParam, UINT lParam)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWin32RenderWindowInteractor::OnDropFiles(HWND, WPARAM wParam)
 {
   if (!this->Enabled)
@@ -776,7 +789,7 @@ int vtkWin32RenderWindowInteractor::OnDropFiles(HWND, WPARAM wParam)
     this->InvokeEvent(vtkCommand::UpdateDropLocationEvent, location);
   }
 
-  UINT cFiles = DragQueryFile(hdrop, 0xFFFFFFFF, nullptr, 0);
+  UINT cFiles = DragQueryFileW(hdrop, 0xFFFFFFFF, nullptr, 0);
 
   if (cFiles > 0)
   {
@@ -785,17 +798,11 @@ int vtkWin32RenderWindowInteractor::OnDropFiles(HWND, WPARAM wParam)
 
     for (UINT i = 0; i < cFiles; i++)
     {
-      TCHAR file[MAX_PATH];
-      UINT cch = DragQueryFile(hdrop, i, file, MAX_PATH);
+      wchar_t file[MAX_PATH];
+      UINT cch = DragQueryFileW(hdrop, i, file, MAX_PATH);
       if (cch > 0 && cch < MAX_PATH)
       {
-#ifdef UNICODE
-        char cFile[MAX_PATH];
-        wcstombs(cFile, file, cch);
-        filePaths->InsertNextValue(cFile);
-#else
-        filePaths->InsertNextValue(file);
-#endif
+        filePaths->InsertNextValue(vtksys::Encoding::ToNarrow(file));
         ret = 1;
       }
     }
@@ -805,7 +812,7 @@ int vtkWin32RenderWindowInteractor::OnDropFiles(HWND, WPARAM wParam)
   return ret;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is only called when InstallMessageProc is true
 LRESULT CALLBACK vtkHandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -834,7 +841,7 @@ LRESULT CALLBACK vtkHandleMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 #define MAKEPOINTS(l) (*((POINTS FAR*)&(l)))
 #endif
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 LRESULT CALLBACK vtkHandleMessage2(
   HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, vtkWin32RenderWindowInteractor* me)
 {
@@ -988,7 +995,7 @@ LRESULT CALLBACK vtkHandleMessage2(
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the default function to be called when an interactor needs to exit.
 // This callback is overridden by an instance ExitMethod that is defined.
 void vtkWin32RenderWindowInteractor::SetClassExitMethod(void (*f)(void*), void* arg)
@@ -1010,7 +1017,7 @@ void vtkWin32RenderWindowInteractor::SetClassExitMethod(void (*f)(void*), void* 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Set the arg delete method.  This is used to free user memory.
 void vtkWin32RenderWindowInteractor::SetClassExitMethodArgDelete(void (*f)(void*))
 {
@@ -1022,7 +1029,7 @@ void vtkWin32RenderWindowInteractor::SetClassExitMethodArgDelete(void (*f)(void*
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32RenderWindowInteractor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1030,7 +1037,7 @@ void vtkWin32RenderWindowInteractor::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "StartedMessageLoop: " << this->StartedMessageLoop << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32RenderWindowInteractor::ExitCallback()
 {
   if (this->HasObserver(vtkCommand::ExitEvent))

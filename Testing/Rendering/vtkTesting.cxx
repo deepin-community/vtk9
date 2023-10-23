@@ -35,7 +35,6 @@
 #include "vtkRenderWindowInteractor.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkTimerLog.h"
-#include "vtkToolkits.h"
 #include "vtkWindowToImageFilter.h"
 
 #include <sstream>
@@ -47,7 +46,7 @@ vtkCxxSetObjectMacro(vtkTesting, RenderWindow, vtkRenderWindow);
 using std::string;
 using std::vector;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Find in command tail, failing that find in environment,
 // failing that return a default.
 // Up to caller to delete the string returned.
@@ -86,7 +85,7 @@ static string vtkTestingGetArgOrEnvOrDefault(
   return argValue;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Sum the L2 Norm point wise over all tuples. Each term
 // is scaled by the magnitude of one of the inputs.
@@ -138,7 +137,7 @@ vtkTesting::vtkTesting()
   this->StartWallTime = vtkTimerLog::GetUniversalTime();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTesting::~vtkTesting()
 {
   this->SetRenderWindow(nullptr);
@@ -147,31 +146,31 @@ vtkTesting::~vtkTesting()
   this->SetTempDirectory(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTesting::AddArgument(const char* arg)
 {
-  this->Args.push_back(arg);
+  this->Args.emplace_back(arg);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTesting::AddArguments(int argc, const char** argv)
 {
   for (int i = 0; i < argc; ++i)
   {
-    this->Args.push_back(argv[i]);
+    this->Args.emplace_back(argv[i]);
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTesting::AddArguments(int argc, char** argv)
 {
   for (int i = 0; i < argc; ++i)
   {
-    this->Args.push_back(argv[i]);
+    this->Args.emplace_back(argv[i]);
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkTesting::GetArgument(const char* argName)
 {
   string argValue = vtkTestingGetArgOrEnvOrDefault(argName, this->Args, "", "");
@@ -181,12 +180,12 @@ char* vtkTesting::GetArgument(const char* argName)
 
   return cArgValue;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTesting::CleanArguments()
 {
   this->Args.erase(this->Args.begin(), this->Args.end());
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkTesting::GetDataRoot()
 {
 #ifdef VTK_DATA_ROOT
@@ -199,7 +198,7 @@ const char* vtkTesting::GetDataRoot()
 
   return this->DataRoot;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkTesting::GetTempDirectory()
 {
   string td =
@@ -208,7 +207,7 @@ const char* vtkTesting::GetTempDirectory()
 
   return this->TempDirectory;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkTesting::GetValidImageFileName()
 {
   this->SetValidImageFileName(nullptr);
@@ -247,7 +246,7 @@ const char* vtkTesting::GetValidImageFileName()
 
   return this->ValidImageFileName;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::IsInteractiveModeSpecified()
 {
   for (size_t i = 0; i < this->Args.size(); ++i)
@@ -259,7 +258,7 @@ int vtkTesting::IsInteractiveModeSpecified()
   }
   return 0;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::IsFlagSpecified(const char* flag)
 {
   for (size_t i = 0; i < this->Args.size(); ++i)
@@ -271,7 +270,7 @@ int vtkTesting::IsFlagSpecified(const char* flag)
   }
   return 0;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::IsValidImageSpecified()
 {
   for (size_t i = 1; i < this->Args.size(); ++i)
@@ -283,7 +282,7 @@ int vtkTesting::IsValidImageSpecified()
   }
   return 0;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkTesting::IncrementFileName(const char* fname, int count)
 {
   char counts[256];
@@ -308,7 +307,7 @@ char* vtkTesting::IncrementFileName(const char* fname, int count)
 
   return newFileName;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::LookForFile(const char* newFileName)
 {
   if (!newFileName)
@@ -326,14 +325,14 @@ int vtkTesting::LookForFile(const char* newFileName)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTesting::SetFrontBuffer(vtkTypeBool frontBuffer)
 {
   vtkWarningMacro("SetFrontBuffer method is deprecated and has no effet anymore.");
   this->FrontBuffer = frontBuffer;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::RegressionTest(vtkAlgorithm* imageSource, double thresh)
 {
   int result = this->RegressionTest(imageSource, thresh, cout);
@@ -347,7 +346,7 @@ int vtkTesting::RegressionTest(vtkAlgorithm* imageSource, double thresh)
 
   return result;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::RegressionTestAndCaptureOutput(double thresh, ostream& os)
 {
   int result = this->RegressionTest(thresh, os);
@@ -361,13 +360,13 @@ int vtkTesting::RegressionTestAndCaptureOutput(double thresh, ostream& os)
 
   return result;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::RegressionTest(double thresh)
 {
   int result = this->RegressionTestAndCaptureOutput(thresh, cout);
   return result;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::RegressionTest(double thresh, ostream& os)
 {
   vtkNew<vtkWindowToImageFilter> rtW2if;
@@ -429,12 +428,12 @@ int vtkTesting::RegressionTest(double thresh, ostream& os)
   }
   return res;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::RegressionTest(const string& pngFileName, double thresh)
 {
   return this->RegressionTest(pngFileName, thresh, cout);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::RegressionTest(const string& pngFileName, double thresh, ostream& os)
 {
   vtkNew<vtkPNGReader> inputReader;
@@ -456,7 +455,7 @@ int vtkTesting::RegressionTest(const string& pngFileName, double thresh, ostream
 
   return this->RegressionTest(src, thresh, os);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::RegressionTest(vtkAlgorithm* imageSource, double thresh, ostream& os)
 {
   // do a get to compute the real value
@@ -770,7 +769,7 @@ int vtkTesting::RegressionTest(vtkAlgorithm* imageSource, double thresh, ostream
 
   return FAILED;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::Test(int argc, char* argv[], vtkRenderWindow* rw, double thresh)
 {
   vtkNew<vtkTesting> testing;
@@ -792,7 +791,7 @@ int vtkTesting::Test(int argc, char* argv[], vtkRenderWindow* rw, double thresh)
   }
   return NOT_RUN;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::CompareAverageOfL2Norm(vtkDataArray* daA, vtkDataArray* daB, double tol)
 {
   int typeA = daA->GetDataType();
@@ -867,7 +866,7 @@ int vtkTesting::CompareAverageOfL2Norm(vtkDataArray* daA, vtkDataArray* daB, dou
   // Test passed
   return 1;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::CompareAverageOfL2Norm(vtkDataSet* dsA, vtkDataSet* dsB, double tol)
 {
   vtkDataArray* daA = nullptr;
@@ -923,7 +922,7 @@ int vtkTesting::CompareAverageOfL2Norm(vtkDataSet* dsA, vtkDataSet* dsB, double 
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTesting::InteractorEventLoop(
   int argc, char* argv[], vtkRenderWindowInteractor* iren, const char* playbackStream)
 {
@@ -987,7 +986,7 @@ int vtkTesting::InteractorEventLoop(
   return EXIT_SUCCESS;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTesting::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

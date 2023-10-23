@@ -32,7 +32,7 @@ class vtkImageEllipsoidSource;
 class VTKIMAGINGMORPHOLOGICAL_EXPORT vtkImageContinuousErode3D : public vtkImageSpatialAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Construct an instance of vtkImageContinuousErode3D filter.
    * By default zero values are eroded.
@@ -40,7 +40,7 @@ public:
   static vtkImageContinuousErode3D* New();
   vtkTypeMacro(vtkImageContinuousErode3D, vtkImageSpatialAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * This method sets the size of the neighborhood.  It also sets the
@@ -56,7 +56,7 @@ protected:
 
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData,
-    int extent[6], int id) override;
+    int outExt[6], int id) override;
   int RequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
 

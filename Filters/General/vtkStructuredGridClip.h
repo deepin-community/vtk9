@@ -41,7 +41,7 @@ public:
   vtkTypeMacro(vtkStructuredGridClip, vtkStructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * The whole extent of the output has to be set explicitly.
    */
@@ -49,11 +49,11 @@ public:
   void SetOutputWholeExtent(int minX, int maxX, int minY, int maxY, int minZ, int maxZ);
   void GetOutputWholeExtent(int extent[6]);
   int* GetOutputWholeExtent() { return this->OutputWholeExtent; }
-  //@}
+  ///@}
 
   void ResetOutputWholeExtent();
 
-  //@{
+  ///@{
   /**
    * By default, ClipData is off, and only the WholeExtent is modified.
    * the data's extent may actually be larger.  When this flag is on,
@@ -62,11 +62,11 @@ public:
   vtkSetMacro(ClipData, vtkTypeBool);
   vtkGetMacro(ClipData, vtkTypeBool);
   vtkBooleanMacro(ClipData, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkStructuredGridClip();
-  ~vtkStructuredGridClip() override {}
+  ~vtkStructuredGridClip() override = default;
 
   // Time when OutputImageExtent was computed.
   vtkTimeStamp CTime;

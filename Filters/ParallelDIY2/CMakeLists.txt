@@ -9,8 +9,11 @@ set(classes
   vtkAdaptiveResampleToImage
   vtkExtractSubsetWithSeed
   vtkGenerateGlobalIds
+  vtkGhostCellsGenerator
+  vtkOverlappingCellsDetector
   vtkPResampleToImage
   vtkPResampleWithDataSet
+  vtkProbeLineFilter
   vtkRedistributeDataSetFilter)
 
 if (TARGET VTK::ParallelMPI)

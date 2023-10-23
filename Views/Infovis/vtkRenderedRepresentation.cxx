@@ -18,6 +18,9 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkRenderedRepresentation.h"
 
 #include "vtkIdTypeArray.h"
@@ -39,8 +42,8 @@ class vtkRenderedRepresentation::Internals
 public:
   // Convenience vectors for storing props to add/remove until the next render,
   // where they are added/removed by PrepareForRendering().
-  std::vector<vtkSmartPointer<vtkProp> > PropsToAdd;
-  std::vector<vtkSmartPointer<vtkProp> > PropsToRemove;
+  std::vector<vtkSmartPointer<vtkProp>> PropsToAdd;
+  std::vector<vtkSmartPointer<vtkProp>> PropsToRemove;
 };
 
 vtkRenderedRepresentation::vtkRenderedRepresentation()
@@ -56,12 +59,12 @@ vtkRenderedRepresentation::~vtkRenderedRepresentation()
 
 void vtkRenderedRepresentation::AddPropOnNextRender(vtkProp* p)
 {
-  this->Implementation->PropsToAdd.push_back(p);
+  this->Implementation->PropsToAdd.emplace_back(p);
 }
 
 void vtkRenderedRepresentation::RemovePropOnNextRender(vtkProp* p)
 {
-  this->Implementation->PropsToRemove.push_back(p);
+  this->Implementation->PropsToRemove.emplace_back(p);
 }
 
 void vtkRenderedRepresentation::PrepareForRendering(vtkRenderView* view)
@@ -81,8 +84,7 @@ void vtkRenderedRepresentation::PrepareForRendering(vtkRenderView* view)
   this->Implementation->PropsToRemove.clear();
 }
 
-vtkUnicodeString vtkRenderedRepresentation::GetHoverText(
-  vtkView* view, vtkProp* prop, vtkIdType cell)
+std::string vtkRenderedRepresentation::GetHoverString(vtkView* view, vtkProp* prop, vtkIdType cell)
 {
   vtkSmartPointer<vtkSelection> cellSelect = vtkSmartPointer<vtkSelection>::New();
   vtkSmartPointer<vtkSelectionNode> cellNode = vtkSmartPointer<vtkSelectionNode>::New();
@@ -94,7 +96,7 @@ vtkUnicodeString vtkRenderedRepresentation::GetHoverText(
   cellNode->SetSelectionList(idArr);
   cellSelect->AddNode(cellNode);
   vtkSelection* converted = this->ConvertSelection(view, cellSelect);
-  vtkUnicodeString text = this->GetHoverTextInternal(converted);
+  std::string text = this->GetHoverStringInternal(converted);
   if (converted != cellSelect)
   {
     converted->Delete();
@@ -102,8 +104,19 @@ vtkUnicodeString vtkRenderedRepresentation::GetHoverText(
   return text;
 }
 
+vtkUnicodeString vtkRenderedRepresentation::GetHoverText(
+  vtkView* view, vtkProp* prop, vtkIdType cell)
+{
+  return vtkUnicodeString::from_utf8(GetHoverString(view, prop, cell));
+}
+
 void vtkRenderedRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "LabelRenderMode: " << this->LabelRenderMode << endl;
+}
+
+vtkUnicodeString vtkRenderedRepresentation::GetHoverTextInternal(vtkSelection* selection)
+{
+  return vtkUnicodeString::from_utf8(GetHoverStringInternal(selection));
 }

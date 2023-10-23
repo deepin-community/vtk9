@@ -12,6 +12,10 @@ the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkPTemporalStreamTracer.h"
 #include "vtkTemporalStreamTracer.h"
 
@@ -45,28 +49,27 @@ PURPOSE.  See the above copyright notice for more information.
 #include "vtkRungeKutta45.h"
 #include "vtkSmartPointer.h"
 #include "vtkTemporalInterpolatedVelocityField.h"
-#include "vtkToolkits.h"
 #include <cassert>
 
 using namespace vtkTemporalStreamTracerNamespace;
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkPTemporalStreamTracer);
 vtkCxxSetObjectMacro(vtkPTemporalStreamTracer, Controller, vtkMultiProcessController);
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPTemporalStreamTracer::vtkPTemporalStreamTracer()
 {
   this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
   VTK_LEGACY_BODY(vtkPTemporalStreamTracer::vtkPTemporalStreamTracer, "VTK 9.0");
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPTemporalStreamTracer::~vtkPTemporalStreamTracer()
 {
   this->SetController(nullptr);
   this->SetParticleWriter(nullptr);
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPTemporalStreamTracer::AssignSeedsToProcessors(vtkDataSet* source, int sourceID, int ptId,
   ParticleVector& LocalSeedPoints, int& LocalAssignedCount)
 {
@@ -144,7 +147,7 @@ void vtkPTemporalStreamTracer::AssignSeedsToProcessors(vtkDataSet* source, int s
     vtkDebugMacro(<< "Total Assigned to all processes " << TotalAssigned);
   }
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPTemporalStreamTracer::AssignUniqueIds(
   vtkTemporalStreamTracerNamespace::ParticleVector& LocalSeedPoints)
 {
@@ -158,7 +161,7 @@ void vtkPTemporalStreamTracer::AssignUniqueIds(
   if (this->UpdateNumPieces > 1)
   {
     vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-    if (com == 0)
+    if (com == nullptr)
     {
       vtkErrorMacro("MPICommunicator needed for this operation.");
       return;
@@ -194,12 +197,12 @@ void vtkPTemporalStreamTracer::AssignUniqueIds(
     this->UniqueIdCounter += numParticles;
   }
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPTemporalStreamTracer::TransmitReceiveParticles(
   ParticleVector& sending, ParticleVector& received, bool removeself)
 {
   vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-  if (com == 0)
+  if (com == nullptr)
   {
     vtkErrorMacro("MPICommunicator needed for this operation.");
     return;
@@ -229,7 +232,7 @@ void vtkPTemporalStreamTracer::TransmitReceiveParticles(
   if (TotalParticles == 0)
     return;
   // Gather the data from all procs.
-  char* sendbuf = (char*)((sending.size() > 0) ? &(sending[0]) : nullptr);
+  char* sendbuf = (char*)(!sending.empty() ? &(sending[0]) : nullptr);
   char* recvbuf = (char*)(&(received[0]));
   com->AllGatherV(sendbuf, recvbuf, OurParticles * TypeSize, &recvLengths[0], &recvOffsets[0]);
   // Now all particles from all processors are in one big array
@@ -243,7 +246,7 @@ void vtkPTemporalStreamTracer::TransmitReceiveParticles(
     received.erase(first, last);
   }
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPTemporalStreamTracer::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -256,14 +259,14 @@ int vtkPTemporalStreamTracer::RequestData(
 
   return rvalue;
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPTemporalStreamTracer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
   os << indent << "Controller: " << this->Controller << endl;
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPTemporalStreamTracer::AddParticleToMPISendList(ParticleInformation& info)
 {
   double eps = (this->CurrentTimeSteps[1] - this->CurrentTimeSteps[0]) / 100;

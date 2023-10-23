@@ -34,14 +34,15 @@
 #include "vtkmetaio/metaObject.h"
 #include "vtkmetaio/metaTypes.h"
 #include "vtkmetaio/metaUtils.h"
+#include <cmath>
 #include <string>
 
 #include <sys/stat.h>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkMetaImageReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMetaImageReader::vtkMetaImageReader()
 {
   GantryAngle = 0;
@@ -65,13 +66,13 @@ vtkMetaImageReader::vtkMetaImageReader()
   this->FileLowerLeft = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMetaImageReader::~vtkMetaImageReader()
 {
   delete this->MetaImagePtr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMetaImageReader::ExecuteInformation()
 {
   if (!this->FileName)
@@ -254,7 +255,7 @@ int vtkMetaImageReader::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMetaImageReader::CanReadFile(const char* fname)
 {
 
@@ -350,13 +351,13 @@ int vtkMetaImageReader::CanReadFile(const char* fname)
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMetaImageReader::GetDataByteOrder()
 {
   return vtkmetaio::MET_SystemByteOrderMSB();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMetaImageReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

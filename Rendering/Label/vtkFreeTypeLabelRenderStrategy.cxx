@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkFreeTypeLabelRenderStrategy.h"
 
 #include "vtkActor2D.h"
@@ -26,7 +30,7 @@
 
 vtkStandardNewMacro(vtkFreeTypeLabelRenderStrategy);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFreeTypeLabelRenderStrategy::vtkFreeTypeLabelRenderStrategy()
 {
   this->TextRenderer = vtkTextRenderer::GetInstance();
@@ -35,7 +39,7 @@ vtkFreeTypeLabelRenderStrategy::vtkFreeTypeLabelRenderStrategy()
   this->Actor->SetMapper(this->Mapper);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFreeTypeLabelRenderStrategy::~vtkFreeTypeLabelRenderStrategy()
 {
   this->Mapper->Delete();
@@ -49,7 +53,7 @@ void vtkFreeTypeLabelRenderStrategy::ReleaseGraphicsResources(vtkWindow* window)
 
 // double compute_bounds_time1 = 0;
 // int compute_bounds_iter1 = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFreeTypeLabelRenderStrategy::ComputeLabelBounds(
   vtkTextProperty* tprop, vtkUnicodeString label, double bds[4])
 {
@@ -138,7 +142,7 @@ void vtkFreeTypeLabelRenderStrategy::ComputeLabelBounds(
 
 // double render_label_time1 = 0;
 // int render_label_iter1 = 0;
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFreeTypeLabelRenderStrategy::RenderLabel(
   int x[2], vtkTextProperty* tprop, vtkUnicodeString label)
 {
@@ -168,7 +172,7 @@ void vtkFreeTypeLabelRenderStrategy::RenderLabel(
   //  }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFreeTypeLabelRenderStrategy::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

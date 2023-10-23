@@ -35,7 +35,7 @@
 
 vtkStandardNewMacro(vtkSimpleMotionBlurPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSimpleMotionBlurPass::vtkSimpleMotionBlurPass()
 {
   this->SubFrames = 30;
@@ -52,7 +52,7 @@ vtkSimpleMotionBlurPass::vtkSimpleMotionBlurPass()
   this->ColorFormat = vtkTextureObject::Fixed8;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSimpleMotionBlurPass::~vtkSimpleMotionBlurPass()
 {
   if (this->FrameBufferObject != nullptr)
@@ -81,7 +81,7 @@ vtkSimpleMotionBlurPass::~vtkSimpleMotionBlurPass()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSimpleMotionBlurPass::SetSubFrames(int subFrames)
 {
   if (this->SubFrames != subFrames)
@@ -97,14 +97,14 @@ void vtkSimpleMotionBlurPass::SetSubFrames(int subFrames)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSimpleMotionBlurPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   os << indent << "SubFrames: " << this->SubFrames << "\n";
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Perform rendering according to a render state \p s.
 // \pre s_exists: s!=0
@@ -267,13 +267,13 @@ void vtkSimpleMotionBlurPass::Render(const vtkRenderState* s)
 
   // now copy the result to the outer FO
   renWin->GetState()->PushReadFramebufferBinding();
-  this->FrameBufferObject->Bind(this->FrameBufferObject->GetReadMode());
+  this->FrameBufferObject->Bind(vtkOpenGLFramebufferObject::GetReadMode());
 
   ostate->vtkglViewport(
     this->ViewportX, this->ViewportY, this->ViewportWidth, this->ViewportHeight);
   ostate->vtkglScissor(this->ViewportX, this->ViewportY, this->ViewportWidth, this->ViewportHeight);
 
-  glBlitFramebuffer(0, 0, this->ViewportWidth, this->ViewportHeight, this->ViewportX,
+  ostate->vtkglBlitFramebuffer(0, 0, this->ViewportWidth, this->ViewportHeight, this->ViewportX,
     this->ViewportY, this->ViewportX + this->ViewportWidth, this->ViewportY + this->ViewportHeight,
     GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
@@ -282,7 +282,7 @@ void vtkSimpleMotionBlurPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release graphics resources and ask components to release their own
 // resources.

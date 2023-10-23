@@ -28,7 +28,7 @@
 
 vtkStandardNewMacro(vtkBoxWidget2);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoxWidget2::vtkBoxWidget2()
 {
   this->WidgetState = vtkBoxWidget2::Start;
@@ -67,26 +67,27 @@ vtkBoxWidget2::vtkBoxWidget2()
     vtkCommand::MouseMoveEvent, vtkWidgetEvent::Move, this, vtkBoxWidget2::MoveAction);
 
   {
-    vtkNew<vtkEventDataButton3D> ed;
-    ed->SetDevice(vtkEventDataDevice::RightController);
-    ed->SetInput(vtkEventDataDeviceInput::Trigger);
+    vtkNew<vtkEventDataDevice3D> ed;
+    ed->SetDevice(vtkEventDataDevice::Any);
+    ed->SetInput(vtkEventDataDeviceInput::Any);
     ed->SetAction(vtkEventDataAction::Press);
-    this->CallbackMapper->SetCallbackMethod(vtkCommand::Button3DEvent, ed.Get(),
+    this->CallbackMapper->SetCallbackMethod(vtkCommand::Select3DEvent, ed.Get(),
       vtkWidgetEvent::Select3D, this, vtkBoxWidget2::SelectAction3D);
   }
 
   {
-    vtkNew<vtkEventDataButton3D> ed;
-    ed->SetDevice(vtkEventDataDevice::RightController);
-    ed->SetInput(vtkEventDataDeviceInput::Trigger);
+    vtkNew<vtkEventDataDevice3D> ed;
+    ed->SetDevice(vtkEventDataDevice::Any);
+    ed->SetInput(vtkEventDataDeviceInput::Any);
     ed->SetAction(vtkEventDataAction::Release);
-    this->CallbackMapper->SetCallbackMethod(vtkCommand::Button3DEvent, ed.Get(),
+    this->CallbackMapper->SetCallbackMethod(vtkCommand::Select3DEvent, ed.Get(),
       vtkWidgetEvent::EndSelect3D, this, vtkBoxWidget2::EndSelectAction3D);
   }
 
   {
-    vtkNew<vtkEventDataMove3D> ed;
-    ed->SetDevice(vtkEventDataDevice::RightController);
+    vtkNew<vtkEventDataDevice3D> ed;
+    ed->SetDevice(vtkEventDataDevice::Any);
+    ed->SetInput(vtkEventDataDeviceInput::Any);
     this->CallbackMapper->SetCallbackMethod(
       vtkCommand::Move3DEvent, ed.Get(), vtkWidgetEvent::Move3D, this, vtkBoxWidget2::MoveAction3D);
   }
@@ -96,13 +97,13 @@ vtkBoxWidget2::vtkBoxWidget2()
   this->KeyEventCallbackCommand->SetCallback(vtkBoxWidget2::ProcessKeyEvents);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoxWidget2::~vtkBoxWidget2()
 {
   this->KeyEventCallbackCommand->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::SetEnabled(int enabling)
 {
   int enabled = this->Enabled;
@@ -141,7 +142,7 @@ void vtkBoxWidget2::SetEnabled(int enabling)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::SelectAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -210,7 +211,7 @@ void vtkBoxWidget2::SelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::SelectAction3D(vtkAbstractWidget* w)
 {
   vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
@@ -250,6 +251,15 @@ void vtkBoxWidget2::SelectAction3D(vtkAbstractWidget* w)
     return;
   }
 
+  // watch for motion events from this device
+  vtkEventData* edata = static_cast<vtkEventData*>(self->CallData);
+  vtkEventDataDevice3D* edd = edata->GetAsEventDataDevice3D();
+  if (!edd)
+  {
+    return;
+  }
+  self->LastDevice = static_cast<int>(edd->GetDevice());
+
   // We are definitely selected
   if (!self->Parent)
   {
@@ -265,7 +275,7 @@ void vtkBoxWidget2::SelectAction3D(vtkAbstractWidget* w)
   self->InvokeEvent(vtkCommand::StartInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::TranslateAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -312,7 +322,7 @@ void vtkBoxWidget2::TranslateAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::ScaleAction(vtkAbstractWidget* w)
 {
   // We are in a static method, cast to ourself
@@ -359,7 +369,7 @@ void vtkBoxWidget2::ScaleAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::MoveAction(vtkAbstractWidget* w)
 {
   vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
@@ -386,13 +396,26 @@ void vtkBoxWidget2::MoveAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::MoveAction3D(vtkAbstractWidget* w)
 {
   vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
 
   // See whether we're active
   if (self->WidgetState == vtkBoxWidget2::Start)
+  {
+    return;
+  }
+
+  // watch for motion events from this device
+  vtkEventData* edata = static_cast<vtkEventData*>(self->CallData);
+  vtkEventDataDevice3D* edd = edata->GetAsEventDataDevice3D();
+  if (!edd)
+  {
+    return;
+  }
+
+  if (!edd->DeviceMatches(static_cast<vtkEventDataDevice>(self->LastDevice)))
   {
     return;
   }
@@ -406,7 +429,7 @@ void vtkBoxWidget2::MoveAction3D(vtkAbstractWidget* w)
   self->InvokeEvent(vtkCommand::InteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::EndSelectAction(vtkAbstractWidget* w)
 {
   vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
@@ -427,7 +450,7 @@ void vtkBoxWidget2::EndSelectAction(vtkAbstractWidget* w)
   self->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::EndSelectAction3D(vtkAbstractWidget* w)
 {
   vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
@@ -453,7 +476,7 @@ void vtkBoxWidget2::EndSelectAction3D(vtkAbstractWidget* w)
   self->InvokeEvent(vtkCommand::EndInteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::StepAction3D(vtkAbstractWidget* w)
 {
   vtkBoxWidget2* self = reinterpret_cast<vtkBoxWidget2*>(w);
@@ -478,7 +501,7 @@ void vtkBoxWidget2::StepAction3D(vtkAbstractWidget* w)
   self->InvokeEvent(vtkCommand::InteractionEvent, nullptr);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::CreateDefaultRepresentation()
 {
   if (!this->WidgetRep)
@@ -487,7 +510,7 @@ void vtkBoxWidget2::CreateDefaultRepresentation()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::ProcessKeyEvents(vtkObject*, unsigned long event, void* clientdata, void*)
 {
   vtkBoxWidget2* self = static_cast<vtkBoxWidget2*>(clientdata);
@@ -534,7 +557,7 @@ void vtkBoxWidget2::ProcessKeyEvents(vtkObject*, unsigned long event, void* clie
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoxWidget2::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

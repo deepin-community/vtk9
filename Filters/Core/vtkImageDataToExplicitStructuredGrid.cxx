@@ -28,7 +28,13 @@
 
 vtkStandardNewMacro(vtkImageDataToExplicitStructuredGrid);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageDataToExplicitStructuredGrid::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 int vtkImageDataToExplicitStructuredGrid::RequestInformation(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -41,7 +47,7 @@ int vtkImageDataToExplicitStructuredGrid::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToExplicitStructuredGrid::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -108,7 +114,7 @@ int vtkImageDataToExplicitStructuredGrid::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageDataToExplicitStructuredGrid::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {

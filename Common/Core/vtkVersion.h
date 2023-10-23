@@ -36,6 +36,7 @@ class VTKCOMMONCORE_EXPORT vtkVersion : public vtkObject
 public:
   static vtkVersion* New();
   vtkTypeMacro(vtkVersion, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Return the version of vtk this object is a part of.
@@ -43,14 +44,15 @@ public:
    * with an identifier which timestamps a particular source tree.
    */
   static const char* GetVTKVersion() { return VTK_VERSION; }
+  static const char* GetVTKVersionFull();
   static int GetVTKMajorVersion() { return VTK_MAJOR_VERSION; }
   static int GetVTKMinorVersion() { return VTK_MINOR_VERSION; }
   static int GetVTKBuildVersion() { return VTK_BUILD_VERSION; }
   static const char* GetVTKSourceVersion() { return VTK_SOURCE_VERSION; }
 
 protected:
-  vtkVersion() {} // insure constructor/destructor protected
-  ~vtkVersion() override {}
+  vtkVersion() = default; // ensure constructor/destructor protected
+  ~vtkVersion() override = default;
 
 private:
   vtkVersion(const vtkVersion&) = delete;
@@ -63,5 +65,3 @@ extern "C"
 }
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkVersion.h

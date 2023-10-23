@@ -86,11 +86,11 @@ int TestSmartPointer(int, char*[])
   (void)da4;
   ia->Delete();
 
-  std::vector<vtkSmartPointer<vtkIntArray> > intarrays;
+  std::vector<vtkSmartPointer<vtkIntArray>> intarrays;
   { // local scope for vtkNew object
     vtkNew<vtkIntArray> vtknew;
     vtkSmartPointer<vtkIntArray> aa(vtknew);
-    intarrays.push_back(vtknew);
+    intarrays.emplace_back(vtknew);
   }
   if (intarrays[0]->GetReferenceCount() != 1)
   {
@@ -118,6 +118,7 @@ int TestSmartPointer(int, char*[])
     }
 
     vtkSmartPointer<vtkIntArray> intArrayMoved(std::move(intArrayCopy));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     if (intArrayCopy || !intArrayMoved || intArrayMoved->GetReferenceCount() != 2)
     {
       std::cerr << "Move constructing vtkSmartPointer yielded unexpected "
@@ -134,6 +135,7 @@ int TestSmartPointer(int, char*[])
     }
 
     vtkSmartPointer<vtkDataArray> dataArrayMoved(std::move(intArrayMoved));
+    // NOLINTNEXTLINE(bugprone-use-after-move)
     if (!dataArrayMoved || intArrayMoved || dataArrayMoved->GetReferenceCount() != 3)
     {
       std::cerr << "Cast move-constructing vtkSmartPointer failed.\n";

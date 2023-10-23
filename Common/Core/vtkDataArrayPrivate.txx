@@ -15,6 +15,8 @@
 #ifndef vtkDataArrayPrivate_txx
 #define vtkDataArrayPrivate_txx
 
+#ifndef VTK_GDA_TEMPLATE_EXTERN
+
 #include "vtkAssume.h"
 #include "vtkDataArray.h"
 #include "vtkDataArrayRange.h"
@@ -24,6 +26,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert> // for assert()
+#include <limits>
 #include <vector>
 
 namespace vtkDataArrayPrivate
@@ -103,9 +106,17 @@ class MinAndMax
 {
 protected:
   APIType ReducedRange[2 * NumComps];
-  vtkSMPThreadLocal<std::array<APIType, 2 * NumComps> > TLRange;
+  vtkSMPThreadLocal<std::array<APIType, 2 * NumComps>> TLRange;
 
 public:
+  MinAndMax()
+  {
+    for (int i = 0, j = 0; i < NumComps; ++i, j += 2)
+    {
+      this->ReducedRange[j] = vtkTypeTraits<APIType>::Max();
+      this->ReducedRange[j + 1] = vtkTypeTraits<APIType>::Min();
+    }
+  }
   void Initialize()
   {
     auto& range = this->TLRange.Local();
@@ -113,8 +124,6 @@ public:
     {
       range[j] = vtkTypeTraits<APIType>::Max();
       range[j + 1] = vtkTypeTraits<APIType>::Min();
-      this->ReducedRange[j] = vtkTypeTraits<APIType>::Max();
-      this->ReducedRange[j + 1] = vtkTypeTraits<APIType>::Min();
     }
   }
   void Reduce()
@@ -140,7 +149,7 @@ public:
   }
 };
 
-template <int NumComps, typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT> >
+template <int NumComps, typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT>>
 class AllValuesMinAndMax : public MinAndMax<APIType, NumComps>
 {
 private:
@@ -173,7 +182,7 @@ public:
   }
 };
 
-template <int NumComps, typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT> >
+template <int NumComps, typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT>>
 class FiniteMinAndMax : public MinAndMax<APIType, NumComps>
 {
 private:
@@ -209,7 +218,7 @@ public:
   }
 };
 
-template <typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT> >
+template <typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT>>
 class MagnitudeAllValuesMinAndMax : public MinAndMax<APIType, 1>
 {
 private:
@@ -251,7 +260,7 @@ public:
   }
 };
 
-template <typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT> >
+template <typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT>>
 class MagnitudeFiniteMinAndMax : public MinAndMax<APIType, 1>
 {
 private:
@@ -324,7 +333,7 @@ class GenericMinAndMax
 protected:
   ArrayT* Array;
   vtkIdType NumComps;
-  vtkSMPThreadLocal<std::vector<APIType> > TLRange;
+  vtkSMPThreadLocal<std::vector<APIType>> TLRange;
   std::vector<APIType> ReducedRange;
 
 public:
@@ -333,6 +342,11 @@ public:
     , NumComps(Array->GetNumberOfComponents())
     , ReducedRange(2 * NumComps)
   {
+    for (int i = 0, j = 0; i < this->NumComps; ++i, j += 2)
+    {
+      this->ReducedRange[j] = vtkTypeTraits<APIType>::Max();
+      this->ReducedRange[j + 1] = vtkTypeTraits<APIType>::Min();
+    }
   }
   void Initialize()
   {
@@ -342,8 +356,6 @@ public:
     {
       range[j] = vtkTypeTraits<APIType>::Max();
       range[j + 1] = vtkTypeTraits<APIType>::Min();
-      this->ReducedRange[j] = vtkTypeTraits<APIType>::Max();
-      this->ReducedRange[j + 1] = vtkTypeTraits<APIType>::Min();
     }
   }
   void Reduce()
@@ -369,7 +381,7 @@ public:
   }
 };
 
-template <typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT> >
+template <typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT>>
 class AllValuesGenericMinAndMax : public GenericMinAndMax<ArrayT, APIType>
 {
 private:
@@ -400,7 +412,7 @@ public:
   }
 };
 
-template <typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT> >
+template <typename ArrayT, typename APIType = typename vtk::GetAPIType<ArrayT>>
 class FiniteGenericMinAndMax : public GenericMinAndMax<ArrayT, APIType>
 {
 private:
@@ -564,5 +576,6 @@ bool DoComputeVectorRange(ArrayT* array, RangeValueType range[2], FiniteValues)
 }
 
 } // end namespace vtkDataArrayPrivate
+#endif // VTK_GDA_TEMPLATE_EXTERN
 #endif
 // VTK-HeaderTest-Exclude: vtkDataArrayPrivate.txx

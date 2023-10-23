@@ -45,7 +45,7 @@
 
 #define VTK_CREATE(type, var) vtkSmartPointer<type> var = vtkSmartPointer<type>::New()
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 class vtkTestMagnifyRenderManager : public vtkParallelRenderManager
 {
@@ -57,10 +57,10 @@ protected:
   vtkTestMagnifyRenderManager();
   ~vtkTestMagnifyRenderManager() override;
 
-  virtual void PreRenderProcessing() override;
-  virtual void PostRenderProcessing() override;
+  void PreRenderProcessing() override;
+  void PostRenderProcessing() override;
 
-  virtual void ReadReducedImage() override;
+  void ReadReducedImage() override;
 
   vtkImageMandelbrotSource* Mandelbrot;
 
@@ -107,8 +107,8 @@ void vtkTestMagnifyRenderManager::PostRenderProcessing()
   reducedImageViewport[1] = 0;
   reducedImageViewport[2] = this->ReducedImageSize[0] / 2;
   reducedImageViewport[3] = this->ReducedImageSize[1] / 2;
-  this->MagnifyImageNearest(this->FullImage, this->FullImageSize, this->ReducedImage,
-    this->ReducedImageSize, fullImageViewport, reducedImageViewport);
+  vtkTestMagnifyRenderManager::MagnifyImageNearest(this->FullImage, this->FullImageSize,
+    this->ReducedImage, this->ReducedImageSize, fullImageViewport, reducedImageViewport);
 
   fullImageViewport[0] = this->FullImageSize[0] / 2;
   fullImageViewport[1] = 0;
@@ -118,8 +118,8 @@ void vtkTestMagnifyRenderManager::PostRenderProcessing()
   reducedImageViewport[1] = 0;
   reducedImageViewport[2] = this->ReducedImageSize[0];
   reducedImageViewport[3] = this->ReducedImageSize[1] / 2;
-  this->MagnifyImageLinear(this->FullImage, this->FullImageSize, this->ReducedImage,
-    this->ReducedImageSize, fullImageViewport, reducedImageViewport);
+  vtkTestMagnifyRenderManager::MagnifyImageLinear(this->FullImage, this->FullImageSize,
+    this->ReducedImage, this->ReducedImageSize, fullImageViewport, reducedImageViewport);
 
   // Read in image as RGB.
   this->UseRGBA = 0;
@@ -134,8 +134,8 @@ void vtkTestMagnifyRenderManager::PostRenderProcessing()
   reducedImageViewport[1] = this->ReducedImageSize[1] / 2;
   reducedImageViewport[2] = this->ReducedImageSize[0] / 2;
   reducedImageViewport[3] = this->ReducedImageSize[1];
-  this->MagnifyImageNearest(this->FullImage, this->FullImageSize, this->ReducedImage,
-    this->ReducedImageSize, fullImageViewport, reducedImageViewport);
+  vtkTestMagnifyRenderManager::MagnifyImageNearest(this->FullImage, this->FullImageSize,
+    this->ReducedImage, this->ReducedImageSize, fullImageViewport, reducedImageViewport);
 
   fullImageViewport[0] = this->FullImageSize[0] / 2;
   fullImageViewport[1] = this->FullImageSize[1] / 2;
@@ -145,8 +145,8 @@ void vtkTestMagnifyRenderManager::PostRenderProcessing()
   reducedImageViewport[1] = this->ReducedImageSize[1] / 2;
   reducedImageViewport[2] = this->ReducedImageSize[0];
   reducedImageViewport[3] = this->ReducedImageSize[1];
-  this->MagnifyImageLinear(this->FullImage, this->FullImageSize, this->ReducedImage,
-    this->ReducedImageSize, fullImageViewport, reducedImageViewport);
+  vtkTestMagnifyRenderManager::MagnifyImageLinear(this->FullImage, this->FullImageSize,
+    this->ReducedImage, this->ReducedImageSize, fullImageViewport, reducedImageViewport);
 
   this->FullImageUpToDate = 1;
 
@@ -198,7 +198,7 @@ void vtkTestMagnifyRenderManager::ReadReducedImage()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int PrmMagnify(int argc, char* argv[])
 {

@@ -18,8 +18,15 @@ vtk_add_test_python(
   TestFitToHeightMapFilter.py
   TestFitToHeightMapFilter2.py
   TestImageMarchingCubes.py
+  TestImprintFilter.py
+  TestImprintFilter2.py
+  TestImprintFilter3.py
+  TestImprintFilter4.py
+  TestImprintFilter5.py
+  TestImprintFilter6.py
   TestOutlineFilter.py
   TestPointSampler.py
+  TestPointSampler2.py
   TestRibbonAndTube.py
   TestRuledSurface.py
   TestRuledSurface2.py

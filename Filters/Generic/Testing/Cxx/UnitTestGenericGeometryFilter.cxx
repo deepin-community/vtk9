@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkSmartPointer.h"
 
 #include "vtkBridgeDataSet.h"
@@ -29,7 +33,7 @@
 
 #include <sstream>
 
-static vtkSmartPointer<vtkBridgeDataSet> CreatePolyData(const int xres, const int yres);
+static vtkSmartPointer<vtkBridgeDataSet> CreatePolyData(int xres, int yres);
 static vtkSmartPointer<vtkBridgeDataSet> CreateVertexData();
 static vtkSmartPointer<vtkBridgeDataSet> CreateTetraData();
 
@@ -213,7 +217,7 @@ int UnitTestGenericGeometryFilter(int, char*[])
   return status;
 }
 
-vtkSmartPointer<vtkBridgeDataSet> CreatePolyData(const int xres, const int yres)
+vtkSmartPointer<vtkBridgeDataSet> CreatePolyData(int xres, int yres)
 {
   vtkSmartPointer<vtkPlaneSource> plane = vtkSmartPointer<vtkPlaneSource>::New();
   plane->SetXResolution(xres);

@@ -35,6 +35,7 @@ class VTKCOMMONCORE_EXPORT vtkOverrideInformationCollection : public vtkCollecti
 public:
   vtkTypeMacro(vtkOverrideInformationCollection, vtkCollection);
   static vtkOverrideInformationCollection* New();
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Add a OverrideInformation to the list.
@@ -56,8 +57,8 @@ public:
   }
 
 protected:
-  vtkOverrideInformationCollection() {}
-  ~vtkOverrideInformationCollection() override {}
+  vtkOverrideInformationCollection() = default;
+  ~vtkOverrideInformationCollection() override = default;
 
 private:
   // hide the standard AddItem from the user and the compiler.
@@ -79,4 +80,3 @@ inline vtkOverrideInformation* vtkOverrideInformationCollection::GetNextItem()
 }
 
 #endif
-// VTK-HeaderTest-Exclude: vtkOverrideInformationCollection.h

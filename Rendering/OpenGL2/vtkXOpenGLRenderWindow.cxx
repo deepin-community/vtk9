@@ -13,8 +13,11 @@
 
 =========================================================================*/
 
-#include "vtkXOpenGLRenderWindow.h"
+// Must be included first to avoid conflicts with X11's `Status` define.
+#include "vtksys/SystemTools.hxx"
+
 #include "vtkOpenGLRenderer.h"
+#include "vtkXOpenGLRenderWindow.h"
 
 #include "vtk_glew.h"
 // Define GLX_GLXEXT_LEGACY to prevent glx.h from including the glxext.h
@@ -47,6 +50,7 @@ typedef ptrdiff_t GLsizeiptr;
 
 #include "vtkCommand.h"
 #include "vtkIdList.h"
+#include "vtkImageData.h"
 #include "vtkNew.h"
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLShaderCache.h"
@@ -56,14 +60,25 @@ typedef ptrdiff_t GLsizeiptr;
 #include "vtkRenderWindowInteractor.h"
 #include "vtkRendererCollection.h"
 #include "vtkStringOutputWindow.h"
-#include "vtkToolkits.h"
-#include "vtksys/SystemTools.hxx"
 
 #include <sstream>
 
+#include <X11/Xatom.h>
+#include <X11/cursorfont.h>
+#if VTK_HAVE_XCURSOR
+#include <X11/Xcursor/Xcursor.h>
+#endif
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/cursorfont.h>
+
+/*
+ * Work-around to get forward declarations of C typedef of anonymous
+ * structs working. We do not want to include XUtil.h in the header as
+ * it populates the global namespace.
+ */
+struct vtkXVisualInfo : public XVisualInfo
+{
+};
 
 #define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB 0x2092
@@ -224,7 +239,7 @@ int XEventTypeEquals(Display*, XEvent* event, XPointer)
   return event->type == EventType;
 }
 
-XVisualInfo* vtkXOpenGLRenderWindow::GetDesiredVisualInfo()
+vtkXVisualInfo* vtkXOpenGLRenderWindow::GetDesiredVisualInfo()
 {
   XVisualInfo* v = nullptr;
 
@@ -258,7 +273,7 @@ XVisualInfo* vtkXOpenGLRenderWindow::GetDesiredVisualInfo()
       vtkErrorMacro(<< "Could not find a decent visual\n");
     }
   }
-  return (v);
+  return reinterpret_cast<vtkXVisualInfo*>(v);
 }
 
 vtkXOpenGLRenderWindow::vtkXOpenGLRenderWindow()
@@ -286,6 +301,7 @@ vtkXOpenGLRenderWindow::vtkXOpenGLRenderWindow()
   this->XCSizeSE = 0;
   this->XCSizeSW = 0;
   this->XCHand = 0;
+  this->XCCustom = 0;
 }
 
 // free up memory & close the window
@@ -431,8 +447,8 @@ void vtkXOpenGLRenderWindow::CreateAWindow()
     xsh.y = static_cast<int>(this->Position[1]);
   }
 
-  x = ((this->Position[0] >= 0) ? this->Position[0] : 5);
-  y = ((this->Position[1] >= 0) ? this->Position[1] : 5);
+  x = this->Position[0];
+  y = this->Position[1];
   width = ((this->Size[0] > 0) ? this->Size[0] : 300);
   height = ((this->Size[1] > 0) ? this->Size[1] : 300);
 
@@ -728,6 +744,10 @@ void vtkXOpenGLRenderWindow::DestroyWindow()
     {
       XFreeCursor(this->DisplayId, this->XCHand);
     }
+    if (this->XCCustom)
+    {
+      XFreeCursor(this->DisplayId, this->XCCustom);
+    }
   }
 
   this->XCCrosshair = 0;
@@ -740,6 +760,7 @@ void vtkXOpenGLRenderWindow::DestroyWindow()
   this->XCSizeSE = 0;
   this->XCSizeSW = 0;
   this->XCHand = 0;
+  this->XCCustom = 0;
 
   if (this->OwnContext && this->Internal->ContextId)
   {
@@ -784,7 +805,7 @@ void vtkXOpenGLRenderWindow::DestroyWindow()
 }
 
 // Initialize the window for rendering.
-void vtkXOpenGLRenderWindow::WindowInitialize(void)
+void vtkXOpenGLRenderWindow::WindowInitialize()
 {
   this->CreateAWindow();
 
@@ -802,7 +823,7 @@ void vtkXOpenGLRenderWindow::WindowInitialize(void)
 }
 
 // Initialize the rendering window.
-void vtkXOpenGLRenderWindow::Initialize(void)
+void vtkXOpenGLRenderWindow::Initialize()
 {
   if (!this->Internal->ContextId)
   {
@@ -811,7 +832,7 @@ void vtkXOpenGLRenderWindow::Initialize(void)
   }
 }
 
-void vtkXOpenGLRenderWindow::Finalize(void)
+void vtkXOpenGLRenderWindow::Finalize()
 {
   // clean and destroy window
   this->DestroyWindow();
@@ -915,7 +936,7 @@ void vtkXOpenGLRenderWindow::WindowRemap()
 }
 
 // Begin the rendering process.
-void vtkXOpenGLRenderWindow::Start(void)
+void vtkXOpenGLRenderWindow::Start()
 {
   this->Initialize();
 
@@ -1086,7 +1107,16 @@ void vtkXOpenGLRenderWindow::MakeCurrent()
   }
 }
 
-// ----------------------------------------------------------------------------
+void vtkXOpenGLRenderWindow::ReleaseCurrent()
+{
+  if (this->Internal->ContextId && (this->Internal->ContextId == glXGetCurrentContext()) &&
+    this->DisplayId)
+  {
+    glXMakeCurrent(this->DisplayId, None, nullptr);
+  }
+}
+
+//------------------------------------------------------------------------------
 // Description:
 // Tells if this window is the current OpenGL context for the calling thread.
 bool vtkXOpenGLRenderWindow::IsCurrent()
@@ -1196,7 +1226,7 @@ int* vtkXOpenGLRenderWindow::GetScreenSize()
 }
 
 // Get the position in screen coordinates (pixels) of the window.
-int* vtkXOpenGLRenderWindow::GetPosition(void)
+int* vtkXOpenGLRenderWindow::GetPosition()
 {
   XWindowAttributes attribs;
   int x, y;
@@ -1471,6 +1501,50 @@ void vtkXOpenGLRenderWindow::SetWindowName(const char* cname)
   delete[] name;
 }
 
+void vtkXOpenGLRenderWindow::SetIcon(vtkImageData* img)
+{
+  int dim[3];
+  img->GetDimensions(dim);
+
+  int nbComp = img->GetNumberOfScalarComponents();
+
+  if (img->GetScalarType() != VTK_UNSIGNED_CHAR || dim[2] != 1 || nbComp < 3 || nbComp > 4)
+  {
+    vtkErrorMacro(
+      "Icon image should be 2D, have 3 or 4 components, and its type must be unsigned char.");
+    return;
+  }
+
+  unsigned char* imgScalars = static_cast<unsigned char*>(img->GetScalarPointer());
+
+  std::vector<unsigned long> pixels(2 + dim[0] * dim[1]);
+  pixels[0] = dim[0];
+  pixels[1] = dim[1];
+
+  // Convert vtkImageData buffer to X icon.
+  // We need to flip Y and use ARGB 32-bits encoded convention
+  for (int col = 0; col < dim[1]; col++)
+  {
+    for (int line = 0; line < dim[0]; line++)
+    {
+      unsigned char* inPixel = imgScalars + nbComp * ((dim[0] - col - 1) * dim[1] + line); // flip Y
+      unsigned long* outPixel = pixels.data() + col * dim[1] + line + 2;
+      if (nbComp == 4)
+      {
+        *outPixel = nbComp == 4 ? inPixel[3] : 0xff;
+      }
+      *outPixel = (*outPixel << 8) + inPixel[0];
+      *outPixel = (*outPixel << 8) + inPixel[1];
+      *outPixel = (*outPixel << 8) + inPixel[2];
+    }
+  }
+
+  Atom iconAtom = XInternAtom(this->DisplayId, "_NET_WM_ICON", False);
+  Atom typeAtom = XInternAtom(this->DisplayId, "CARDINAL", False);
+  XChangeProperty(this->DisplayId, this->WindowId, iconAtom, typeAtom, 32, PropModeReplace,
+    reinterpret_cast<unsigned char*>(pixels.data()), pixels.size());
+}
+
 // Specify the X window id to use if a WindowRemap is done.
 void vtkXOpenGLRenderWindow::SetNextWindowId(Window arg)
 {
@@ -1519,7 +1593,7 @@ void vtkXOpenGLRenderWindow::Render()
   this->vtkOpenGLRenderWindow::Render();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXOpenGLRenderWindow::HideCursor()
 {
   static char blankBits[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1547,7 +1621,7 @@ void vtkXOpenGLRenderWindow::HideCursor()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXOpenGLRenderWindow::ShowCursor()
 {
   if (!this->DisplayId || !this->WindowId)
@@ -1656,6 +1730,26 @@ void vtkXOpenGLRenderWindow::SetCurrentCursor(int shape)
         this->XCHand = XCreateFontCursor(this->DisplayId, XC_hand1);
       }
       XDefineCursor(this->DisplayId, this->WindowId, this->XCHand);
+      break;
+    case VTK_CURSOR_CUSTOM:
+#if VTK_HAVE_XCURSOR
+      this->XCCustom = XcursorFilenameLoadCursor(this->DisplayId, this->GetCursorFileName());
+      if (!this->XCCustom)
+      {
+        vtkErrorMacro(<< "Failed to load cursor from Xcursor file: " << this->GetCursorFileName());
+        break;
+      }
+      XDefineCursor(this->DisplayId, this->WindowId, this->XCCustom);
+#else
+    {
+      static bool once = false;
+      if (!once)
+      {
+        once = true;
+        vtkWarningMacro("VTK built without Xcursor support; ignoring requests for custom cursors.");
+      }
+    }
+#endif
       break;
   }
 }

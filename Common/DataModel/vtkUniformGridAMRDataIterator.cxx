@@ -150,6 +150,7 @@ vtkInformation* vtkUniformGridAMRDataIterator::GetCurrentMetaData()
 
 unsigned int vtkUniformGridAMRDataIterator::GetCurrentFlatIndex()
 {
+  assert(!this->IsDoneWithTraversal());
   return this->Iter->GetFlatIndex();
 }
 
@@ -210,7 +211,7 @@ void vtkUniformGridAMRDataIterator::GoToNextItem()
   this->Iter->Next();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkUniformGridAMRDataIterator::IsDoneWithTraversal()
 {
   return (!this->Iter) || this->Iter->IsDone();

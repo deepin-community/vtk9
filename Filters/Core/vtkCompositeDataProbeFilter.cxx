@@ -20,6 +20,7 @@
 #include "vtkCompositeDataSet.h"
 #include "vtkDataArray.h"
 #include "vtkDataSet.h"
+#include "vtkFindCellStrategy.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkMath.h"
@@ -28,16 +29,16 @@
 #include "vtkSmartPointer.h"
 
 vtkStandardNewMacro(vtkCompositeDataProbeFilter);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataProbeFilter::vtkCompositeDataProbeFilter()
 {
   this->PassPartialArrays = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataProbeFilter::~vtkCompositeDataProbeFilter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataProbeFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   this->Superclass::FillInputPortInformation(port, info);
@@ -51,13 +52,13 @@ int vtkCompositeDataProbeFilter::FillInputPortInformation(int port, vtkInformati
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutive* vtkCompositeDataProbeFilter::CreateDefaultExecutive()
 {
   return vtkCompositeDataPipeline::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataProbeFilter::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -118,6 +119,16 @@ int vtkCompositeDataProbeFilter::RequestData(
         continue;
       }
 
+      auto strategyIt = this->StrategyMap.find(sourceDS);
+      if (strategyIt != this->StrategyMap.end())
+      {
+        this->SetFindCellStrategy(strategyIt->second);
+      }
+      else
+      {
+        this->SetFindCellStrategy(nullptr);
+      }
+
       this->DoProbing(input, idx, sourceDS, output);
       idx++;
     }
@@ -127,7 +138,7 @@ int vtkCompositeDataProbeFilter::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataProbeFilter::InitializeOutputArrays(vtkPointData* outPD, vtkIdType numPts)
 {
   if (!this->PassPartialArrays)
@@ -153,7 +164,7 @@ void vtkCompositeDataProbeFilter::InitializeOutputArrays(vtkPointData* outPD, vt
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataProbeFilter::BuildFieldList(vtkCompositeDataSet* source)
 {
   delete this->PointList;
@@ -232,7 +243,23 @@ int vtkCompositeDataProbeFilter::BuildFieldList(vtkCompositeDataSet* source)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkCompositeDataProbeFilter::SetFindCellStrategyMap(
+  const std::map<vtkDataSet*, vtkSmartPointer<vtkFindCellStrategy>>& map)
+{
+  for (const auto& keyVal : map)
+  {
+    auto it = this->StrategyMap.find(keyVal.first);
+    if (it == this->StrategyMap.end() || it->second.GetPointer() != keyVal.second.GetPointer())
+    {
+      this->StrategyMap = map;
+      this->Modified();
+      return;
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkCompositeDataProbeFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

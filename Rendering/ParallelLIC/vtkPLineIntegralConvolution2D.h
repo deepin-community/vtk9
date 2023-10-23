@@ -40,9 +40,9 @@ class VTKRENDERINGPARALLELLIC_EXPORT vtkPLineIntegralConvolution2D
 public:
   static vtkPLineIntegralConvolution2D* New();
   vtkTypeMacro(vtkPLineIntegralConvolution2D, vtkLineIntegralConvolution2D);
-  virtual void PrintSelf(ostream& os, vtkIndent indent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the communicator to use during parallel operation
    * The communicator will not be duplicated or reference
@@ -50,15 +50,15 @@ public:
    * hold/manage reference to the communicator during use
    * of the LIC object.
    */
-  virtual void SetCommunicator(vtkPainterCommunicator*) override;
-  virtual vtkPainterCommunicator* GetCommunicator() override;
-  //@}
+  void SetCommunicator(vtkPainterCommunicator*) override;
+  vtkPainterCommunicator* GetCommunicator() override;
+  ///@}
 
   /**
    * For parallel operation, find global min/max
    * min/max are in/out.
    */
-  virtual void GetGlobalMinMax(vtkPainterCommunicator* comm, float& min, float& max) override;
+  void GetGlobalMinMax(vtkPainterCommunicator* comm, float& min, float& max) override;
 
   /**
    * Methods used for parallel benchmarks. Use cmake to define
@@ -66,13 +66,13 @@ public:
    * During each update timing information is stored, it can
    * be written to disk by calling WriteLog.
    */
-  virtual void WriteTimerLog(const char* fileName) override;
+  void WriteTimerLog(VTK_FILEPATH const char* fileName) override;
 
 protected:
   vtkPLineIntegralConvolution2D();
   ~vtkPLineIntegralConvolution2D() override;
 
-  //@{
+  ///@{
   /**
    * Methods used for parallel benchmarks. Use cmake to define
    * vtkSurfaceLICPainterTIME to enable benchmarks. During each
@@ -80,9 +80,9 @@ protected:
    * disk by calling WriteLog. Note: Some of the timings are
    * enabled by the surface lic painter.
    */
-  virtual void StartTimerEvent(const char* name) override;
-  virtual void EndTimerEvent(const char* name) override;
-  //@}
+  void StartTimerEvent(const char* name) override;
+  void EndTimerEvent(const char* name) override;
+  ///@}
 
 private:
   std::string LogFileName;

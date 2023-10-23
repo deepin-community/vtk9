@@ -30,16 +30,21 @@
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static const char* PyVTKReference_Doc =
+  "reference(value:int) -> reference\n"
+  "reference(value:float) -> reference\n"
+  "reference(value:str) -> reference\n"
+  "reference(value:(int, ...)) -> reference\n"
+  "\n"
   "A simple container that acts as a reference to its contents.\n\n"
   "This wrapper class is needed when a VTK method returns a value\n"
   "in an argument that has been passed by reference.  By calling\n"
   "\"m = vtk.reference(a)\" on a value, you can create a proxy to\n"
   "that value.  The value can be changed by calling \"m.set(b)\".\n";
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // helper method: make sure than an object is usable
 static PyObject* PyVTKReference_CompatibleObject(PyObject* self, PyObject* opn)
 {
@@ -59,11 +64,7 @@ static PyObject* PyVTKReference_CompatibleObject(PyObject* self, PyObject* opn)
   // check if it is a string
   if (self == nullptr || Py_TYPE(self) == &PyVTKStringReference_Type)
   {
-    if (
-#ifdef Py_USING_UNICODE
-      PyUnicode_Check(opn) ||
-#endif
-      PyBytes_Check(opn))
+    if (PyUnicode_Check(opn) || PyBytes_Check(opn))
     {
       Py_INCREF(opn);
       return opn;
@@ -148,7 +149,7 @@ static PyObject* PyVTKReference_CompatibleObject(PyObject* self, PyObject* opn)
   return nullptr;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // methods from C
 
 PyObject* PyVTKReference_GetValue(PyObject* self)
@@ -188,7 +189,7 @@ int PyVTKReference_SetValue(PyObject* self, PyObject* val)
   return -1;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // methods from python
 
 static PyObject* PyVTKReference_Get(PyObject* self, PyObject* args)
@@ -240,11 +241,7 @@ static PyObject* PyVTKReference_Trunc(PyObject* self, PyObject* args)
         PyExc_TypeError, "type %.100s doesn't define __trunc__ method", Py_TYPE(ob)->tp_name);
       return nullptr;
     }
-#if PY_VERSION_HEX >= 0x03040000
     return PyObject_CallFunction(meth, "O", ob);
-#else
-    return PyObject_CallFunction(meth, const_cast<char*>("O"), ob);
-#endif
   }
 
   return nullptr;
@@ -265,19 +262,11 @@ static PyObject* PyVTKReference_Round(PyObject* self, PyObject* args)
         PyExc_TypeError, "type %.100s doesn't define __round__ method", Py_TYPE(ob)->tp_name);
       return nullptr;
     }
-#if PY_VERSION_HEX >= 0x03040000
     if (opn)
     {
       return PyObject_CallFunction(meth, "OO", ob, opn);
     }
     return PyObject_CallFunction(meth, "O", ob);
-#else
-    if (opn)
-    {
-      return PyObject_CallFunction(meth, const_cast<char*>("OO"), ob, opn);
-    }
-    return PyObject_CallFunction(meth, const_cast<char*>("O"), ob);
-#endif
   }
 
   return nullptr;
@@ -285,17 +274,17 @@ static PyObject* PyVTKReference_Round(PyObject* self, PyObject* args)
 #endif
 
 static PyMethodDef PyVTKReference_Methods[] = { { "get", PyVTKReference_Get, METH_VARARGS,
-                                                  "Get the stored value." },
-  { "set", PyVTKReference_Set, METH_VARARGS, "Set the stored value." },
+                                                  "get() -> object\n\nGet the stored value." },
+  { "set", PyVTKReference_Set, METH_VARARGS, "set(value:object) -> None\n\nSet the stored value." },
 #ifdef VTK_PY3K
   { "__trunc__", PyVTKReference_Trunc, METH_VARARGS,
-    "Returns the Integral closest to x between 0 and x." },
+    "__trunc__() -> int\n\nReturns the Integral closest to x between 0 and x." },
   { "__round__", PyVTKReference_Round, METH_VARARGS,
-    "Returns the Integral closest to x, rounding half toward even.\n" },
+    "__round__() -> int\n\nReturns the Integral closest to x, rounding half toward even.\n" },
 #endif
   { nullptr, nullptr, 0, nullptr } };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Macros used for defining protocol methods
 
 #define REFOBJECT_INTFUNC(prot, op)                                                                \
@@ -449,7 +438,7 @@ static PyMethodDef PyVTKReference_Methods[] = { { "get", PyVTKReference_Get, MET
     return 0;                                                                                      \
   }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Number protocol
 
 static int PyVTKReference_NonZero(PyObject* ob)
@@ -472,33 +461,13 @@ static int PyVTKReference_Coerce(PyObject** ob1, PyObject** ob2)
 static PyObject* PyVTKReference_Hex(PyObject* ob)
 {
   ob = ((PyVTKReference*)ob)->value;
-#if PY_VERSION_HEX >= 0x02060000
   return PyNumber_ToBase(ob, 16);
-#else
-  if (Py_TYPE(ob)->tp_as_number && Py_TYPE(ob)->tp_as_number->nb_hex)
-  {
-    return Py_TYPE(ob)->tp_as_number->nb_hex(ob);
-  }
-
-  PyErr_SetString(PyExc_TypeError, "hex() argument can't be converted to hex");
-  return nullptr;
-#endif
 }
 
 static PyObject* PyVTKReference_Oct(PyObject* ob)
 {
   ob = ((PyVTKReference*)ob)->value;
-#if PY_VERSION_HEX >= 0x02060000
   return PyNumber_ToBase(ob, 8);
-#else
-  if (Py_TYPE(ob)->tp_as_number && Py_TYPE(ob)->tp_as_number->nb_oct)
-  {
-    return Py_TYPE(ob)->tp_as_number->nb_oct(ob);
-  }
-
-  PyErr_SetString(PyExc_TypeError, "oct() argument can't be converted to oct");
-  return nullptr;
-#endif
 }
 #endif
 
@@ -549,7 +518,7 @@ REFOBJECT_INPLACEFUNC(Number, TrueDivide)
 
 REFOBJECT_UNARYFUNC(Number, Index)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static PyNumberMethods PyVTKReference_AsNumber = {
   PyVTKReference_Add,      // nb_add
   PyVTKReference_Subtract, // nb_subtract
@@ -607,7 +576,7 @@ static PyNumberMethods PyVTKReference_AsNumber = {
 #endif
 };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static PyNumberMethods PyVTKStringReference_AsNumber = {
   nullptr, // nb_add
   nullptr, // nb_subtract
@@ -665,7 +634,7 @@ static PyNumberMethods PyVTKStringReference_AsNumber = {
 #endif
 };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Sequence protocol
 
 REFOBJECT_SIZEFUNC(Sequence, Size)
@@ -677,7 +646,7 @@ REFOBJECT_SLICEFUNC(Sequence, GetSlice)
 #endif
 REFOBJECT_INTFUNC2(Sequence, Contains)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static PySequenceMethods PyVTKReference_AsSequence = {
   PyVTKReference_Size,    // sq_length
   PyVTKReference_Concat,  // sq_concat
@@ -695,7 +664,7 @@ static PySequenceMethods PyVTKReference_AsSequence = {
   nullptr,                 // sq_inplace_repeat
 };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Mapping protocol
 
 static PyObject* PyVTKReference_GetMapItem(PyObject* ob, PyObject* key)
@@ -704,14 +673,14 @@ static PyObject* PyVTKReference_GetMapItem(PyObject* ob, PyObject* key)
   return PyObject_GetItem(ob, key);
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static PyMappingMethods PyVTKReference_AsMapping = {
   PyVTKReference_Size,       // mp_length
   PyVTKReference_GetMapItem, // mp_subscript
   nullptr,                   // mp_ass_subscript
 };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Buffer protocol
 
 #ifndef VTK_PY3K
@@ -793,7 +762,6 @@ static Py_ssize_t PyVTKReference_GetCharBuf(PyObject* op, Py_ssize_t segment, ch
 }
 #endif
 
-#if PY_VERSION_HEX >= 0x02060000
 // new buffer protocol
 static int PyVTKReference_GetBuffer(PyObject* self, Py_buffer* view, int flags)
 {
@@ -805,7 +773,6 @@ static void PyVTKReference_ReleaseBuffer(PyObject*, Py_buffer* view)
 {
   PyBuffer_Release(view);
 }
-#endif
 
 static PyBufferProcs PyVTKReference_AsBuffer = {
 #ifndef VTK_PY3K
@@ -814,13 +781,11 @@ static PyBufferProcs PyVTKReference_AsBuffer = {
   PyVTKReference_GetSegCount, // bf_getsegcount
   PyVTKReference_GetCharBuf,  // bf_getcharbuffer
 #endif
-#if PY_VERSION_HEX >= 0x02060000
   PyVTKReference_GetBuffer,    // bf_getbuffer
   PyVTKReference_ReleaseBuffer // bf_releasebuffer
-#endif
 };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Object protocol
 
 static void PyVTKReference_Delete(PyObject* ob)
@@ -895,17 +860,11 @@ static PyObject* PyVTKReference_GetAttr(PyObject* self, PyObject* attr)
 #ifndef VTK_PY3K
   char* name = PyString_AsString(attr);
   int firstchar = name[0];
-#elif PY_VERSION_HEX >= 0x03030000
+#else
   int firstchar = '\0';
   if (PyUnicode_GetLength(attr) > 0)
   {
     firstchar = PyUnicode_ReadChar(attr, 0);
-  }
-#else
-  int firstchar = '\0';
-  if (PyUnicode_Check(attr) && PyUnicode_GetSize(attr) > 0)
-  {
-    firstchar = PyUnicode_AS_UNICODE(attr)[0];
   }
 #endif
   if (firstchar != '_')
@@ -946,11 +905,7 @@ static PyObject* PyVTKReference_New(PyTypeObject*, PyObject* args, PyObject* kwd
     if (o)
     {
       PyVTKReference* self;
-      if (
-#ifdef Py_USING_UNICODE
-        PyUnicode_Check(o) ||
-#endif
-        PyBytes_Check(o))
+      if (PyUnicode_Check(o) || PyBytes_Check(o))
       {
         self = PyObject_New(PyVTKReference, &PyVTKStringReference_Type);
       }
@@ -970,8 +925,12 @@ static PyObject* PyVTKReference_New(PyTypeObject*, PyObject* args, PyObject* kwd
   return nullptr;
 }
 
+#ifdef VTK_PYTHON_NEEDS_DEPRECATION_WARNING_SUPPRESSION
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 // clang-format off
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyTypeObject PyVTKReference_Type = {
   PyVarObject_HEAD_INIT(&PyType_Type, 0)
   "vtkmodules.vtkCommonCore.reference", // tp_name
@@ -990,11 +949,7 @@ PyTypeObject PyVTKReference_Type = {
   nullptr,                // tp_as_number
   nullptr,                // tp_as_sequence
   nullptr,                // tp_as_mapping
-#if PY_VERSION_HEX >= 0x02060000
   PyObject_HashNotImplemented, // tp_hash
-#else
-  nullptr,                // tp_hash
-#endif
   nullptr,                // tp_call
   PyVTKReference_Str,     // tp_string
   PyVTKReference_GetAttr, // tp_getattro
@@ -1031,7 +986,7 @@ PyTypeObject PyVTKReference_Type = {
   nullptr,                    // tp_weaklist
   VTK_WRAP_PYTHON_SUPPRESS_UNINITIALIZED };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyTypeObject PyVTKNumberReference_Type = {
   PyVarObject_HEAD_INIT(&PyType_Type, 0)
   "vtkmodules.vtkCommonCore.number_reference", // tp_name
@@ -1050,11 +1005,7 @@ PyTypeObject PyVTKNumberReference_Type = {
   &PyVTKReference_AsNumber, // tp_as_number
   nullptr,                  // tp_as_sequence
   nullptr,                  // tp_as_mapping
-#if PY_VERSION_HEX >= 0x02060000
   PyObject_HashNotImplemented, // tp_hash
-#else
-  nullptr,                  // tp_hash
-#endif
   nullptr,                  // tp_call
   PyVTKReference_Str,       // tp_string
   PyVTKReference_GetAttr,   // tp_getattro
@@ -1091,7 +1042,7 @@ PyTypeObject PyVTKNumberReference_Type = {
   nullptr,                             // tp_weaklist
   VTK_WRAP_PYTHON_SUPPRESS_UNINITIALIZED };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyTypeObject PyVTKStringReference_Type = {
   PyVarObject_HEAD_INIT(&PyType_Type, 0)
   "vtkmodules.vtkCommonCore.string_reference", // tp_name
@@ -1110,11 +1061,7 @@ PyTypeObject PyVTKStringReference_Type = {
   &PyVTKStringReference_AsNumber, // tp_as_number
   &PyVTKReference_AsSequence,     // tp_as_sequence
   &PyVTKReference_AsMapping,      // tp_as_mapping
-#if PY_VERSION_HEX >= 0x02060000
   PyObject_HashNotImplemented,    // tp_hash
-#else
-  nullptr,                        // tp_hash
-#endif
   nullptr,                        // tp_call
   PyVTKReference_Str,             // tp_string
   PyVTKReference_GetAttr,         // tp_getattro
@@ -1151,7 +1098,7 @@ PyTypeObject PyVTKStringReference_Type = {
   nullptr,                             // tp_weaklist
   VTK_WRAP_PYTHON_SUPPRESS_UNINITIALIZED };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyTypeObject PyVTKTupleReference_Type = {
   PyVarObject_HEAD_INIT(&PyType_Type, 0)
   "vtkmodules.vtkCommonCore.tuple_reference", // tp_name
@@ -1170,11 +1117,7 @@ PyTypeObject PyVTKTupleReference_Type = {
   nullptr,                    // tp_as_number
   &PyVTKReference_AsSequence, // tp_as_sequence
   &PyVTKReference_AsMapping,  // tp_as_mapping
-#if PY_VERSION_HEX >= 0x02060000
   PyObject_HashNotImplemented, // tp_hash
-#else
-  nullptr,                    // tp_hash
-#endif
   nullptr,                    // tp_call
   PyVTKReference_Str,         // tp_string
   PyVTKReference_GetAttr,     // tp_getattro

@@ -85,6 +85,13 @@ protected:
     vtkMultiBlockDataSet* output, int measured = 0) override;
 
   /**
+   * Read asimmetric tensors per node for this dataset.  If an error occurred, 0 is
+   * returned; otherwise 1.
+   */
+  int ReadAsymmetricTensorsPerNode(const char* fileName, const char* description, int timeStep,
+    vtkMultiBlockDataSet* output) override;
+
+  /**
    * Read tensors per node for this dataset.  If an error occurred, 0 is
    * returned; otherwise 1.
    */
@@ -104,6 +111,13 @@ protected:
    * returned; otherwise 1.
    */
   int ReadVectorsPerElement(const char* fileName, const char* description, int timeStep,
+    vtkMultiBlockDataSet* output) override;
+
+  /**
+   * Read asymmetric tensors per element for this dataset.  If an error occurred, 0 is
+   * returned; otherwise 1.
+   */
+  int ReadAsymmetricTensorsPerElement(const char* fileName, const char* description, int timeStep,
     vtkMultiBlockDataSet* output) override;
 
   /**
@@ -142,20 +156,8 @@ protected:
   int CreateImageDataOutput(
     int partId, char line[256], const char* name, vtkMultiBlockDataSet* output);
 
-  /**
-   * Skip next line in file if the 'undef' or 'partial' keyword was
-   * specified after a sectional keyword
-   */
-  int CheckForUndefOrPartial(const char* line);
-
   int NodeIdsListed;
   int ElementIdsListed;
-
-  class UndefPartialInternal;
-  /**
-   * Handle the undef / partial support for EnSight gold
-   */
-  UndefPartialInternal* UndefPartial;
 
   class FileOffsetMapInternal;
   FileOffsetMapInternal* FileOffsets;
@@ -163,6 +165,21 @@ protected:
 private:
   vtkEnSightGoldReader(const vtkEnSightGoldReader&) = delete;
   void operator=(const vtkEnSightGoldReader&) = delete;
+
+  /**
+   * Opens a variable file name. This will compute the full path and then open
+   * it. `variableType` is simply used to report helpful error messages.
+   */
+  bool OpenVariableFile(const char* fname, const char* variableType);
+
+  /**
+   * Jump forward to a particular timestep in the variable file, if
+   * applicable.
+   */
+  bool SkipToTimeStep(const char* fileName, int timeStep);
+
+  class UndefPartialHelper;
+  friend class UndefPartialHelper;
 };
 
 #endif

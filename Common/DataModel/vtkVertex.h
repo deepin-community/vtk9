@@ -38,7 +38,7 @@ public:
    * Make a new vtkVertex object with the same information as this object.
    */
 
-  //@{
+  ///@{
   /**
    * See the vtkCell API for descriptions of these methods.
    */
@@ -55,7 +55,14 @@ public:
     double& dist2, double weights[]) override;
   void EvaluateLocation(int& subId, const double pcoords[3], double x[3], double* weights) override;
   double* GetParametricCoords() override;
-  //@}
+  ///@}
+
+  /**
+   * This method does nothing.
+   *
+   * \return 1 if inflation was successful, 0 if no inflation was performed
+   */
+  int Inflate(double) override { return 0; }
 
   /**
    * Given parametric coordinates of a point, return the closest cell
@@ -104,7 +111,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[1]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[3]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -117,11 +124,11 @@ public:
   {
     vtkVertex::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
+  ///@}
 
 protected:
   vtkVertex();
-  ~vtkVertex() override {}
+  ~vtkVertex() override = default;
 
 private:
   vtkVertex(const vtkVertex&) = delete;

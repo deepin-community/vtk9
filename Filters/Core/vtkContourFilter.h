@@ -40,6 +40,12 @@
  * normals.
  *
  * @sa
+ * Much faster implementations for isocontouring are available. In
+ * particular, vtkFlyingEdges3D and vtkFlyingEdges2D are much faster
+ * and if built with the right options, multithreaded, and scale well
+ * with additional processors.
+ *
+ * @sa
  * vtkFlyingEdges3D vtkFlyingEdges2D vtkDiscreteFlyingEdges3D
  * vtkDiscreteFlyingEdges2D vtkMarchingContourFilter vtkMarchingCubes
  * vtkSliceCubes vtkMarchingSquares vtkImageMarchingCubes
@@ -73,7 +79,7 @@ public:
    */
   static vtkContourFilter* New();
 
-  //@{
+  ///@{
   /**
    * Methods to set / get contour values.
    */
@@ -85,14 +91,14 @@ public:
   vtkIdType GetNumberOfContours();
   void GenerateValues(int numContours, double range[2]);
   void GenerateValues(int numContours, double rangeStart, double rangeEnd);
-  //@}
+  ///@}
 
   /**
    * Modified GetMTime Because we delegate to vtkContourValues
    */
   vtkMTimeType GetMTime() override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of normals. Normal computation is fairly
    * expensive in both time and storage. If the output data will be
@@ -106,9 +112,9 @@ public:
   vtkSetMacro(ComputeNormals, vtkTypeBool);
   vtkGetMacro(ComputeNormals, vtkTypeBool);
   vtkBooleanMacro(ComputeNormals, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of gradients. Gradient computation is
    * fairly expensive in both time and storage. Note that if
@@ -120,42 +126,43 @@ public:
   vtkSetMacro(ComputeGradients, vtkTypeBool);
   vtkGetMacro(ComputeGradients, vtkTypeBool);
   vtkBooleanMacro(ComputeGradients, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the computation of scalars.
    */
   vtkSetMacro(ComputeScalars, vtkTypeBool);
   vtkGetMacro(ComputeScalars, vtkTypeBool);
   vtkBooleanMacro(ComputeScalars, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Enable the use of a scalar tree to accelerate contour extraction.
+   * Enable the use of a scalar tree to accelerate contour extraction. By
+   * default, an instance of vtkSpanSpace is created when needed.
    */
   vtkSetMacro(UseScalarTree, vtkTypeBool);
   vtkGetMacro(UseScalarTree, vtkTypeBool);
   vtkBooleanMacro(UseScalarTree, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable the use of a scalar tree to accelerate contour extraction.
    */
   virtual void SetScalarTree(vtkScalarTree*);
   vtkGetObjectMacro(ScalarTree, vtkScalarTree);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set / get a spatial locator for merging points. By default,
    * an instance of vtkMergePoints is used.
    */
   void SetLocator(vtkIncrementalPointLocator* locator);
   vtkGetObjectMacro(Locator, vtkIncrementalPointLocator);
-  //@}
+  ///@}
 
   /**
    * Create default locator. Used to create one when none is
@@ -163,16 +170,16 @@ public:
    */
   void CreateDefaultLocator();
 
-  //@{
+  ///@{
   /**
    * Set/get which component of the scalar array to contour on; defaults to 0.
    * Currently this feature only works if the input is a vtkImageData.
    */
   void SetArrayComponent(int);
   int GetArrayComponent();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If this is enabled (by default), the output will be triangles
    * otherwise, the output will be the intersection polygon
@@ -183,9 +190,9 @@ public:
   vtkSetMacro(GenerateTriangles, vtkTypeBool);
   vtkGetMacro(GenerateTriangles, vtkTypeBool);
   vtkBooleanMacro(GenerateTriangles, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::Precision enum for an explanation of the available
@@ -193,7 +200,7 @@ public:
    */
   void SetOutputPointsPrecision(int precision);
   int GetOutputPointsPrecision() const;
-  //@}
+  ///@}
 
 protected:
   vtkContourFilter();

@@ -3,6 +3,7 @@ set(classes
   vtkClearRGBPass
   vtkClearZPass
   vtkCompositePolyDataMapper2
+  vtkDataTransferHelper
   vtkDefaultPass
   vtkDepthImageProcessingPass
   vtkDepthOfFieldPass
@@ -66,13 +67,14 @@ set(classes
   vtkOpenGLVertexBufferObjectCache
   vtkOpenGLVertexBufferObjectGroup
   vtkOrderIndependentTranslucentPass
+  vtkOutlineGlowPass
   vtkOverlayPass
-  vtkPanoramicProjectionPass
-  vtkPixelBufferObject
-  vtkPointFillPass
   vtkPBRIrradianceTexture
   vtkPBRLUTTexture
   vtkPBRPrefilterTexture
+  vtkPanoramicProjectionPass
+  vtkPixelBufferObject
+  vtkPointFillPass
   vtkRenderPassCollection
   vtkRenderStepsPass
   vtkRenderbuffer
@@ -93,17 +95,19 @@ set(classes
   vtkValuePass
   vtkVolumetricPass)
 
-if (NOT DEFINED OPENGL_ES_VERSION)
-  list(APPEND classes
-    vtkDataTransferHelper)
-endif()
-
 set(headers
-  vtkCompositePolyDataMapper2Internal.h
-  vtkOpenGL.h
-  vtkStateStorage.h
   "${CMAKE_CURRENT_BINARY_DIR}/vtkOpenGLError.h"
   "${CMAKE_CURRENT_BINARY_DIR}/vtkRenderingOpenGLConfigure.h")
+
+set(nowrap_headers
+  vtkCompositeMapperHelper2.h
+  vtkCompositePolyDataMapper2Internal.h
+)
+
+if (NOT VTK_LEGACY_REMOVE)
+  list(APPEND nowrap_headers
+    vtkOpenGL.h)
+endif ()
 
 # add opengl support test execulatble on windows
 if (WIN32 AND (NOT CMAKE_CROSSCOMPILING OR DEFINED CMAKE_CROSSCOMPILING_EMULATOR))
@@ -138,6 +142,9 @@ set(shader_files
   glsl/vtkGaussianBlurPassVS.glsl
   glsl/vtkGlyph3DVS.glsl
   glsl/vtkOrderIndependentTranslucentPassFinalFS.glsl
+  glsl/vtkOutlineGlowBlurPassFS.glsl
+  glsl/vtkOutlineGlowUpscalePassFS.glsl
+  glsl/vtkPBRFunctions.glsl
   glsl/vtkPointFillPassFS.glsl
   glsl/vtkPointGaussianVS.glsl
   glsl/vtkPointGaussianGS.glsl
@@ -145,6 +152,7 @@ set(shader_files
   glsl/vtkPolyData2DVS.glsl
   glsl/vtkPolyDataFS.glsl
   glsl/vtkPolyDataVS.glsl
+  glsl/vtkPolyDataEdgesGS.glsl
   glsl/vtkPolyDataWideLineGS.glsl
   glsl/vtkSSAAPassFS.glsl
   glsl/vtkSimpleMotionBlurPassFS.glsl
@@ -325,18 +333,35 @@ configure_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/vtkRenderingOpenGLConfigure.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/vtkRenderingOpenGLConfigure.h")
 
+if (VTK_USE_SDL2)
+  list(APPEND classes vtkSDL2OpenGLRenderWindow)
+endif ()
+
 vtk_module_add_module(VTK::RenderingOpenGL2
   CLASSES ${classes}
   SOURCES ${sources} ${vtk_object_factory_source}
   HEADERS ${headers}
+  NOWRAP_HEADERS ${nowrap_headers}
   PRIVATE_HEADERS ${private_headers} ${vtk_object_factory_header})
 
-if (VTK_USE_X)
-  vtk_module_find_package(
-    PACKAGE X11)
+if (VTK_USE_SDL2)
+  vtk_module_find_package(PACKAGE SDL2)
   vtk_module_link(VTK::RenderingOpenGL2
-    PUBLIC
-      X11::X11)
+    PUBLIC SDL2::SDL2)
+endif ()
+
+if (VTK_USE_X)
+  vtk_module_find_package(PACKAGE X11)
+  vtk_module_link(VTK::RenderingOpenGL2 PUBLIC X11::X11)
+  if (TARGET X11::Xcursor)
+    vtk_module_link(VTK::RenderingOpenGL2 PRIVATE X11::Xcursor)
+  else()
+    message(WARNING "X11::Xcursor not found; custom cursors will be ignored.")
+  endif()
+  set_property(SOURCE vtkXOpenGLRenderWindow.cxx APPEND
+    PROPERTY
+      COMPILE_DEFINITIONS "VTK_HAVE_XCURSOR=$<TARGET_EXISTS:X11::Xcursor>"
+  )
 elseif (VTK_USE_COCOA)
   vtk_module_link(VTK::RenderingOpenGL2 PUBLIC "-framework Cocoa")
 endif ()

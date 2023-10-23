@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkBezierTetra.h"
 #include "vtkBezierInterpolation.h"
 
@@ -27,13 +31,10 @@
 #include "vtkTetra.h"
 
 vtkStandardNewMacro(vtkBezierTetra);
-//----------------------------------------------------------------------------
-vtkBezierTetra::vtkBezierTetra()
-  : vtkHigherOrderTetra()
-{
-}
+//------------------------------------------------------------------------------
+vtkBezierTetra::vtkBezierTetra() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBezierTetra::~vtkBezierTetra() = default;
 
 void vtkBezierTetra::PrintSelf(ostream& os, vtkIndent indent)
@@ -126,10 +127,9 @@ void vtkBezierTetra::EvaluateLocationProjectedNode(
 void vtkBezierTetra::SetRationalWeightsFromPointData(
   vtkPointData* point_data, const vtkIdType numPts)
 {
-  if (point_data->SetActiveAttribute(
-        "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
+  vtkDataArray* v = point_data->GetRationalWeights();
+  if (v)
   {
-    vtkDataArray* v = point_data->GetRationalWeights();
     this->GetRationalWeights()->SetNumberOfTuples(numPts);
     for (vtkIdType i = 0; i < numPts; i++)
     {
@@ -140,7 +140,7 @@ void vtkBezierTetra::SetRationalWeightsFromPointData(
     this->GetRationalWeights()->Reset();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBezierTetra::InterpolateFunctions(const double pcoords[3], double* weights)
 {
   const int dim = 3;
@@ -148,10 +148,10 @@ void vtkBezierTetra::InterpolateFunctions(const double pcoords[3], double* weigh
   const vtkIdType nPoints = this->GetPoints()->GetNumberOfPoints();
   std::vector<double> coeffs(nPoints, 0.0);
 
-  vtkBezierInterpolation::deCasteljauSimplex(dim, deg, pcoords, &coeffs[0]);
+  vtkBezierInterpolation::DeCasteljauSimplex(dim, deg, pcoords, &coeffs[0]);
   for (vtkIdType i = 0; i < nPoints; ++i)
   {
-    vtkVector3i bv = vtkBezierInterpolation::unflattenSimplex(dim, deg, i);
+    vtkVector3i bv = vtkBezierInterpolation::UnFlattenSimplex(dim, deg, i);
     vtkIdType lbv[4] = { bv[0], bv[1], bv[2], deg - bv[0] - bv[1] - bv[2] };
     weights[Index(lbv, deg)] = coeffs[i];
   }
@@ -172,7 +172,7 @@ void vtkBezierTetra::InterpolateFunctions(const double pcoords[3], double* weigh
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBezierTetra::InterpolateDerivs(const double pcoords[3], double* derivs)
 {
   const int dim = 3;
@@ -180,10 +180,10 @@ void vtkBezierTetra::InterpolateDerivs(const double pcoords[3], double* derivs)
   const vtkIdType nPoints = this->GetPoints()->GetNumberOfPoints();
 
   std::vector<double> coeffs(nPoints, 0.0);
-  vtkBezierInterpolation::deCasteljauSimplexDeriv(dim, deg, pcoords, &coeffs[0]);
+  vtkBezierInterpolation::DeCasteljauSimplexDeriv(dim, deg, pcoords, &coeffs[0]);
   for (vtkIdType i = 0; i < nPoints; ++i)
   {
-    vtkVector3i bv = vtkBezierInterpolation::unflattenSimplex(dim, deg, i);
+    vtkVector3i bv = vtkBezierInterpolation::UnFlattenSimplex(dim, deg, i);
     vtkIdType lbv[4] = { bv[0], bv[1], bv[2], deg - bv[0] - bv[1] - bv[2] };
     for (int j = 0; j < dim; ++j)
     {
@@ -196,11 +196,11 @@ vtkDoubleArray* vtkBezierTetra::GetRationalWeights()
 {
   return RationalWeights.Get();
 }
-vtkHigherOrderCurve* vtkBezierTetra::getEdgeCell()
+vtkHigherOrderCurve* vtkBezierTetra::GetEdgeCell()
 {
   return EdgeCell;
 }
-vtkHigherOrderTriangle* vtkBezierTetra::getFaceCell()
+vtkHigherOrderTriangle* vtkBezierTetra::GetFaceCell()
 {
   return FaceCell;
 }

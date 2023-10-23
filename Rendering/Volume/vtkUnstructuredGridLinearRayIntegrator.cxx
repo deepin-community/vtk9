@@ -48,7 +48,7 @@
 #define M_1_SQRTPI (0.5 * M_2_SQRTPI)
 #endif
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // VTK's native classes for defining transfer functions is actually slow to
 // access, so we have to cache it somehow.  This class is straightforward
@@ -102,7 +102,7 @@ void vtkLinearRayIntegratorTransferFunction::GetTransferFunction(vtkColorTransfe
 
   double* function_range = color->GetRange();
   double* function = color->GetDataPointer();
-  while (1)
+  while (true)
   {
     cpset.insert(function[0]);
     if (function[0] == function_range[1])
@@ -198,7 +198,7 @@ void vtkLinearRayIntegratorTransferFunction::GetTransferFunction(vtkColorTransfe
 
   function_range = opacity->GetRange();
   function = opacity->GetDataPointer();
-  while (1)
+  while (true)
   {
     cpset.insert(function[0]);
     if (function[0] == function_range[0])
@@ -239,7 +239,7 @@ void vtkLinearRayIntegratorTransferFunction::GetTransferFunction(vtkPiecewiseFun
 
   double* function_range = intensity->GetRange();
   double* function = intensity->GetDataPointer();
-  while (1)
+  while (true)
   {
     cpset.insert(function[0]);
     if (function[0] == function_range[1])
@@ -249,7 +249,7 @@ void vtkLinearRayIntegratorTransferFunction::GetTransferFunction(vtkPiecewiseFun
 
   function_range = opacity->GetRange();
   function = opacity->GetDataPointer();
-  while (1)
+  while (true)
   {
     cpset.insert(function[0]);
     if (function[0] == function_range[0])
@@ -304,7 +304,7 @@ inline void vtkLinearRayIntegratorTransferFunction::GetColor(double x, double c[
   c[3] = (1 - interp) * beforec[3] + interp * afterc[3];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkUnstructuredGridLinearRayIntegrator);
 
@@ -315,21 +315,21 @@ vtkUnstructuredGridLinearRayIntegrator::vtkUnstructuredGridLinearRayIntegrator()
   this->NumIndependentComponents = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkUnstructuredGridLinearRayIntegrator::~vtkUnstructuredGridLinearRayIntegrator()
 {
   delete[] this->TransferFunctions;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkUnstructuredGridLinearRayIntegrator::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkUnstructuredGridLinearRayIntegrator::Initialize(vtkVolume* volume, vtkDataArray* scalars)
 {
@@ -378,7 +378,7 @@ void vtkUnstructuredGridLinearRayIntegrator::Initialize(vtkVolume* volume, vtkDa
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkUnstructuredGridLinearRayIntegrator::Integrate(vtkDoubleArray* intersectionLengths,
   vtkDataArray* nearIntersections, vtkDataArray* farIntersections, float color[4])
@@ -492,7 +492,8 @@ void vtkUnstructuredGridLinearRayIntegrator::Integrate(vtkDoubleArray* intersect
             }
           }
         }
-        this->IntegrateRay(length, nearcolor, nearcolor[3], farcolor, farcolor[3], color);
+        vtkUnstructuredGridLinearRayIntegrator::IntegrateRay(
+          length, nearcolor, nearcolor[3], farcolor, farcolor[3], color);
 
         nearInterpolant = farInterpolant;
       }
@@ -510,8 +511,8 @@ void vtkUnstructuredGridLinearRayIntegrator::Integrate(vtkDoubleArray* intersect
         double length = intersectionLengths->GetValue(i);
         double* nearcolor = nearIntersections->GetTuple(i);
         double* farcolor = farIntersections->GetTuple(i);
-        this->IntegrateRay(length, nearcolor, nearcolor[3] / unitdistance, farcolor,
-          farcolor[3] / unitdistance, color);
+        vtkUnstructuredGridLinearRayIntegrator::IntegrateRay(length, nearcolor,
+          nearcolor[3] / unitdistance, farcolor, farcolor[3] / unitdistance, color);
       }
     }
     else // Two components.
@@ -521,14 +522,14 @@ void vtkUnstructuredGridLinearRayIntegrator::Integrate(vtkDoubleArray* intersect
         double length = intersectionLengths->GetValue(i);
         double* nearcolor = nearIntersections->GetTuple(i);
         double* farcolor = farIntersections->GetTuple(i);
-        this->IntegrateRay(length, nearcolor[0], nearcolor[1] / unitdistance, farcolor[0],
-          farcolor[1] / unitdistance, color);
+        vtkUnstructuredGridLinearRayIntegrator::IntegrateRay(length, nearcolor[0],
+          nearcolor[1] / unitdistance, farcolor[0], farcolor[1] / unitdistance, color);
       }
     }
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkUnstructuredGridLinearRayIntegrator::IntegrateRay(double length, double intensity_front,
   double attenuation_front, double intensity_back, double attenuation_back, float color[4])
@@ -562,7 +563,7 @@ void vtkUnstructuredGridLinearRayIntegrator::IntegrateRay(double length,
   color[3] += (1 - color[3]) * alpha;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static inline float erf_fitting_function(float u)
 {

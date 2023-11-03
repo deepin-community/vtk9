@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkActor.h
+  Module:    QVTKApplication.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -20,7 +20,7 @@
 #include <X11/Xlib.h> // Needed for X types used in the public interface
 #endif
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QVTKApplication::QVTKApplication(int& Argc, char** Argv)
   : QApplication(Argc, Argv)
 {
@@ -31,15 +31,17 @@ QVTKApplication::QVTKApplication(int& Argc, char** Argv)
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+#if defined(VTK_USE_TDX) && (defined(Q_WS_X11) || defined(Q_OS_LINUX))
 QVTKApplication::~QVTKApplication()
 {
-#if defined(VTK_USE_TDX) && (defined(Q_WS_X11) || defined(Q_OS_LINUX))
   delete this->Devices;
-#endif
 }
+#else
+QVTKApplication::~QVTKApplication() = default;
+#endif
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #if defined(VTK_USE_TDX) && (defined(Q_WS_X11) || defined(Q_OS_LINUX))
 bool QVTKApplication::x11EventFilter(XEvent* event)
 {
@@ -49,12 +51,12 @@ bool QVTKApplication::x11EventFilter(XEvent* event)
 }
 #endif
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 #ifdef VTK_USE_TDX
 void QVTKApplication::setDevice(vtkTDxDevice* device)
 {
 #ifdef Q_WS_X11 || Q_OS_LINUX
-  emit CreateDevice(device);
+  Q_EMIT CreateDevice(device);
 #else
   (void)device; // to avoid warnings.
 #endif

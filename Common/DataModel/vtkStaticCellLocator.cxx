@@ -37,7 +37,7 @@
 
 vtkStandardNewMacro(vtkStaticCellLocator);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper classes to support efficient computing, and threaded execution.
 //
 // Note that are two key classes: the vtkCellBinner and the vtkCellProcessor.
@@ -124,7 +124,10 @@ struct vtkCellBinner
     this->yD = this->Divisions[1];
     this->zD = this->Divisions[2];
     this->xyD = this->Divisions[0] * this->Divisions[1];
-    this->binTol = 0.01 * sqrt(this->hX * this->hX + this->hY * this->hY + this->hZ * this->hZ);
+
+    this->binTol = loc->GetUseDiagonalLengthTolerance()
+      ? loc->GetTolerance() * sqrt(this->hX * this->hX + this->hY * this->hY + this->hZ * this->hZ)
+      : loc->GetTolerance();
   }
 
   ~vtkCellBinner()
@@ -218,7 +221,7 @@ struct vtkCellBinner
 
 }; // vtkCellBinner
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // The following tuple is what is sorted in the map. Note that it is templated
 // because depending on the number of points / buckets to process we may want
 // to use vtkIdType. Otherwise for performance reasons it's best to use an int
@@ -478,7 +481,7 @@ struct MapOffsets
 
 }; // MapOffsets
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T>
 vtkIdType CellProcessor<T>::FindCell(
   const double pos[3], vtkGenericCell* cell, double pcoords[3], double* weights)
@@ -496,7 +499,8 @@ vtkIdType CellProcessor<T>::FindCell(
   else
   {
     const CellFragments<T>* cellIds = this->GetIds(binId);
-    double dist2, *bounds, delta[3] = { 0.0, 0.0, 0.0 };
+    double tol = this->Binner->binTol;
+    double dist2, *bounds, delta[3] = { tol, tol, tol };
     int subId;
     vtkIdType cellId;
 
@@ -519,7 +523,7 @@ vtkIdType CellProcessor<T>::FindCell(
   }            // serial
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T>
 void CellProcessor<T>::FindCellsWithinBounds(double* bbox, vtkIdList* cells)
 {
@@ -566,7 +570,7 @@ void CellProcessor<T>::FindCellsWithinBounds(double* bbox, vtkIdList* cells)
   }         // k-footprint
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This code traverses the cell locator by following the intersection ray. All
 // cells in intersected bins are placed into the output cellId vtkIdList. See
 // the IntersectWithLine method for more information on voxel traversal.
@@ -577,13 +581,17 @@ void CellProcessor<T>::FindCellsAlongLine(
   // Initialize the list of cells
   cells->Reset();
 
-  // Make sure the bounding box of the locator is hit.
+  // Make sure the bounding box of the locator is hit. Also, determine the
+  // entry and exit points into and out of the locator. This is used to
+  // determine the bins where the ray starts and ends.
   double* bounds = this->Binner->Bounds;
-  double curPos[3], curT, rayDir[3];
+  double t0, t1, x0[3], x1[3], rayDir[3];
+  int plane0, plane1;
   vtkMath::Subtract(a1, a0, rayDir);
-  if (vtkBox::IntersectBox(bounds, a0, rayDir, curPos, curT) == 0)
+
+  if (vtkBox::IntersectWithLine(bounds, a0, a1, t0, t1, x0, x1, plane0, plane1) == 0)
   {
-    return;
+    return; // No intersections possible, line is outside the locator
   }
 
   // Okay process line
@@ -591,7 +599,7 @@ void CellProcessor<T>::FindCellsAlongLine(
   vtkIdType prod = ndivs[0] * ndivs[1];
   double* h = this->Binner->H;
   T i, numCellsInBin;
-  int ijk[3];
+  int ijk[3], ijkEnd[3];
   vtkIdType idx, cId;
   double hitCellBoundsPosition[3], tHitCell;
   double step[3], next[3], tMax[3], tDelta[3];
@@ -602,8 +610,10 @@ void CellProcessor<T>::FindCellsAlongLine(
   std::vector<unsigned char> cellHasBeenVisited(this->NumCells, 0);
 
   // Get the i-j-k point of intersection and bin index. This is
-  // clamped to the boundary of the locator.
-  this->Binner->GetBinIndices(curPos, ijk);
+  // clamped to the boundary of the locator. Also get the exit bin
+  // of the line.
+  this->Binner->GetBinIndices(x0, ijk);
+  this->Binner->GetBinIndices(x1, ijkEnd);
   idx = ijk[0] + ijk[1] * ndivs[0] + ijk[2] * prod;
 
   // Set up some traversal parameters for traversing through bins
@@ -617,9 +627,9 @@ void CellProcessor<T>::FindCellsAlongLine(
   next[1] = bounds[2] + h[1] * (rayDir[1] >= 0.0 ? (ijk[1] + step[1]) : ijk[1]);
   next[2] = bounds[4] + h[2] * (rayDir[2] >= 0.0 ? (ijk[2] + step[2]) : ijk[2]);
 
-  tMax[0] = (rayDir[0] != 0.0) ? (next[0] - curPos[0]) / rayDir[0] : VTK_FLOAT_MAX;
-  tMax[1] = (rayDir[1] != 0.0) ? (next[1] - curPos[1]) / rayDir[1] : VTK_FLOAT_MAX;
-  tMax[2] = (rayDir[2] != 0.0) ? (next[2] - curPos[2]) / rayDir[2] : VTK_FLOAT_MAX;
+  tMax[0] = (rayDir[0] != 0.0) ? (next[0] - x0[0]) / rayDir[0] : VTK_FLOAT_MAX;
+  tMax[1] = (rayDir[1] != 0.0) ? (next[1] - x0[1]) / rayDir[1] : VTK_FLOAT_MAX;
+  tMax[2] = (rayDir[2] != 0.0) ? (next[2] - x0[2]) / rayDir[2] : VTK_FLOAT_MAX;
 
   tDelta[0] = (rayDir[0] != 0.0) ? (h[0] / rayDir[0]) * step[0] : VTK_FLOAT_MAX;
   tDelta[1] = (rayDir[1] != 0.0) ? (h[1] / rayDir[1]) * step[1] : VTK_FLOAT_MAX;
@@ -628,7 +638,7 @@ void CellProcessor<T>::FindCellsAlongLine(
   // Start walking through the bins, continue until traversed the entire
   // locator. Note that termination of the while(1) loop occurs when the ray
   // passes out of the locator via the break command.
-  while (1)
+  while (true)
   {
     if ((numCellsInBin = this->GetNumberOfIds(idx)) > 0) // there are some cell here
     {
@@ -642,8 +652,8 @@ void CellProcessor<T>::FindCellsAlongLine(
           cellHasBeenVisited[cId] = 1;
 
           // check whether we intersect the cell bounds
-          int hitCellBounds = vtkBox::IntersectBox(
-            this->CellBounds + (6 * cId), a0, rayDir, hitCellBoundsPosition, tHitCell);
+          int hitCellBounds = vtkBox::IntersectBox(this->CellBounds + (6 * cId), a0, rayDir,
+            hitCellBoundsPosition, tHitCell, this->Binner->binTol);
 
           if (hitCellBounds)
           {
@@ -654,20 +664,24 @@ void CellProcessor<T>::FindCellsAlongLine(
       }     // over all cells in bin
     }       // if cells in bin
 
-    // Advance to next voxel
+    // See if the traversal is complete (reached the end of the line).
+    if (ijk[0] == ijkEnd[0] && ijk[1] == ijkEnd[1] && ijk[2] == ijkEnd[2])
+    {
+      break;
+    }
+
+    // Advance to the next voxel
     if (tMax[0] < tMax[1])
     {
       if (tMax[0] < tMax[2])
       {
         ijk[0] += static_cast<int>(step[0]);
         tMax[0] += tDelta[0];
-        curT = tMax[0];
       }
       else
       {
         ijk[2] += static_cast<int>(step[2]);
         tMax[2] += tDelta[2];
-        curT = tMax[2];
       }
     }
     else
@@ -676,18 +690,17 @@ void CellProcessor<T>::FindCellsAlongLine(
       {
         ijk[1] += static_cast<int>(step[1]);
         tMax[1] += tDelta[1];
-        curT = tMax[1];
       }
       else
       {
         ijk[2] += static_cast<int>(step[2]);
         tMax[2] += tDelta[2];
-        curT = tMax[2];
       }
     }
 
-    if (curT > 1.0 || ijk[0] < 0 || ijk[0] >= ndivs[0] || ijk[1] < 0 || ijk[1] >= ndivs[1] ||
-      ijk[2] < 0 || ijk[2] >= ndivs[2])
+    // If exiting the locator, we are done
+    if (ijk[0] < 0 || ijk[0] >= ndivs[0] || ijk[1] < 0 || ijk[1] >= ndivs[1] || ijk[2] < 0 ||
+      ijk[2] >= ndivs[2])
     {
       break;
     }
@@ -844,7 +857,7 @@ struct CellPlaneCandidates
   }         // operator()
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This code evaluates cells in intersecting bins and places them in the
 // output list.
 template <typename T>
@@ -891,7 +904,7 @@ void CellProcessor<T>::FindCellsAlongPlane(
 }
 
 //
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Calculate the distance between the point x and the specified bounds
 //
 // WARNING!!!!! Be very careful altering this routine.  Simple changes to this
@@ -948,7 +961,7 @@ double Distance2ToBounds(const double x[3], double bounds[6])
   return distance;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Return closest point (if any) AND the cell on which this closest point lies
 template <typename T>
 vtkIdType CellProcessor<T>::FindClosestPointWithinRadius(const double x[3], double radius,
@@ -965,7 +978,7 @@ vtkIdType CellProcessor<T>::FindClosestPointWithinRadius(const double x[3], doub
   vtkIdType retVal = 0;
 
   using node = std::pair<double, vtkIdType>;
-  std::priority_queue<node, std::vector<node>, std::greater<node> > queue;
+  std::priority_queue<node, std::vector<node>, std::greater<node>> queue;
 
   // first get ijk containing point
   vtkIdType binId = this->Binner->GetBinIndex(x);
@@ -975,6 +988,8 @@ vtkIdType CellProcessor<T>::FindClosestPointWithinRadius(const double x[3], doub
   // distance to closest point
   minDist2 = radius * radius;
 
+  // Process the queue of candidate bins until the candidate bins are
+  // further away than the current closest point.
   while (!queue.empty())
   {
     binId = queue.top().second;
@@ -1044,7 +1059,8 @@ vtkIdType CellProcessor<T>::FindClosestPointWithinRadius(const double x[3], doub
       }
     }
 
-    // queue neighbors, if they are not already processed
+    // Expand the search: queue neighbors if they are not already processed. (TODO: this
+    // is pretty inefficient with sparse locators, since bins are revisited repeatedly.)
     this->Binner->GetBinIndices(binId, ijk);
     int ijkLo[3] = { std::max(ijk[0] - 1, 0), std::max(ijk[1] - 1, 0), std::max(ijk[2] - 1, 0) };
     int ijkHi[3] = { std::min(ijk[0] + 1, this->Binner->Divisions[0] - 1),
@@ -1065,7 +1081,7 @@ vtkIdType CellProcessor<T>::FindClosestPointWithinRadius(const double x[3], doub
             // get bin bounding box
             bds[0] = this->Binner->Bounds[0] + ijk[0] * this->Binner->hX;
             bds[2] = this->Binner->Bounds[2] + ijk[1] * this->Binner->hY;
-            bds[4] = this->Binner->Bounds[3] + ijk[2] * this->Binner->hZ;
+            bds[4] = this->Binner->Bounds[4] + ijk[2] * this->Binner->hZ;
             bds[1] = bds[0] + this->Binner->hX;
             bds[3] = bds[2] + this->Binner->hY;
             bds[5] = bds[4] + this->Binner->hZ;
@@ -1083,7 +1099,7 @@ vtkIdType CellProcessor<T>::FindClosestPointWithinRadius(const double x[3], doub
   return retVal;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This code traverses the cell locator by following the intersection ray. As
 // each bin is intersected, the cells contained in the bin are
 // intersected. The cell with the smallest parametric coordinate t is
@@ -1096,35 +1112,39 @@ template <typename T>
 int CellProcessor<T>::IntersectWithLine(const double a0[3], const double a1[3], double tol,
   double& t, double x[3], double pcoords[3], int& subId, vtkIdType& cellId, vtkGenericCell* cell)
 {
+  cellId = (-1);
+  subId = 0;
+
   double* bounds = this->Binner->Bounds;
+  double t0, t1, x0[3], x1[3], rayDir[3];
+  int plane0, plane1;
+  vtkMath::Subtract(a1, a0, rayDir);
+
+  // Make sure the bounding box of the locator is hit.
+  if (vtkBox::IntersectWithLine(bounds, a0, a1, t0, t1, x0, x1, plane0, plane1) == 0)
+  {
+    return 0;
+  }
+
   int* ndivs = this->Binner->Divisions;
   vtkIdType prod = ndivs[0] * ndivs[1];
   double* h = this->Binner->H;
   T i, numCellsInBin;
-  double rayDir[3];
-  vtkMath::Subtract(a1, a0, rayDir);
-  double curPos[3], curT, tMin = VTK_FLOAT_MAX;
-  int ijk[3];
+  double tMin = VTK_FLOAT_MAX;
+  int ijk[3], ijkEnd[3];
   vtkIdType idx, cId, bestCellId = (-1);
   double hitCellBoundsPosition[3], tHitCell;
   double step[3], next[3], tMax[3], tDelta[3];
   double binBounds[6], binTol = this->Binner->binTol;
 
-  // Make sure the bounding box of the locator is hit.
-  cellId = (-1);
-  subId = 0;
-  if (vtkBox::IntersectBox(bounds, a0, rayDir, curPos, curT) == 0)
-  {
-    return 0;
-  }
-
   // Initialize intersection query array if necessary. This is done
   // locally to ensure thread safety.
   std::vector<unsigned char> cellHasBeenVisited(this->NumCells, 0);
 
-  // Get the i-j-k point of intersection and bin index. This is
-  // clamped to the boundary of the locator.
-  this->Binner->GetBinIndices(curPos, ijk);
+  // Get the i-j-k point of intersection and bin index for the entry and exit
+  // from the locator. This is clamped to the boundary of the locator.
+  this->Binner->GetBinIndices(x0, ijk);
+  this->Binner->GetBinIndices(x1, ijkEnd);
   idx = ijk[0] + ijk[1] * ndivs[0] + ijk[2] * prod;
 
   // Set up some traversal parameters for traversing through bins
@@ -1138,9 +1158,9 @@ int CellProcessor<T>::IntersectWithLine(const double a0[3], const double a1[3], 
   next[1] = bounds[2] + h[1] * (rayDir[1] >= 0.0 ? (ijk[1] + step[1]) : ijk[1]);
   next[2] = bounds[4] + h[2] * (rayDir[2] >= 0.0 ? (ijk[2] + step[2]) : ijk[2]);
 
-  tMax[0] = (rayDir[0] != 0.0) ? (next[0] - curPos[0]) / rayDir[0] : VTK_FLOAT_MAX;
-  tMax[1] = (rayDir[1] != 0.0) ? (next[1] - curPos[1]) / rayDir[1] : VTK_FLOAT_MAX;
-  tMax[2] = (rayDir[2] != 0.0) ? (next[2] - curPos[2]) / rayDir[2] : VTK_FLOAT_MAX;
+  tMax[0] = (rayDir[0] != 0.0) ? (next[0] - x0[0]) / rayDir[0] : VTK_FLOAT_MAX;
+  tMax[1] = (rayDir[1] != 0.0) ? (next[1] - x0[1]) / rayDir[1] : VTK_FLOAT_MAX;
+  tMax[2] = (rayDir[2] != 0.0) ? (next[2] - x0[2]) / rayDir[2] : VTK_FLOAT_MAX;
 
   tDelta[0] = (rayDir[0] != 0.0) ? (h[0] / rayDir[0]) * step[0] : VTK_FLOAT_MAX;
   tDelta[1] = (rayDir[1] != 0.0) ? (h[1] / rayDir[1]) * step[1] : VTK_FLOAT_MAX;
@@ -1191,7 +1211,7 @@ int CellProcessor<T>::IntersectWithLine(const double a0[3], const double a1[3], 
     }         // if cells in bin
 
     // Exit before end of ray, saves a few cycles
-    if (bestCellId >= 0)
+    if (bestCellId >= 0 || (ijk[0] == ijkEnd[0] && ijk[1] == ijkEnd[1] && ijk[2] == ijkEnd[2]))
     {
       break;
     }
@@ -1203,13 +1223,11 @@ int CellProcessor<T>::IntersectWithLine(const double a0[3], const double a1[3], 
       {
         ijk[0] += static_cast<int>(step[0]);
         tMax[0] += tDelta[0];
-        curT = tMax[0];
       }
       else
       {
         ijk[2] += static_cast<int>(step[2]);
         tMax[2] += tDelta[2];
-        curT = tMax[2];
       }
     }
     else
@@ -1218,18 +1236,17 @@ int CellProcessor<T>::IntersectWithLine(const double a0[3], const double a1[3], 
       {
         ijk[1] += static_cast<int>(step[1]);
         tMax[1] += tDelta[1];
-        curT = tMax[1];
       }
       else
       {
         ijk[2] += static_cast<int>(step[2]);
         tMax[2] += tDelta[2];
-        curT = tMax[2];
       }
     }
 
-    if (curT > 1.0 || ijk[0] < 0 || ijk[0] >= ndivs[0] || ijk[1] < 0 || ijk[1] >= ndivs[1] ||
-      ijk[2] < 0 || ijk[2] >= ndivs[2])
+    // If exiting the locator, we are done
+    if (ijk[0] < 0 || ijk[0] >= ndivs[0] || ijk[1] < 0 || ijk[1] >= ndivs[1] || ijk[2] < 0 ||
+      ijk[2] >= ndivs[2])
     {
       break;
     }
@@ -1257,10 +1274,10 @@ int CellProcessor<T>::IntersectWithLine(const double a0[3], const double a1[3], 
 
 } // anonymous namespace
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Here is the VTK class proper.
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStaticCellLocator::vtkStaticCellLocator()
 {
   this->CacheCellBounds = 1; // always cached
@@ -1280,13 +1297,13 @@ vtkStaticCellLocator::vtkStaticCellLocator()
   this->LargeIds = false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStaticCellLocator::~vtkStaticCellLocator()
 {
   this->FreeSearchStructure();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStaticCellLocator::FreeSearchStructure()
 {
   if (this->Binner)
@@ -1301,7 +1318,7 @@ void vtkStaticCellLocator::FreeSearchStructure()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkStaticCellLocator::FindCell(
   double pos[3], double, vtkGenericCell* cell, double pcoords[3], double* weights)
 {
@@ -1313,7 +1330,7 @@ vtkIdType vtkStaticCellLocator::FindCell(
   return this->Processor->FindCell(pos, cell, pcoords, weights);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStaticCellLocator::FindClosestPoint(const double x[3], double closestPoint[3],
   vtkGenericCell* cell, vtkIdType& cellId, int& subId, double& dist2)
 {
@@ -1324,7 +1341,7 @@ void vtkStaticCellLocator::FindClosestPoint(const double x[3], double closestPoi
     point, radius, closestPoint, cell, cellId, subId, dist2, inside);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkStaticCellLocator::FindClosestPointWithinRadius(double x[3], double radius,
   double closestPoint[3], vtkGenericCell* cell, vtkIdType& cellId, int& subId, double& dist2,
   int& inside)
@@ -1338,7 +1355,7 @@ vtkIdType vtkStaticCellLocator::FindClosestPointWithinRadius(double x[3], double
     x, radius, closestPoint, cell, cellId, subId, dist2, inside);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStaticCellLocator::FindCellsWithinBounds(double* bbox, vtkIdList* cells)
 {
   this->BuildLocator();
@@ -1349,7 +1366,7 @@ void vtkStaticCellLocator::FindCellsWithinBounds(double* bbox, vtkIdList* cells)
   return this->Processor->FindCellsWithinBounds(bbox, cells);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStaticCellLocator::FindCellsAlongLine(
   const double p1[3], const double p2[3], double tol, vtkIdList* cells)
 {
@@ -1361,7 +1378,7 @@ void vtkStaticCellLocator::FindCellsAlongLine(
   return this->Processor->FindCellsAlongLine(p1, p2, tol, cells);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStaticCellLocator::FindCellsAlongPlane(
   const double o[3], const double n[3], double tol, vtkIdList* cells)
 {
@@ -1373,7 +1390,7 @@ void vtkStaticCellLocator::FindCellsAlongPlane(
   return this->Processor->FindCellsAlongPlane(o, n, tol, cells);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStaticCellLocator::IntersectWithLine(const double p1[3], const double p2[3], double tol,
   double& t, double x[3], double pcoords[3], int& subId, vtkIdType& cellId, vtkGenericCell* cell)
 {
@@ -1385,7 +1402,7 @@ int vtkStaticCellLocator::IntersectWithLine(const double p1[3], const double p2[
   return this->Processor->IntersectWithLine(p1, p2, tol, t, x, pcoords, subId, cellId, cell);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStaticCellLocator::BuildLocator()
 {
   vtkDebugMacro(<< "Building static cell locator");
@@ -1477,7 +1494,7 @@ void vtkStaticCellLocator::BuildLocator()
   this->BuildTime.Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Produce a polygonal representation of the locator. Each bin which contains
 // a potential cell candidate contributes to the representation. Note that
 // since the locator has only a single level, the level method parameter is
@@ -1634,7 +1651,7 @@ void vtkStaticCellLocator::GenerateRepresentation(int vtkNotUsed(level), vtkPoly
   pts->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStaticCellLocator::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Cell bounds are always cached

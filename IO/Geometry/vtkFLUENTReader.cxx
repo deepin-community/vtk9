@@ -20,6 +20,9 @@
 // Terry Jordan (terry.jordan@sa.netl.doe.gov)
 // & Doug McCorkle (mccdo@iastate.edu)
 
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkFLUENTReader.h"
 #include "vtkByteSwap.h"
 #include "vtkCellArray.h"
@@ -27,6 +30,7 @@
 #include "vtkConvexPointSet.h"
 #include "vtkDataArraySelection.h"
 #include "vtkDoubleArray.h"
+#include "vtkEndian.h"
 #include "vtkErrorCode.h"
 #include "vtkFieldData.h"
 #include "vtkFloatArray.h"
@@ -145,10 +149,10 @@ struct vtkFLUENTReader::vectorDataVector
 };
 struct vtkFLUENTReader::intVectorVector
 {
-  std::vector<std::vector<int> > value;
+  std::vector<std::vector<int>> value;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFLUENTReader::vtkFLUENTReader()
 {
   this->CellDataArraySelection = vtkDataArraySelection::New();
@@ -196,7 +200,7 @@ vtkFLUENTReader::vtkFLUENTReader()
   this->SetDataByteOrderToLittleEndian();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFLUENTReader::~vtkFLUENTReader()
 {
   this->Points->Delete();
@@ -231,7 +235,7 @@ vtkFLUENTReader::~vtkFLUENTReader()
   delete[] this->FileName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -381,7 +385,7 @@ int vtkFLUENTReader::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -389,7 +393,7 @@ void vtkFLUENTReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Number Of Cells: " << this->NumberOfCells << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -445,7 +449,7 @@ int vtkFLUENTReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkFLUENTReader::OpenCaseFile(const char* filename)
 {
   std::ios_base::openmode mode = ios::in;
@@ -463,25 +467,25 @@ bool vtkFLUENTReader::OpenCaseFile(const char* filename)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetNumberOfCellArrays()
 {
   return this->CellDataArraySelection->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkFLUENTReader::GetCellArrayName(int index)
 {
   return this->CellDataArraySelection->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetCellArrayStatus(const char* name)
 {
   return this->CellDataArraySelection->ArrayIsEnabled(name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::SetCellArrayStatus(const char* name, int status)
 {
   if (status)
@@ -494,21 +498,21 @@ void vtkFLUENTReader::SetCellArrayStatus(const char* name, int status)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::EnableAllCellArrays()
 {
   this->CellDataArraySelection->EnableAllArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::DisableAllCellArrays()
 {
   this->CellDataArraySelection->DisableAllArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkFLUENTReader::OpenDataFile(const char* filename)
 {
   std::string dfilename(filename);
@@ -533,7 +537,7 @@ bool vtkFLUENTReader::OpenDataFile(const char* filename)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetCaseChunk()
 {
   this->CaseBuffer->value = ""; // Clear buffer
@@ -592,7 +596,8 @@ int vtkFLUENTReader::GetCaseChunk()
 
     // while (CaseBuffer.compare(CaseBuffer.size()-strlen(end),
     // strlen(end), end))
-    while (strcmp(this->CaseBuffer->value.c_str() + (this->CaseBuffer->value.size() - len), end))
+    while (
+      strcmp(this->CaseBuffer->value.c_str() + (this->CaseBuffer->value.size() - len), end) != 0)
     {
       // this->CaseBuffer->value.push_back(this->FluentCaseFile->get());
       this->CaseBuffer->value += static_cast<char>(this->FluentCaseFile->get());
@@ -624,7 +629,7 @@ int vtkFLUENTReader::GetCaseChunk()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetCaseIndex()
 {
   std::string sindex;
@@ -638,7 +643,7 @@ int vtkFLUENTReader::GetCaseIndex()
   return atoi(sindex.c_str());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetNumberOfCellZones()
 {
   int match;
@@ -667,7 +672,7 @@ void vtkFLUENTReader::GetNumberOfCellZones()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetDataIndex()
 {
   std::string sindex;
@@ -681,7 +686,7 @@ int vtkFLUENTReader::GetDataIndex()
   return atoi(sindex.c_str());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetDataChunk()
 {
   this->DataBuffer->value = ""; // Clear buffer
@@ -743,7 +748,8 @@ int vtkFLUENTReader::GetDataChunk()
 
     // while (DataBuffer.compare(DataBuffer.size()-strlen(end),
     // strlen(end), end))
-    while (strcmp(this->DataBuffer->value.c_str() + (this->DataBuffer->value.size() - len), end))
+    while (
+      strcmp(this->DataBuffer->value.c_str() + (this->DataBuffer->value.size() - len), end) != 0)
     {
       // this->DataBuffer->value.push_back(this->FluentDataFile->get());
       this->DataBuffer->value += static_cast<char>(this->FluentDataFile->get());
@@ -2321,7 +2327,7 @@ void vtkFLUENTReader::LoadVariableNames()
   this->VariableNames->value[8149] = "PB_SMM_M2_49";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::ParseCaseFile()
 {
   this->FluentCaseFile->clear();
@@ -2452,7 +2458,7 @@ void vtkFLUENTReader::ParseCaseFile()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetDimension()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2460,7 +2466,7 @@ int vtkFLUENTReader::GetDimension()
   return atoi(info.c_str());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetLittleEndianFlag()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2479,7 +2485,7 @@ void vtkFLUENTReader::GetLittleEndianFlag()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetNodesAscii()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2523,7 +2529,7 @@ void vtkFLUENTReader::GetNodesAscii()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetNodesSinglePrecision()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2569,7 +2575,7 @@ void vtkFLUENTReader::GetNodesSinglePrecision()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetNodesDoublePrecision()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2612,7 +2618,7 @@ void vtkFLUENTReader::GetNodesDoublePrecision()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetCellsAscii()
 {
   if (this->CaseBuffer->value.at(5) == '0')
@@ -2661,7 +2667,7 @@ void vtkFLUENTReader::GetCellsAscii()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetCellsBinary()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2695,7 +2701,7 @@ void vtkFLUENTReader::GetCellsBinary()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetFacesAscii()
 {
 
@@ -2764,7 +2770,7 @@ void vtkFLUENTReader::GetFacesAscii()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetFacesBinary()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2822,7 +2828,7 @@ void vtkFLUENTReader::GetFacesBinary()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetPeriodicShadowFacesAscii()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2845,7 +2851,7 @@ void vtkFLUENTReader::GetPeriodicShadowFacesAscii()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetPeriodicShadowFacesBinary()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2869,7 +2875,7 @@ void vtkFLUENTReader::GetPeriodicShadowFacesBinary()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetCellTreeAscii()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2896,7 +2902,7 @@ void vtkFLUENTReader::GetCellTreeAscii()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetCellTreeBinary()
 {
 
@@ -2924,7 +2930,7 @@ void vtkFLUENTReader::GetCellTreeBinary()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetFaceTreeAscii()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2951,7 +2957,7 @@ void vtkFLUENTReader::GetFaceTreeAscii()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetFaceTreeBinary()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -2978,7 +2984,7 @@ void vtkFLUENTReader::GetFaceTreeBinary()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetInterfaceFaceParentsAscii()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -3003,7 +3009,7 @@ void vtkFLUENTReader::GetInterfaceFaceParentsAscii()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetInterfaceFaceParentsBinary()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -3028,7 +3034,7 @@ void vtkFLUENTReader::GetInterfaceFaceParentsBinary()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetNonconformalGridInterfaceFaceInformationAscii()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -3052,7 +3058,7 @@ void vtkFLUENTReader::GetNonconformalGridInterfaceFaceInformationAscii()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::GetNonconformalGridInterfaceFaceInformationBinary()
 {
   size_t start = this->CaseBuffer->value.find('(', 1);
@@ -3076,7 +3082,7 @@ void vtkFLUENTReader::GetNonconformalGridInterfaceFaceInformationBinary()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::CleanCells()
 {
 
@@ -3115,7 +3121,7 @@ void vtkFLUENTReader::CleanCells()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PopulateCellNodes()
 {
   for (size_t i = 0; i < this->Cells->value.size(); i++)
@@ -3154,7 +3160,7 @@ void vtkFLUENTReader::PopulateCellNodes()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetCaseBufferInt(int ptr)
 {
   union mix_i {
@@ -3176,7 +3182,7 @@ int vtkFLUENTReader::GetCaseBufferInt(int ptr)
   return mi.i;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float vtkFLUENTReader::GetCaseBufferFloat(int ptr)
 {
   union mix_f {
@@ -3198,7 +3204,7 @@ float vtkFLUENTReader::GetCaseBufferFloat(int ptr)
   return mf.f;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkFLUENTReader::GetCaseBufferDouble(int ptr)
 {
   union mix_i {
@@ -3220,7 +3226,7 @@ double vtkFLUENTReader::GetCaseBufferDouble(int ptr)
   return md.d;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PopulateTriangleCell(int i)
 {
   this->Cells->value[i].nodes.resize(3);
@@ -3247,7 +3253,7 @@ void vtkFLUENTReader::PopulateTriangleCell(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PopulateTetraCell(int i)
 {
   this->Cells->value[i].nodes.resize(4);
@@ -3285,7 +3291,7 @@ void vtkFLUENTReader::PopulateTetraCell(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PopulateQuadCell(int i)
 {
   this->Cells->value[i].nodes.resize(4);
@@ -3356,7 +3362,7 @@ void vtkFLUENTReader::PopulateQuadCell(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PopulateHexahedronCell(int i)
 {
   this->Cells->value[i].nodes.resize(8);
@@ -3540,7 +3546,7 @@ void vtkFLUENTReader::PopulateHexahedronCell(int i)
   // else point 4 was lined up so everything was correct.
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PopulatePyramidCell(int i)
 {
   this->Cells->value[i].nodes.resize(5);
@@ -3592,7 +3598,7 @@ void vtkFLUENTReader::PopulatePyramidCell(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PopulateWedgeCell(int i)
 {
   this->Cells->value[i].nodes.resize(6);
@@ -3754,7 +3760,7 @@ void vtkFLUENTReader::PopulateWedgeCell(int i)
   // else point 3 was lined up so everything was correct.
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::PopulatePolyhedronCell(int i)
 {
   //  We can't set the size on the nodes std::vector because we
@@ -3792,7 +3798,7 @@ void vtkFLUENTReader::PopulatePolyhedronCell(int i)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::ParseDataFile()
 {
   while (this->GetDataChunk())
@@ -3862,7 +3868,7 @@ void vtkFLUENTReader::ParseDataFile()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetDataBufferInt(int ptr)
 {
   union mix_i {
@@ -3884,7 +3890,7 @@ int vtkFLUENTReader::GetDataBufferInt(int ptr)
   return mi.i;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 float vtkFLUENTReader::GetDataBufferFloat(int ptr)
 {
   union mix_f {
@@ -3906,7 +3912,7 @@ float vtkFLUENTReader::GetDataBufferFloat(int ptr)
   return mf.f;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkFLUENTReader::GetDataBufferDouble(int ptr)
 {
   union mix_i {
@@ -4053,7 +4059,7 @@ void vtkFLUENTReader::GetData(int dataType)
     }
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::SetDataByteOrderToBigEndian()
 {
 #ifndef VTK_WORDS_BIGENDIAN
@@ -4062,7 +4068,7 @@ void vtkFLUENTReader::SetDataByteOrderToBigEndian()
   this->SwapBytesOff();
 #endif
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::SetDataByteOrderToLittleEndian()
 {
 #ifdef VTK_WORDS_BIGENDIAN
@@ -4071,7 +4077,7 @@ void vtkFLUENTReader::SetDataByteOrderToLittleEndian()
   this->SwapBytesOff();
 #endif
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFLUENTReader::SetDataByteOrder(int byteOrder)
 {
   if (byteOrder == VTK_FILE_BYTE_ORDER_BIG_ENDIAN)
@@ -4083,7 +4089,7 @@ void vtkFLUENTReader::SetDataByteOrder(int byteOrder)
     this->SetDataByteOrderToLittleEndian();
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkFLUENTReader::GetDataByteOrder()
 {
 #ifdef VTK_WORDS_BIGENDIAN
@@ -4106,7 +4112,7 @@ int vtkFLUENTReader::GetDataByteOrder()
   }
 #endif
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkFLUENTReader::GetDataByteOrderAsString()
 {
 #ifdef VTK_WORDS_BIGENDIAN

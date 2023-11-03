@@ -57,17 +57,18 @@ class vtkIdList;
 class VTKFILTERSMODELING_EXPORT vtkLoopSubdivisionFilter : public vtkApproximatingSubdivisionFilter
 {
 public:
-  //@{
+  ///@{
   /**
    * Construct object with NumberOfSubdivisions set to 1.
    */
   static vtkLoopSubdivisionFilter* New();
   vtkTypeMacro(vtkLoopSubdivisionFilter, vtkApproximatingSubdivisionFilter);
-  //@}
+  void PrintSelf(ostream& os, vtkIndent indent) override;
+  ///@}
 
 protected:
-  vtkLoopSubdivisionFilter() {}
-  ~vtkLoopSubdivisionFilter() override {}
+  vtkLoopSubdivisionFilter() = default;
+  ~vtkLoopSubdivisionFilter() override = default;
 
   int GenerateSubdivisionPoints(vtkPolyData* inputDS, vtkIntArray* edgeData, vtkPoints* outputPts,
     vtkPointData* outputPD) override;
@@ -83,4 +84,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkLoopSubdivisionFilter.h

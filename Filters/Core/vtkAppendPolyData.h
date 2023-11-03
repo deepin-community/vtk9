@@ -24,8 +24,13 @@
  * attributes available.  (For example, if one dataset has point scalars but
  * another does not, point scalars will not be appended.)
  *
+ * @warning
+ * The related filter vtkRemovePolyData enables the subtraction, or removal
+ * of the cells of a vtkPolyData. Hence vtkRemovePolyData functions like the
+ * inverse operation to vtkAppendPolyData.
+ *
  * @sa
- * vtkAppendFilter
+ * vtkAppendFilter vtkRemovePolyData
  */
 
 #ifndef vtkAppendPolyData_h
@@ -47,7 +52,7 @@ public:
   vtkTypeMacro(vtkAppendPolyData, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * UserManagedInputs allows the user to set inputs by number instead of
    * using the AddInput/RemoveInput functions. Calls to
@@ -57,7 +62,7 @@ public:
   vtkSetMacro(UserManagedInputs, vtkTypeBool);
   vtkGetMacro(UserManagedInputs, vtkTypeBool);
   vtkBooleanMacro(UserManagedInputs, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Add a dataset to the list of data to append. Should not be
@@ -71,13 +76,13 @@ public:
    */
   void RemoveInputData(vtkPolyData*);
 
-  //@{
+  ///@{
   /**
    * Get any input of this filter.
    */
   vtkPolyData* GetInput(int idx);
   vtkPolyData* GetInput() { return this->GetInput(0); }
-  //@}
+  ///@}
 
   /**
    * Directly set(allocate) number of inputs, should only be used
@@ -89,7 +94,7 @@ public:
   void SetInputConnectionByNumber(int num, vtkAlgorithmOutput* input);
   void SetInputDataByNumber(int num, vtkPolyData* ds);
 
-  //@{
+  ///@{
   /**
    * ParallelStreaming is for a particular application.
    * It causes this filter to ask for a different piece
@@ -103,9 +108,9 @@ public:
   vtkSetMacro(ParallelStreaming, vtkTypeBool);
   vtkGetMacro(ParallelStreaming, vtkTypeBool);
   vtkBooleanMacro(ParallelStreaming, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -113,7 +118,7 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
   int ExecuteAppend(vtkPolyData* output, vtkPolyData* inputs[], int numInputs)
     VTK_SIZEHINT(inputs, numInputs);
@@ -135,7 +140,7 @@ protected:
   void AppendData(vtkDataArray* dest, vtkDataArray* src, vtkIdType offset);
 
   // An efficient way to append cells.
-  void AppendCells(vtkCellArray* dest, vtkCellArray* src, vtkIdType offset);
+  void AppendCells(vtkCellArray* dst, vtkCellArray* src, vtkIdType offset);
 
 private:
   // hide the superclass' AddInput() from the user and the compiler

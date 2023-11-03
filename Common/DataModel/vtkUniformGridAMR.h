@@ -102,7 +102,7 @@ public:
   int GetCompositeIndex(const unsigned int level, const unsigned int index);
 
   // Description:
-  // Givenes the composite Idx (as set by SetCompositeIdx) this method returns the
+  // Given the compositeIdx (as set by SetCompositeIdx) this method returns the
   // corresponding level and dataset index within the level.
   void GetLevelAndIndex(const unsigned int compositeIdx, unsigned int& level, unsigned int& idx);
 
@@ -111,6 +111,7 @@ public:
   void ShallowCopy(vtkDataObject* src) override;
   void DeepCopy(vtkDataObject* src) override;
   void CopyStructure(vtkCompositeDataSet* src) override;
+  void RecursiveShallowCopy(vtkDataObject* src) override;
 
   // Retrieve an instance of this class from an information object.
   static vtkUniformGridAMR* GetData(vtkInformation* info);

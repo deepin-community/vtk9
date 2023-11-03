@@ -37,17 +37,17 @@ public:
   vtkTypeMacro(vtkImageLaplacian, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Determines how the input is interpreted (set of 2d slices ...)
    */
   vtkSetClampMacro(Dimensionality, int, 2, 3);
   vtkGetMacro(Dimensionality, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageLaplacian();
-  ~vtkImageLaplacian() override {}
+  ~vtkImageLaplacian() override = default;
 
   int Dimensionality;
 

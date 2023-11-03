@@ -34,6 +34,7 @@
 #include "vtkOpenGLRenderer.h"
 #include "vtkOpenGLResourceFreeCallback.h"
 #include "vtkOpenGLShaderCache.h"
+#include "vtkOpenGLState.h"
 #include "vtkOpenGLVertexArrayObject.h"
 #include "vtkOpenGLVertexBufferObject.h"
 #include "vtkOpenGLVertexBufferObjectGroup.h"
@@ -49,28 +50,36 @@
 #include <algorithm>
 #include <numeric>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOpenGLGlyph3DHelper);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLGlyph3DHelper::vtkOpenGLGlyph3DHelper()
 {
   this->UsingInstancing = false;
   this->PopulateSelectionSettings = 0;
+
+  // Shift and Scale are not used in this mapper producing errors when the Shift Scale
+  // feature was enabled by the superclass.
+  // GCMCMatrix could be modified accordingly but Shift and Scale coefficients are
+  // computed with the glyph source and not the point cloud.
+  // Disabling it for now.
+  this->SetVBOShiftScaleMethod(vtkOpenGLVertexBufferObject::DISABLE_SHIFT_SCALE);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release any graphics resources that are being consumed by this mapper.
 void vtkOpenGLGlyph3DHelper::ReleaseGraphicsResources(vtkWindow* window)
 {
+  this->InstanceBuffersBuildTime = vtkTimeStamp();
   this->NormalMatrixBuffer->ReleaseGraphicsResources();
   this->MatrixBuffer->ReleaseGraphicsResources();
   this->ColorBuffer->ReleaseGraphicsResources();
   this->Superclass::ReleaseGraphicsResources(window);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DHelper::GetShaderTemplate(
   std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* actor)
 {
@@ -84,7 +93,7 @@ void vtkOpenGLGlyph3DHelper::ReplaceShaderPositionVC(
 {
   std::string VSSource = shaders[vtkShader::Vertex]->GetSource();
 
-  if (this->LastLightComplexity[this->LastBoundBO] > 0)
+  if (this->PrimitiveInfo[this->LastBoundBO].LastLightComplexity > 0)
   {
     // we use vertex instead of vertexMC
     vtkShaderProgram::Substitute(VSSource, "//VTK::PositionVC::Impl",
@@ -141,7 +150,7 @@ void vtkOpenGLGlyph3DHelper::ReplaceShaderColor(
   }
 
   // now handle scalar coloring
-  if (!this->DrawingEdgesOrVertices)
+  if (!this->DrawingVertices)
   {
     vtkShaderProgram::Substitute(FSSource, "//VTK::Color::Impl",
       "//VTK::Color::Impl\n"
@@ -283,11 +292,12 @@ void vtkOpenGLGlyph3DHelper::GlyphRender(vtkRenderer* ren, vtkActor* actor, vtkI
 
   this->RenderPieceStart(ren, actor);
 
+  vtkOpenGLRenderWindow* renWin = static_cast<vtkOpenGLRenderWindow*>(ren->GetRenderWindow());
+  vtkOpenGLState* ostate = renWin->GetState();
+
   if (selecting_points)
   {
-#ifndef GL_ES_VERSION_3_0
-    glPointSize(6.0);
-#endif
+    ostate->vtkglPointSize(6.0);
     representation = GL_POINTS;
   }
 
@@ -297,7 +307,7 @@ void vtkOpenGLGlyph3DHelper::GlyphRender(vtkRenderer* ren, vtkActor* actor, vtkI
   for (int i = PrimitiveStart;
        i < (draw_surface_with_edges ? PrimitiveEnd : PrimitiveTriStrips + 1); i++)
   {
-    this->DrawingEdgesOrVertices = (i > PrimitiveTriStrips ? true : false);
+    this->DrawingVertices = (i > PrimitiveTriStrips ? true : false);
     if (this->Primitives[i].IBO->IndexCount)
     {
       this->UpdateShaders(this->Primitives[i], ren, actor);
@@ -317,7 +327,7 @@ void vtkOpenGLGlyph3DHelper::GlyphRender(vtkRenderer* ren, vtkActor* actor, vtkI
         program->SetUniformMatrix4x4("GCMCMatrix", &(matrices[inPtId * 16]));
 
         // for lit shaders set normal matrix
-        if (this->LastLightComplexity[this->LastBoundBO] > 0 &&
+        if (this->PrimitiveInfo[this->LastBoundBO].LastLightComplexity > 0 &&
           this->VBOs->GetNumberOfComponents("normalMC") == 3 && !this->UsingInstancing)
         {
           program->SetUniformMatrix3x3("glyphNormalMatrix", &(normalMatrices[inPtId * 9]));
@@ -346,7 +356,7 @@ void vtkOpenGLGlyph3DHelper::GlyphRender(vtkRenderer* ren, vtkActor* actor, vtkI
   this->RenderPieceFinish(ren, actor);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DHelper::SetMapperShaderParameters(
   vtkOpenGLHelper& cellBO, vtkRenderer* ren, vtkActor* actor)
 {
@@ -388,7 +398,7 @@ void vtkOpenGLGlyph3DHelper::GlyphRenderInstances(vtkRenderer* ren, vtkActor* ac
   for (int i = PrimitiveStart;
        i < (draw_surface_with_edges ? PrimitiveEnd : PrimitiveTriStrips + 1); i++)
   {
-    this->DrawingEdgesOrVertices = (i > PrimitiveTriStrips ? true : false);
+    this->DrawingVertices = (i > PrimitiveTriStrips ? true : false);
     if (this->Primitives[i].IBO->IndexCount)
     {
       GLenum mode = this->GetOpenGLMode(representation, i);
@@ -560,7 +570,7 @@ void vtkOpenGLGlyph3DHelper::GlyphRenderInstances(vtkRenderer* ren, vtkActor* ac
   this->RenderPieceFinish(ren, actor);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DHelper::BuildCullingShaders(
   vtkRenderer* ren, vtkActor* actor, vtkIdType numPts, bool withNormals)
 {
@@ -590,19 +600,19 @@ void vtkOpenGLGlyph3DHelper::BuildCullingShaders(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DHelper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
-void vtkOpenGLGlyph3DHelper::SetLODs(std::vector<std::pair<float, float> >& lods)
+//------------------------------------------------------------------------------
+void vtkOpenGLGlyph3DHelper::SetLODs(std::vector<std::pair<float, float>>& lods)
 {
   this->LODs = lods;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DHelper::SetLODColoring(bool val)
 {
   this->InstanceCulling->SetColorLOD(val);

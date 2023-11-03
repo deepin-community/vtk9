@@ -53,13 +53,13 @@ public:
    */
   void DeepCopy(vtkOpenGLShaderProperty* p);
 
-  virtual void AddVertexShaderReplacement(const std::string& originalValue,
+  void AddVertexShaderReplacement(const std::string& originalValue,
     bool replaceFirst, // do this replacement before the default
     const std::string& replacementValue, bool replaceAll) override;
-  virtual void AddFragmentShaderReplacement(const std::string& originalValue,
+  void AddFragmentShaderReplacement(const std::string& originalValue,
     bool replaceFirst, // do this replacement before the default
     const std::string& replacementValue, bool replaceAll) override;
-  virtual void AddGeometryShaderReplacement(const std::string& originalValue,
+  void AddGeometryShaderReplacement(const std::string& originalValue,
     bool replaceFirst, // do this replacement before the default
     const std::string& replacementValue, bool replaceAll) override;
 
@@ -76,7 +76,7 @@ public:
   void ClearAllGeometryShaderReplacements() override;
   void ClearAllShaderReplacements() override;
 
-  //@{
+  ///@{
   /**
    * This function enables you to apply your own substitutions
    * to the shader creation process. The shader code in this class
@@ -91,7 +91,7 @@ public:
   void ClearShaderReplacement(vtkShader::Type shaderType, // vertex, fragment, etc
     const std::string& originalValue, bool replaceFirst);
   void ClearAllShaderReplacements(vtkShader::Type shaderType);
-  //@}
+  ///@}
 
   /**
    * @brief GetAllShaderReplacements returns all user-specified shader

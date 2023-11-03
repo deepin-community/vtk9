@@ -2,11 +2,9 @@ Description: Rename vtkpython to vtkpython-9.0
 Author: Anton Gladky <gladk@debian.org>
 Last-Update: 2020-11-05
 
-Index: vtk9-9.0.1+dfsg1/Wrapping/Python/CMakeLists.txt
-===================================================================
---- vtk9-9.0.1+dfsg1.orig/Wrapping/Python/CMakeLists.txt
-+++ vtk9-9.0.1+dfsg1/Wrapping/Python/CMakeLists.txt
-@@ -23,21 +23,21 @@ endif ()
+--- vtk9.orig/Wrapping/Python/CMakeLists.txt
++++ vtk9/Wrapping/Python/CMakeLists.txt
+@@ -23,21 +23,21 @@
  
  # The interpreters are not supported in wheel builds, so skip them.
  if (NOT VTK_WHEEL_BUILD)

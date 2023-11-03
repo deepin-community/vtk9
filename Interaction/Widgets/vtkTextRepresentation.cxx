@@ -50,7 +50,7 @@ protected:
 
 vtkStandardNewMacro(vtkTextRepresentation);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextRepresentation::vtkTextRepresentation()
 {
   this->Observer = vtkTextRepresentationObserver::New();
@@ -60,11 +60,11 @@ vtkTextRepresentation::vtkTextRepresentation()
   this->InitializeTextActor();
 
   this->SetShowBorder(vtkBorderRepresentation::BORDER_ACTIVE);
-  this->BWActor->VisibilityOff();
+  this->BWActorEdges->VisibilityOff();
   this->WindowLocation = AnyLocation;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextRepresentation::~vtkTextRepresentation()
 {
   this->SetTextActor(nullptr);
@@ -72,7 +72,7 @@ vtkTextRepresentation::~vtkTextRepresentation()
   this->Observer->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::SetTextActor(vtkTextActor* textActor)
 {
   if (textActor != this->TextActor)
@@ -94,7 +94,7 @@ void vtkTextRepresentation::SetTextActor(vtkTextActor* textActor)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::SetText(const char* text)
 {
   if (this->TextActor)
@@ -107,7 +107,7 @@ void vtkTextRepresentation::SetText(const char* text)
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkTextRepresentation::GetText()
 {
   if (this->TextActor)
@@ -118,38 +118,43 @@ const char* vtkTextRepresentation::GetText()
   return nullptr;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::BuildRepresentation()
 {
   // Ask the superclass the size and set the text
-  int* pos1 = this->PositionCoordinate->GetComputedDisplayValue(this->Renderer);
-  int* pos2 = this->Position2Coordinate->GetComputedDisplayValue(this->Renderer);
+  double* pos1 = this->PositionCoordinate->GetComputedDoubleDisplayValue(this->Renderer);
+  double* pos2 = this->Position2Coordinate->GetComputedDoubleDisplayValue(this->Renderer);
 
   if (this->TextActor)
   {
-    this->TextActor->GetPositionCoordinate()->SetValue(pos1[0], pos1[1]);
-    this->TextActor->GetPosition2Coordinate()->SetValue(pos2[0], pos2[1]);
+    // Add the padding when setting the position of the Text
+    const double textPos1[] = { pos1[0] + this->PaddingLeft, pos1[1] + this->PaddingBottom };
+
+    const double textPos2[] = { pos2[0] - this->PaddingRight, pos2[1] - this->PaddingTop };
+
+    this->TextActor->GetPositionCoordinate()->SetValue(textPos1[0], textPos1[1]);
+    this->TextActor->GetPosition2Coordinate()->SetValue(textPos2[0], textPos2[1]);
   }
 
   // Note that the transform is updated by the superclass
   this->Superclass::BuildRepresentation();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::GetActors2D(vtkPropCollection* pc)
 {
   pc->AddItem(this->TextActor);
   this->Superclass::GetActors2D(pc);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->TextActor->ReleaseGraphicsResources(w);
   this->Superclass::ReleaseGraphicsResources(w);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextRepresentation::RenderOverlay(vtkViewport* w)
 {
   int count = this->Superclass::RenderOverlay(w);
@@ -157,7 +162,7 @@ int vtkTextRepresentation::RenderOverlay(vtkViewport* w)
   return count;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextRepresentation::RenderOpaqueGeometry(vtkViewport* w)
 {
   // CheckTextBoundary resize the text actor. This needs to happen before we
@@ -169,7 +174,7 @@ int vtkTextRepresentation::RenderOpaqueGeometry(vtkViewport* w)
   return count;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w)
 {
   int count = this->Superclass::RenderTranslucentPolygonalGeometry(w);
@@ -177,7 +182,7 @@ int vtkTextRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w)
   return count;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkTextRepresentation::HasTranslucentPolygonalGeometry()
 {
   int result = this->Superclass::HasTranslucentPolygonalGeometry();
@@ -185,7 +190,7 @@ vtkTypeBool vtkTextRepresentation::HasTranslucentPolygonalGeometry()
   return result;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::InitializeTextActor()
 {
   if (this->TextActor)
@@ -208,7 +213,7 @@ void vtkTextRepresentation::InitializeTextActor()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::ExecuteTextPropertyModifiedEvent(
   vtkObject* object, unsigned long enumEvent, void*)
 {
@@ -225,7 +230,7 @@ void vtkTextRepresentation::ExecuteTextPropertyModifiedEvent(
   this->CheckTextBoundary();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::ExecuteTextActorModifiedEvent(
   vtkObject* object, unsigned long enumEvent, void*)
 {
@@ -248,7 +253,7 @@ void vtkTextRepresentation::ExecuteTextActorModifiedEvent(
   this->CheckTextBoundary();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::CheckTextBoundary()
 {
   if (this->GetRenderer() &&
@@ -280,21 +285,27 @@ void vtkTextRepresentation::CheckTextBoundary()
     // The bounding box was the area that is going to be filled with pixels
     // given a text origin of (0, 0). Now get the real size we need, i.e.
     // the full extent from the origin to the bounding box.
-
-    double text_size[2];
-    text_size[0] = (text_bbox[1] - text_bbox[0] + 1);
-    text_size[1] = (text_bbox[3] - text_bbox[2] + 1);
+    double text_size[] = { (text_bbox[1] - text_bbox[0] + 1.0),
+      (text_bbox[3] - text_bbox[2] + 1.0) };
 
     this->GetRenderer()->DisplayToNormalizedDisplay(text_size[0], text_size[1]);
     this->GetRenderer()->NormalizedDisplayToViewport(text_size[0], text_size[1]);
     this->GetRenderer()->ViewportToNormalizedViewport(text_size[0], text_size[1]);
 
-    // update the PositionCoordinate
+    // Convert padding in pixels into viewport
+    // Multiply by 2 to ensure an even padding
+    int* size = win->GetSize();
+    double paddingX = (this->PaddingLeft + this->PaddingRight) / (double)size[0];
+    double paddingY = (this->PaddingTop + this->PaddingBottom) / (double)size[1];
 
+    double posX = text_size[0] + paddingX;
+    double posY = text_size[1] + paddingY;
+
+    // update the PositionCoordinate and add padding
     double* pos2 = this->Position2Coordinate->GetValue();
-    if (pos2[0] != text_size[0] || pos2[1] != text_size[1])
+    if (pos2[0] != posX || pos2[1] != posY)
     {
-      this->Position2Coordinate->SetValue(text_size[0], text_size[1], 0);
+      this->Position2Coordinate->SetValue(posX, posY, 0);
       this->Modified();
     }
     if (this->WindowLocation != AnyLocation)
@@ -304,7 +315,7 @@ void vtkTextRepresentation::CheckTextBoundary()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::SetWindowLocation(int enumLocation)
 {
   if (this->WindowLocation == enumLocation)
@@ -317,7 +328,7 @@ void vtkTextRepresentation::SetWindowLocation(int enumLocation)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::SetPosition(double x, double y)
 {
   double* pos = this->PositionCoordinate->GetValue();
@@ -330,7 +341,7 @@ void vtkTextRepresentation::SetPosition(double x, double y)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::UpdateWindowLocation()
 {
   if (this->WindowLocation != AnyLocation)
@@ -362,7 +373,19 @@ void vtkTextRepresentation::UpdateWindowLocation()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkTextRepresentation::SetPadding(int padding)
+{
+  padding = std::max(0, std::min(4000, padding));
+
+  // Negative padding does not make sense
+  this->PaddingLeft = padding;
+  this->PaddingRight = padding;
+  this->PaddingTop = padding;
+  this->PaddingBottom = padding;
+}
+
+//------------------------------------------------------------------------------
 void vtkTextRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

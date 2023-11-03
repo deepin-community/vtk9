@@ -14,13 +14,13 @@
 #define vtkOBJImporterInternals_h
 #ifndef __VTK_WRAP__
 
-#include "vtkActor.h"
-#include "vtkOBJImporter.h"
+#include "vtkIOImportModule.h" // For export macro
 #include "vtkPolyDataAlgorithm.h"
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
+#include <map>    // for std::map
+#include <string> // for std::string
+#include <vector> // for std::vector
+
+class vtkActor;
 
 struct VTKIOIMPORT_EXPORT vtkOBJImportedMaterial
 {
@@ -121,9 +121,9 @@ public:
   std::vector<vtkOBJImportedPolyDataWithMaterial*> poly_list;
 
   // what gets returned to client code via GetOutput()
-  std::vector<vtkSmartPointer<vtkPolyData> > outVector_of_vtkPolyData;
+  std::vector<vtkSmartPointer<vtkPolyData>> outVector_of_vtkPolyData;
 
-  std::vector<vtkSmartPointer<vtkActor> > actor_list;
+  std::vector<vtkSmartPointer<vtkActor>> actor_list;
   /////////////////////
 
   std::vector<vtkOBJImportedMaterial*> ParseOBJandMTL(std::string filename, int& result_code);
@@ -158,4 +158,3 @@ void bindTexturedPolydataToRenderWindow(
 
 #endif
 #endif
-// VTK-HeaderTest-Exclude: vtkOBJImporterInternals.h

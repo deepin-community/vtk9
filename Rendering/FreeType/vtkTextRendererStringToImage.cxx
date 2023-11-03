@@ -13,6 +13,9 @@
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkTextRendererStringToImage.h"
 
 #include "vtkImageData.h"
@@ -30,22 +33,22 @@ public:
   vtkTextRenderer* TextRenderer;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkTextRendererStringToImage);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextRendererStringToImage::vtkTextRendererStringToImage()
 {
   this->Implementation = new Internals;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTextRendererStringToImage::~vtkTextRendererStringToImage()
 {
   delete this->Implementation;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVector2i vtkTextRendererStringToImage::GetBounds(
   vtkTextProperty* property, const vtkUnicodeString& string, int dpi)
 {
@@ -63,7 +66,7 @@ vtkVector2i vtkTextRendererStringToImage::GetBounds(
   return recti;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVector2i vtkTextRendererStringToImage::GetBounds(
   vtkTextProperty* property, const vtkStdString& string, int dpi)
 {
@@ -81,31 +84,31 @@ vtkVector2i vtkTextRendererStringToImage::GetBounds(
   return recti;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextRendererStringToImage::RenderString(vtkTextProperty* property,
   const vtkUnicodeString& string, int dpi, vtkImageData* data, int textDims[2])
 {
   return this->Implementation->TextRenderer->RenderString(property, string, data, textDims, dpi);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTextRendererStringToImage::RenderString(vtkTextProperty* property,
   const vtkStdString& string, int dpi, vtkImageData* data, int textDims[2])
 {
   return this->Implementation->TextRenderer->RenderString(property, string, data, textDims, dpi);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRendererStringToImage::SetScaleToPowerOfTwo(bool scale)
 {
   this->vtkStringToImage::SetScaleToPowerOfTwo(scale);
   this->Implementation->TextRenderer->SetScaleToPowerOfTwo(scale);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRendererStringToImage::DeepCopy(vtkTextRendererStringToImage*) {}
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTextRendererStringToImage::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

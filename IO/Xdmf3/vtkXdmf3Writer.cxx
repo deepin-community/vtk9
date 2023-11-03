@@ -47,8 +47,8 @@ vtkObjectFactoryNewMacro(vtkXdmf3Writer);
 class vtkXdmf3Writer::Internals
 {
 public:
-  Internals() {}
-  ~Internals() {}
+  Internals() = default;
+  ~Internals() = default;
   void Init()
   {
     this->NumberOfTimeSteps = 1;
@@ -75,7 +75,8 @@ public:
     this->Destination = this->DestinationGroups.top();
     this->Domain->insert(dest);
   }
-  void WriteDataObject(vtkDataObject* dataSet, bool hasTime, double time, const char* name = 0)
+  void WriteDataObject(
+    vtkDataObject* dataSet, bool hasTime, double time, const char* name = nullptr)
   {
     if (!dataSet)
     {
@@ -149,7 +150,7 @@ public:
   boost::shared_ptr<XdmfWriter> Writer;
   boost::shared_ptr<XdmfDomain> AggregateDomain;
   boost::shared_ptr<XdmfWriter> AggregateWriter;
-  std::stack<boost::shared_ptr<XdmfDomain> > DestinationGroups;
+  std::stack<boost::shared_ptr<XdmfDomain>> DestinationGroups;
 
   int NumberOfTimeSteps;
   int CurrentTimeIndex;
@@ -157,21 +158,21 @@ public:
 
 //==============================================================================
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmf3Writer::vtkXdmf3Writer()
 {
   this->FileName = nullptr;
   this->LightDataLimit = 100;
   this->WriteAllTimeSteps = false;
   this->TimeValues = nullptr;
-  this->TimeValues = 0;
+  this->TimeValues = nullptr;
   this->InitWriters = true;
 
   this->Internal = new Internals();
   this->SetNumberOfOutputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmf3Writer::~vtkXdmf3Writer()
 {
   this->SetFileName(nullptr);
@@ -182,7 +183,7 @@ vtkXdmf3Writer::~vtkXdmf3Writer()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmf3Writer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -224,7 +225,7 @@ int vtkXdmf3Writer::Write()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -244,7 +245,7 @@ int vtkXdmf3Writer::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -282,7 +283,7 @@ int vtkXdmf3Writer::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::RequestData(vtkInformation* request, vtkInformationVector** inputVector,
   vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -300,13 +301,13 @@ int vtkXdmf3Writer::RequestData(vtkInformation* request, vtkInformationVector** 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::GlobalContinueExecuting(int localContinueExecution)
 {
   return localContinueExecution;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmf3Writer::WriteDataInternal(vtkInformation* request)
 {
   bool isTemporal = false;
@@ -387,7 +388,7 @@ void vtkXdmf3Writer::WriteDataInternal(vtkInformation* request)
       std::string rankGridName = "/Xdmf/Domain/Grid[1]";
 
       shared_ptr<XdmfGridController> partController =
-        XdmfGridController::New(rankFileName.c_str(), rankGridName.c_str());
+        XdmfGridController::New(rankFileName, rankGridName);
 
       // tricky part is we have to state what type we are referencing to.
       // otherwise readback fails.
@@ -486,8 +487,8 @@ void vtkXdmf3Writer::WriteDataInternal(vtkInformation* request)
   }
 }
 
-//----------------------------------------------------------------------------
-int vtkXdmf3Writer::CheckParametersInternal(int _NumberOfProcesses, int _MyRank)
+//------------------------------------------------------------------------------
+int vtkXdmf3Writer::CheckParametersInternal(int numberOfProcesses, int myRank)
 {
   if (!this->FileName)
   {
@@ -495,13 +496,13 @@ int vtkXdmf3Writer::CheckParametersInternal(int _NumberOfProcesses, int _MyRank)
     return 0;
   }
 
-  this->NumberOfProcesses = _NumberOfProcesses;
-  this->MyRank = _MyRank;
+  this->NumberOfProcesses = numberOfProcesses;
+  this->MyRank = myRank;
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmf3Writer::CheckParameters()
 {
   return this->CheckParametersInternal(1, 0);

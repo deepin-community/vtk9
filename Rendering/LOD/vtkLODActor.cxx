@@ -32,7 +32,7 @@ vtkStandardNewMacro(vtkLODActor);
 vtkCxxSetObjectMacro(vtkLODActor, LowResFilter, vtkPolyDataAlgorithm);
 vtkCxxSetObjectMacro(vtkLODActor, MediumResFilter, vtkPolyDataAlgorithm);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLODActor::vtkLODActor()
 {
   // get a hardware dependent actor and mappers
@@ -49,7 +49,7 @@ vtkLODActor::vtkLODActor()
   this->MediumMapper = nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLODActor::~vtkLODActor()
 {
   this->Device->Delete();
@@ -58,7 +58,7 @@ vtkLODActor::~vtkLODActor()
   this->LODMappers->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLODActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -79,7 +79,7 @@ void vtkLODActor::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLODActor::Render(vtkRenderer* ren, vtkMapper* vtkNotUsed(m))
 {
   float myTime, bestTime, tempTime;
@@ -181,50 +181,12 @@ void vtkLODActor::Render(vtkRenderer* ren, vtkMapper* vtkNotUsed(m))
   // etc to work.
   this->Device->SetPropertyKeys(this->GetPropertyKeys());
 
+  // copy current translucent pass setting
+  this->Device->SetIsRenderingTranslucentPolygonalGeometry(
+    this->IsRenderingTranslucentPolygonalGeometry());
+
   this->Device->Render(ren, bestMapper);
   this->EstimatedRenderTime = bestMapper->GetTimeToDraw();
-}
-
-int vtkLODActor::RenderOpaqueGeometry(vtkViewport* vp)
-{
-  int renderedSomething = 0;
-  vtkRenderer* ren = static_cast<vtkRenderer*>(vp);
-
-  if (!this->Mapper)
-  {
-    return 0;
-  }
-
-  // make sure we have a property
-  if (!this->Property)
-  {
-    // force creation of a property
-    this->GetProperty();
-  }
-
-  // is this actor opaque ?
-  // Do this check only when not in selection mode
-  if (this->GetIsOpaque() || (ren->GetSelector() && this->Property->GetOpacity() > 0.0))
-  {
-    this->Property->Render(this, ren);
-
-    // render the backface property
-    if (this->BackfaceProperty)
-    {
-      this->BackfaceProperty->BackfaceRender(this, ren);
-    }
-
-    // render the texture
-    if (this->Texture)
-    {
-      this->Texture->Render(ren);
-    }
-    this->Render(ren, this->Mapper);
-
-    renderedSomething = 1;
-  }
-
-  return renderedSomething;
 }
 
 void vtkLODActor::ReleaseGraphicsResources(vtkWindow* renWin)
@@ -240,7 +202,7 @@ void vtkLODActor::ReleaseGraphicsResources(vtkWindow* renWin)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // does not matter if mapper is in mapper collection.
 void vtkLODActor::AddLODMapper(vtkMapper* mapper)
 {
@@ -257,7 +219,7 @@ void vtkLODActor::AddLODMapper(vtkMapper* mapper)
   this->LODMappers->AddItem(mapper);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Can only be used if no LOD mappers have been added.
 // Maybe we should remove this exculsive feature.
 void vtkLODActor::CreateOwnLODs()
@@ -306,7 +268,7 @@ void vtkLODActor::CreateOwnLODs()
   this->UpdateOwnLODs();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLODActor::UpdateOwnLODs()
 {
   if (!this->Mapper)
@@ -347,7 +309,7 @@ void vtkLODActor::UpdateOwnLODs()
   this->BuildTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Deletes Mappers and filters created by this object.
 // (number two and three)
 void vtkLODActor::DeleteOwnLODs()
@@ -373,7 +335,7 @@ void vtkLODActor::DeleteOwnLODs()
   this->SetMediumResFilter(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLODActor::Modified()
 {
   if (this->Device) // Will be nullptr only during destruction of this class.

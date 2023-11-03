@@ -54,22 +54,22 @@ public:
    */
   int Pick(double selectionX, double selectionY, double selectionZ, vtkRenderer* renderer) override;
 
-  //@{
+  ///@{
   /**
    * Get the picked axis
    */
   vtkGetMacro(PickedAxis1, int);
   vtkGetMacro(PickedAxis2, int);
   vtkGetMacro(PickedCenter, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the reslice cursor algorithm. One must be set
    */
   virtual void SetResliceCursorAlgorithm(vtkResliceCursorPolyDataAlgorithm*);
   vtkGetObjectMacro(ResliceCursorAlgorithm, vtkResliceCursorPolyDataAlgorithm);
-  //@}
+  ///@}
 
   virtual void SetTransformMatrix(vtkMatrix4x4*);
 
@@ -90,7 +90,7 @@ protected:
   void TransformPoint(double pIn[4], double pOut[4]);
   void InverseTransformPoint(double pIn[4], double pOut[4]);
 
-private:
+  // Helper members
   vtkGenericCell* Cell; // used to accelerate picking
   vtkResliceCursorPolyDataAlgorithm* ResliceCursorAlgorithm;
 

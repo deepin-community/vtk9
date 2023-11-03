@@ -32,7 +32,6 @@
 #include "vtkObject.h"
 
 #include <string> // STL Header
-#include <vector> // STL Header
 
 #ifdef _WIN32
 #include <sys/timeb.h> // Needed for Win32 implementation of timer
@@ -104,31 +103,31 @@ public:
   static void LoggingOn() { vtkTimerLog::SetLogging(1); }
   static void LoggingOff() { vtkTimerLog::SetLogging(0); }
 
-  //@{
+  ///@{
   /**
    * Set/Get the maximum number of entries allowed in the timer log
    */
   static void SetMaxEntries(int a);
   static int GetMaxEntries();
-  //@}
+  ///@}
 
   /**
    * Record a timing event.  The event is represented by a formatted
    * string.  The internal buffer is 4096 bytes and will truncate anything longer.
    */
 #ifndef __VTK_WRAP__
-  static void FormatAndMarkEvent(const char* EventString, ...) VTK_FORMAT_PRINTF(1, 2);
+  static void FormatAndMarkEvent(const char* format, ...) VTK_FORMAT_PRINTF(1, 2);
 #endif
 
-  //@{
+  ///@{
   /**
    * Write the timing table out to a file.  Calculate some helpful
    * statistics (deltas and percentages) in the process.
    */
-  static void DumpLog(const char* filename);
-  //@}
+  static void DumpLog(VTK_FILEPATH const char* filename);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * I want to time events, so I am creating this interface to
    * mark events that have a start and an end.  These events can be,
@@ -136,20 +135,20 @@ public:
    */
   static void MarkStartEvent(const char* EventString);
   static void MarkEndEvent(const char* EventString);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Insert an event with a known wall time value (in seconds)
    * and cpuTicks.
    */
   static void InsertTimedEvent(const char* EventString, double time, int cpuTicks);
-  //@}
+  ///@}
 
   static void DumpLogWithIndents(ostream* os, double threshold);
   static void DumpLogWithIndentsAndPercentages(ostream* os);
 
-  //@{
+  ///@{
   /**
    * Programmatic access to events.  Indexed from 0 to num-1.
    */
@@ -158,7 +157,7 @@ public:
   static double GetEventWallTime(int i);
   static const char* GetEventString(int i);
   static vtkTimerLogEntry::LogEntryType GetEventType(int i);
-  //@}
+  ///@}
 
   /**
    * Record a timing event and capture wall time and cpu ticks.
@@ -209,8 +208,8 @@ protected:
   {
     this->StartTime = 0;
     this->EndTime = 0;
-  } // insure constructor/destructor protected
-  ~vtkTimerLog() override {}
+  } // ensure constructor/destructor protected
+  ~vtkTimerLog() override = default;
 
   static int Logging;
   static int Indent;
@@ -218,7 +217,6 @@ protected:
   static int NextEntry;
   static int WrapFlag;
   static int TicksPerSecond;
-  static std::vector<vtkTimerLogEntry> TimerLog;
 
 #ifdef _WIN32
 #ifndef _WIN32_WCE
@@ -289,5 +287,18 @@ private:
     vtkTimerLog::FormatAndMarkEvent(                                                               \
       "Mark: In %s, line %d, class %s: %s", __FILE__, __LINE__, this->GetClassName(), string);     \
   }
+
+// Implementation detail for Schwarz counter idiom.
+class VTKCOMMONSYSTEM_EXPORT vtkTimerLogCleanup
+{
+public:
+  vtkTimerLogCleanup();
+  ~vtkTimerLogCleanup();
+
+private:
+  vtkTimerLogCleanup(const vtkTimerLogCleanup&) = delete;
+  void operator=(const vtkTimerLogCleanup&) = delete;
+};
+static vtkTimerLogCleanup vtkTimerLogCleanupInstance;
 
 #endif

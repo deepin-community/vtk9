@@ -27,6 +27,7 @@
 
 #include "vtkCommonCoreModule.h" // For export macro
 #include "vtkObject.h"
+#include "vtkThreads.h" // for VTK_MAX_THREADS
 
 #include <mutex> // For std::mutex
 
@@ -39,14 +40,12 @@
 // If VTK_USE_PTHREADS is defined, then pthread_create() will be
 // used to create multiple threads
 
-// Defined in vtkSystemIncludes.h:
-//   VTK_MAX_THREADS
-
 // If VTK_USE_PTHREADS is defined, then the multithreaded
 // function is of type void *, and returns nullptr
 // Otherwise the type is void which is correct for WIN32
 
-// Defined in vtkSystemIncludes.h:
+// Defined in vtkThreads.h:
+//   VTK_MAX_THREADS
 //   VTK_THREAD_RETURN_VALUE
 //   VTK_THREAD_RETURN_TYPE
 
@@ -104,7 +103,7 @@ public:
     void* UserData;
   };
 
-  //@{
+  ///@{
   /**
    * Get/Set the number of threads to create. It will be clamped to the range
    * 1 - VTK_MAX_THREADS, so the caller of this method should check that the
@@ -112,9 +111,16 @@ public:
    */
   vtkSetClampMacro(NumberOfThreads, int, 1, VTK_MAX_THREADS);
   virtual int GetNumberOfThreads();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get the maximum number of threads VTK was allocated to support.
+   */
+  static int GetGlobalStaticMaximumNumberOfThreads();
+  ///@}
+
+  ///@{
   /**
    * Set/Get the maximum number of threads to use when multithreading.
    * This limits and overrides any other settings for multithreading.
@@ -122,9 +128,9 @@ public:
    */
   static void SetGlobalMaximumNumberOfThreads(int val);
   static int GetGlobalMaximumNumberOfThreads();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the value which is used to initialize the NumberOfThreads
    * in the constructor.  Initially this default is set to the number of
@@ -132,7 +138,7 @@ public:
    */
   static void SetGlobalDefaultNumberOfThreads(int val);
   static int GetGlobalDefaultNumberOfThreads();
-  //@}
+  ///@}
 
   // These methods are excluded from wrapping 1) because the
   // wrapper gives up on them and 2) because they really shouldn't be
@@ -176,12 +182,12 @@ public:
   /**
    * Terminate the thread that was created with a SpawnThreadExecute()
    */
-  void TerminateThread(int thread_id);
+  void TerminateThread(int threadId);
 
   /**
    * Determine if a thread is still active
    */
-  vtkTypeBool IsThreadActive(int threadID);
+  vtkTypeBool IsThreadActive(int threadId);
 
   /**
    * Get the thread identifier of the calling thread.

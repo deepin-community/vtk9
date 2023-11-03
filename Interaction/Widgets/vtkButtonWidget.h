@@ -68,13 +68,13 @@ public:
    */
   static vtkButtonWidget* New();
 
-  //@{
+  ///@{
   /**
    * Standard macros.
    */
   vtkTypeMacro(vtkButtonWidget, vtkAbstractWidget);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Specify an instance of vtkWidgetRepresentation used to represent this
@@ -110,7 +110,7 @@ public:
 
 protected:
   vtkButtonWidget();
-  ~vtkButtonWidget() override {}
+  ~vtkButtonWidget() override = default;
 
   // These are the events that are handled
   static void SelectAction(vtkAbstractWidget*);

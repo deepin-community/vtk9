@@ -14,7 +14,8 @@
 =========================================================================*/
 /**
  * @class   vtkImplicitPolyDataDistance
- *
+ * @brief   Implicit function that computes the distance from a point x to the nearest point p on an
+ * input vtkPolyData.
  *
  * Implicit function that computes the distance from a point x to the
  * nearest point p on an input vtkPolyData. The sign of the function
@@ -82,40 +83,40 @@ public:
    */
   void SetInput(vtkPolyData* input);
 
-  //@{
+  ///@{
   /**
    * Set/get the function value to use if no input vtkPolyData
    * specified.
    */
   vtkSetMacro(NoValue, double);
   vtkGetMacro(NoValue, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the function gradient to use if no input vtkPolyData
    * specified.
    */
   vtkSetVector3Macro(NoGradient, double);
   vtkGetVector3Macro(NoGradient, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the closest point to use if no input vtkPolyData
    * specified.
    */
   vtkSetVector3Macro(NoClosestPoint, double);
   vtkGetVector3Macro(NoClosestPoint, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the tolerance usued for the locator.
    */
   vtkGetMacro(Tolerance, double);
   vtkSetMacro(Tolerance, double);
-  //@}
+  ///@}
 
 protected:
   vtkImplicitPolyDataDistance();
@@ -126,7 +127,7 @@ protected:
    */
   void CreateDefaultLocator(void);
 
-  double SharedEvaluate(double x[3], double g[3], double p[3]);
+  double SharedEvaluate(double x[3], double g[3], double closestPoint[3]);
 
   double NoGradient[3];
   double NoClosestPoint[3];

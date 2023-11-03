@@ -33,7 +33,7 @@ public:
   vtkTypeMacro(vtkEmptyCell, vtkCell);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * See the vtkCell API for descriptions of these methods.
    */
@@ -50,7 +50,7 @@ public:
   void Clip(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
     vtkCellArray* pts, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
     vtkCellData* outCd, int insideOut) override;
-  //@}
+  ///@}
 
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
@@ -62,8 +62,8 @@ public:
     int subId, const double pcoords[3], const double* values, int dim, double* derivs) override;
 
 protected:
-  vtkEmptyCell() {}
-  ~vtkEmptyCell() override {}
+  vtkEmptyCell() = default;
+  ~vtkEmptyCell() override = default;
 
 private:
   vtkEmptyCell(const vtkEmptyCell&) = delete;

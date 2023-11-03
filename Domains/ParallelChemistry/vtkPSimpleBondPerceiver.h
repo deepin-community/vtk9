@@ -39,6 +39,7 @@ class VTKDOMAINSPARALLELCHEMISTRY_EXPORT vtkPSimpleBondPerceiver : public vtkSim
 public:
   static vtkPSimpleBondPerceiver* New();
   vtkTypeMacro(vtkPSimpleBondPerceiver, vtkSimpleBondPerceiver);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkPSimpleBondPerceiver() = default;
@@ -56,7 +57,7 @@ protected:
   void ComputeBonds(vtkMolecule* molecule) override;
 
 private:
-  vtkPSimpleBondPerceiver(const vtkPSimpleBondPerceiver&) = delete; // Not implemented.
-  void operator=(const vtkPSimpleBondPerceiver&) = delete;          // Not implemented.
+  vtkPSimpleBondPerceiver(const vtkPSimpleBondPerceiver&) = delete;
+  void operator=(const vtkPSimpleBondPerceiver&) = delete;
 };
 #endif

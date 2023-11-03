@@ -60,10 +60,15 @@ QVTKInteractorInternal::QVTKInteractorInternal(QVTKInteractor* p)
   : Parent(p)
 {
   this->SignalMapper = new QSignalMapper(this);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+  QObject::connect(
+    this->SignalMapper, &QSignalMapper::mappedInt, this, &QVTKInteractorInternal::TimerEvent);
+#else
   QObject::connect(this->SignalMapper, SIGNAL(mapped(int)), this, SLOT(TimerEvent(int)));
+#endif
 }
 
-QVTKInteractorInternal::~QVTKInteractorInternal() {}
+QVTKInteractorInternal::~QVTKInteractorInternal() = default;
 
 void QVTKInteractorInternal::TimerEvent(int id)
 {
@@ -121,13 +126,13 @@ void QVTKInteractor::Initialize()
 }
 
 #if defined(VTK_USE_TDX) && (defined(Q_WS_X11) || defined(Q_OS_LINUX))
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTDxUnixDevice* QVTKInteractor::GetDevice()
 {
   return this->Device;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void QVTKInteractor::SetDevice(vtkTDxDevice* device)
 {
   if (this->Device != device)
@@ -152,7 +157,7 @@ void QVTKInteractor::TerminateApp()
   // qApp->exit();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void QVTKInteractor::StartListening()
 {
 #if defined(VTK_USE_TDX) && defined(Q_OS_WIN)
@@ -175,7 +180,7 @@ void QVTKInteractor::StartListening()
 #endif
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void QVTKInteractor::StopListening()
 {
 #if defined(VTK_USE_TDX) && defined(Q_OS_WIN)

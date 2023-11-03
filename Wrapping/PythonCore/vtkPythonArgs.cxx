@@ -21,15 +21,19 @@ more efficient and flexible that the original PyArg_ParseTuple() code,
 resulting in wrapper code that is faster and more compact.
 -----------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 // Keep vtkPythonArgs.h from declaring externs for templates we instantiate
 #define vtkPythonArgs_cxx
 
 #include "vtkPythonArgs.h"
+#include "PyVTKReference.h"
 #include "vtkPythonUtil.h"
 
 #include "vtkObjectBase.h"
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Extract various C++ types from python objects.  The rules are
 // identical to PyArg_ParseTuple except that range checking is done
 // on unsigned values.
@@ -96,10 +100,9 @@ Py_ssize_t vtkPythonGetStringSize(PyObject* o)
   {
     return PyByteArray_GET_SIZE(o);
   }
-#ifdef Py_USING_UNICODE
   else if (PyUnicode_Check(o))
   {
-#if PY_VERSION_HEX >= 0x03030000
+#ifdef VTK_PY3K
     Py_ssize_t size;
     PyUnicode_AsUTF8AndSize(o, &size);
     return size;
@@ -111,7 +114,6 @@ Py_ssize_t vtkPythonGetStringSize(PyObject* o)
     }
 #endif
   }
-#endif
   return 0;
 }
 
@@ -127,10 +129,9 @@ bool vtkPythonGetStringValue(PyObject* o, const char*& a, const char* exctext)
     a = PyByteArray_AS_STRING(o);
     return true;
   }
-#ifdef Py_USING_UNICODE
   else if (PyUnicode_Check(o))
   {
-#if PY_VERSION_HEX >= 0x03030000
+#ifdef VTK_PY3K
     a = PyUnicode_AsUTF8(o);
     return true;
 #else
@@ -148,7 +149,6 @@ bool vtkPythonGetStringValue(PyObject* o, const char*& a, const char* exctext)
     }
 #endif
   }
-#endif
 
   if (exctext)
   {
@@ -167,10 +167,9 @@ inline bool vtkPythonGetStdStringValue(PyObject* o, std::string& a, const char* 
     a = std::string(val, len);
     return true;
   }
-#ifdef Py_USING_UNICODE
   else if (PyUnicode_Check(o))
   {
-#if PY_VERSION_HEX >= 0x03030000
+#ifdef VTK_PY3K
     Py_ssize_t len;
     const char* val = PyUnicode_AsUTF8AndSize(o, &len);
     a = std::string(val, len);
@@ -189,13 +188,12 @@ inline bool vtkPythonGetStdStringValue(PyObject* o, std::string& a, const char* 
     exctext = "(unicode conversion error)";
 #endif
   }
-#endif
 
   PyErr_SetString(PyExc_TypeError, exctext);
   return false;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overloaded methods, mostly based on the above templates
 
 // Get a void pointer to the contents of a buffer of type "btype", where
@@ -209,9 +207,6 @@ static bool vtkPythonGetValue(PyObject* o, const void*& a, Py_buffer* view, char
   PyBufferProcs* b = Py_TYPE(o)->tp_as_buffer;
 #endif
 
-#if PY_VERSION_HEX < 0x02060000
-  (void)view;
-#else
 #ifdef VTK_PY3K
   PyObject* bytes = nullptr;
   if (PyUnicode_Check(o))
@@ -255,12 +250,8 @@ static bool vtkPythonGetValue(PyObject* o, const void*& a, Py_buffer* view, char
     }
   }
 #ifndef VTK_PY3K
-  else
-#endif
-#endif
-#ifndef VTK_PY3K
   // use the old buffer interface
-  if (b && b->bf_getreadbuffer && b->bf_getsegcount)
+  else if (b && b->bf_getreadbuffer && b->bf_getsegcount)
   {
     if (b->bf_getsegcount(o, nullptr) == 1)
     {
@@ -277,8 +268,8 @@ static bool vtkPythonGetValue(PyObject* o, const void*& a, Py_buffer* view, char
 #ifdef VTK_PY3K
   if (bytes && btype == '\0')
 #else
-    if (p && sz >= 0 && sz <= VTK_INT_MAX && btype == '\0' &&
-      (format == nullptr || format[0] == 'c' || format[0] == 'B'))
+  if (p && sz >= 0 && sz <= VTK_INT_MAX && btype == '\0' &&
+    (format == nullptr || format[0] == 'c' || format[0] == 'B'))
 #endif
   {
     // check for pointer mangled as string
@@ -340,7 +331,6 @@ inline bool vtkPythonGetValue(PyObject* o, std::string& a)
 
 inline bool vtkPythonGetValue(PyObject* o, vtkUnicodeString& a)
 {
-#ifdef Py_USING_UNICODE
   PyObject* s = PyUnicode_AsUTF8String(o);
   if (s)
   {
@@ -349,11 +339,6 @@ inline bool vtkPythonGetValue(PyObject* o, vtkUnicodeString& a)
     return true;
   }
   return false;
-#else
-  a.clear();
-  PyErr_SetString(PyExc_TypeError, "python built without unicode support");
-  return false;
-#endif
 }
 
 inline bool vtkPythonGetValue(PyObject* o, char& a)
@@ -505,7 +490,52 @@ inline bool vtkPythonGetValue(PyObject* o, unsigned long long& a)
   return vtkPythonGetUnsignedLongLongValue(o, a);
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Methods for getting file system paths
+inline bool vtkPythonGetFilePath(PyObject* o, const char*& a)
+{
+  const char* exctext = "string, None, or pathlike object required";
+  a = nullptr;
+
+  if (o == Py_None)
+  {
+    // accept Py_None as equivalent to nullptr
+    return true;
+  }
+
+#if PY_VERSION_HEX >= 0x03060000
+  bool rval = false;
+  PyObject* s = PyOS_FSPath(o);
+  if (s != nullptr)
+  {
+    rval = vtkPythonGetStringValue(s, a, exctext);
+    Py_DECREF(s);
+  }
+  return rval;
+#else
+  return vtkPythonGetStringValue(o, a, exctext);
+#endif
+}
+
+inline bool vtkPythonGetFilePath(PyObject* o, std::string& a)
+{
+  const char* exctext = "string or pathlike object required";
+
+#if PY_VERSION_HEX >= 0x03060000
+  bool rval = false;
+  PyObject* s = PyOS_FSPath(o);
+  if (s != nullptr)
+  {
+    rval = vtkPythonGetStdStringValue(s, a, exctext);
+    Py_DECREF(s);
+  }
+  return rval;
+#else
+  return vtkPythonGetStdStringValue(o, a, exctext);
+#endif
+}
+
+//------------------------------------------------------------------------------
 // Method for setting a C++ array from a Python sequence.
 
 static bool vtkPythonSequenceError(PyObject* o, size_t n, size_t m);
@@ -618,7 +648,7 @@ inline bool vtkPythonGetArray(PyObject* o, char* a, size_t n)
   return true;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Method for setting an n-dimensional C++ arrays from a Python sequence.
 
 template <class T>
@@ -695,7 +725,7 @@ bool vtkPythonGetNArray(PyObject* o, T* a, int ndim, const size_t* dims)
   return true;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Method for setting a python sequence from a C++ array
 
 template <class T>
@@ -796,7 +826,7 @@ inline bool vtkPythonSetArray(PyObject* o, const char* a, size_t n)
   return true;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Method for setting a python array from an n-dimensional C++ array
 
 template <class T>
@@ -888,7 +918,7 @@ bool vtkPythonSetNArray(PyObject* o, const T* a, int ndim, const size_t* dims)
   return true;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define all the "BuildValue" array methods defined in the class.
 
 template <class T>
@@ -929,7 +959,7 @@ VTK_PYTHON_BUILD_TUPLE(unsigned long long)
 VTK_PYTHON_BUILD_TUPLE(std::string)
 VTK_PYTHON_BUILD_TUPLE(vtkUnicodeString)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 PyObject* vtkPythonArgs::BuildEnumValue(int val, const char* enumname)
 {
@@ -945,7 +975,7 @@ PyObject* vtkPythonArgs::BuildEnumValue(int val, const char* enumname)
   return PyVTKEnum_New(pytype, val);
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // If "self" is a class, get real "self" from arg list
 PyObject* vtkPythonArgs::GetSelfFromFirstArg(PyObject* self, PyObject* args)
 {
@@ -972,7 +1002,7 @@ PyObject* vtkPythonArgs::GetSelfFromFirstArg(PyObject* self, PyObject* args)
   return nullptr;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define the GetArg methods for getting objects
 
 PyObject* vtkPythonArgs::GetArgAsPythonObject(bool& valid)
@@ -1055,7 +1085,7 @@ int vtkPythonArgs::GetArgAsEnum(PyObject* o, const char* enumname, bool& valid)
   return i;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define all the "GetValue" methods in the class.
 
 #define VTK_PYTHON_GET_ARG(T)                                                                      \
@@ -1094,7 +1124,31 @@ VTK_PYTHON_GET_ARG(unsigned long)
 VTK_PYTHON_GET_ARG(long long)
 VTK_PYTHON_GET_ARG(unsigned long long)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Define all the "GetFilePath" methods in the class.
+
+#define VTK_PYTHON_GET_FILEPATH_ARG(T)                                                             \
+  bool vtkPythonArgs::GetFilePath(T& a)                                                            \
+  {                                                                                                \
+    PyObject* o = PyTuple_GET_ITEM(this->Args, this->I++);                                         \
+    if (PyVTKReference_Check(o))                                                                   \
+    {                                                                                              \
+      o = PyVTKReference_GetValue(o);                                                              \
+    }                                                                                              \
+    if (vtkPythonGetFilePath(o, a))                                                                \
+    {                                                                                              \
+      return true;                                                                                 \
+    }                                                                                              \
+    this->RefineArgTypeError(this->I - this->M - 1);                                               \
+    return false;                                                                                  \
+  }                                                                                                \
+                                                                                                   \
+  bool vtkPythonArgs::GetFilePath(PyObject* o, T& a) { return vtkPythonGetFilePath(o, a); }
+
+VTK_PYTHON_GET_FILEPATH_ARG(const char*)
+VTK_PYTHON_GET_FILEPATH_ARG(std::string)
+
+//------------------------------------------------------------------------------
 // Define all the GetArray methods in the class.
 
 #define VTK_PYTHON_GET_ARRAY_ARG(T)                                                                \
@@ -1126,7 +1180,7 @@ VTK_PYTHON_GET_ARRAY_ARG(unsigned long long)
 VTK_PYTHON_GET_ARRAY_ARG(std::string)
 VTK_PYTHON_GET_ARRAY_ARG(vtkUnicodeString)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define all the GetNArray methods in the class.
 
 #define VTK_PYTHON_GET_NARRAY_ARG(T)                                                               \
@@ -1156,7 +1210,7 @@ VTK_PYTHON_GET_NARRAY_ARG(unsigned long)
 VTK_PYTHON_GET_NARRAY_ARG(long long)
 VTK_PYTHON_GET_NARRAY_ARG(unsigned long long)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define the special function pointer GetValue method
 
 bool vtkPythonArgs::GetFunction(PyObject* arg, PyObject*& o)
@@ -1176,7 +1230,7 @@ bool vtkPythonArgs::GetFunction(PyObject*& o)
   return vtkPythonArgs::GetFunction(arg, o);
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define the void pointer GetValue method
 
 #define VTK_PYTHON_GET_BUFFER(T, btype)                                                            \
@@ -1244,7 +1298,7 @@ VTK_PYTHON_GET_BUFFER(unsigned long, 'L')
 VTK_PYTHON_GET_BUFFER(long long, 'q')
 VTK_PYTHON_GET_BUFFER(unsigned long long, 'Q')
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define all the SetArgValue methods for setting reference args
 
 #define VTK_PYTHON_SET_ARG(T)                                                                      \
@@ -1313,7 +1367,7 @@ VTK_PYTHON_SET_ARGN(unsigned long)
 VTK_PYTHON_SET_ARGN(long long)
 VTK_PYTHON_SET_ARGN(unsigned long long)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define all the SetArgValue methods for setting array args
 
 #define VTK_PYTHON_SET_ARRAY_ARG(T)                                                                \
@@ -1347,7 +1401,7 @@ VTK_PYTHON_SET_ARRAY_ARG(unsigned long)
 VTK_PYTHON_SET_ARRAY_ARG(long long)
 VTK_PYTHON_SET_ARRAY_ARG(unsigned long long)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Define all the SetArgValue methods for setting multi-dim array args
 
 #define VTK_PYTHON_SET_NARRAY_ARG(T)                                                               \
@@ -1381,7 +1435,7 @@ VTK_PYTHON_SET_NARRAY_ARG(unsigned long)
 VTK_PYTHON_SET_NARRAY_ARG(long long)
 VTK_PYTHON_SET_NARRAY_ARG(unsigned long long)
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Replace the contents of an argument, arg[:] = seq
 bool vtkPythonArgs::SetContents(int i, PyObject* seq)
 {
@@ -1399,7 +1453,7 @@ bool vtkPythonArgs::SetContents(int i, PyObject* seq)
   return true;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Raise an exception about incorrect arg count.
 bool vtkPythonArgs::ArgCountError(Py_ssize_t m, Py_ssize_t n)
 {
@@ -1416,7 +1470,7 @@ bool vtkPythonArgs::ArgCountError(Py_ssize_t m, Py_ssize_t n)
   return false;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Static method to write an arg count error.
 bool vtkPythonArgs::ArgCountError(Py_ssize_t n, const char* name)
 {
@@ -1428,7 +1482,7 @@ bool vtkPythonArgs::ArgCountError(Py_ssize_t n, const char* name)
   return false;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Static method to raise an exception on a failed precondition.
 bool vtkPythonArgs::PrecondError(const char* ctext)
 {
@@ -1439,7 +1493,7 @@ bool vtkPythonArgs::PrecondError(const char* ctext)
   return false;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Raise an exception about pure virtual method call
 bool vtkPythonArgs::PureVirtualError()
 {
@@ -1450,7 +1504,7 @@ bool vtkPythonArgs::PureVirtualError()
   return false;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Refine an error by saying what argument it is for
 bool vtkPythonArgs::RefineArgTypeError(Py_ssize_t i)
 {
@@ -1468,7 +1522,7 @@ bool vtkPythonArgs::RefineArgTypeError(Py_ssize_t i)
     if (val && !PyUnicode_Check(val))
     {
       Py_DECREF(val);
-      val = 0;
+      val = nullptr;
     }
     newval = PyUnicode_FromFormat(
       "%s argument %" PY_FORMAT_SIZE_T "d: %V", this->MethodName, i + 1, val, cp);
@@ -1488,7 +1542,7 @@ bool vtkPythonArgs::RefineArgTypeError(Py_ssize_t i)
   return false;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Raise a type error for a sequence arg of wrong type or size.
 bool vtkPythonSequenceError(PyObject* o, size_t n, size_t m)
 {
@@ -1507,7 +1561,7 @@ bool vtkPythonSequenceError(PyObject* o, size_t n, size_t m)
   return false;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Checking size of array arg.
 size_t vtkPythonArgs::GetArgSize(int i)
 {
@@ -1523,7 +1577,7 @@ size_t vtkPythonArgs::GetArgSize(int i)
   return size;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Checking size of string arg.
 size_t vtkPythonArgs::GetStringSize(int i)
 {
@@ -1540,7 +1594,7 @@ size_t vtkPythonArgs::GetStringSize(int i)
   return size;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Check if 'm' equals 'n', and report an error for arg i if not.
 bool vtkPythonArgs::CheckSizeHint(int i, size_t m, size_t n)
 {
@@ -1555,7 +1609,7 @@ bool vtkPythonArgs::CheckSizeHint(int i, size_t m, size_t n)
   return true;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Use stack space for small arrays, heap for large arrays.
 template <class T>
 vtkPythonArgs::Array<T>::Array(size_t n)

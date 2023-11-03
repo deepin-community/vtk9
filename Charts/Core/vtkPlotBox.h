@@ -66,7 +66,7 @@ public:
    */
   bool PaintLegend(vtkContext2D* painter, const vtkRectf& rect, int legendIndex) override;
 
-  //@{
+  ///@{
   /**
    * This is a convenience function to set the input table.
    */
@@ -75,7 +75,7 @@ public:
   {
     this->SetInputData(table);
   }
-  //@}
+  ///@}
 
   /**
    * Get the plot labels. If this array has a length greater than 1 the index
@@ -89,24 +89,16 @@ public:
    * or -1.
    */
   vtkIdType GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
-    vtkVector2f* location,
-#ifndef VTK_LEGACY_REMOVE
-    vtkIdType* segmentId) override;
-#else
-    vtkIdType* segmentId = nullptr) override;
-#endif // VTK_LEGACY_REMOVE
-
-#ifndef VTK_LEGACY_REMOVE
+    vtkVector2f* location, vtkIdType* segmentId) override;
   using vtkPlot::GetNearestPoint;
-#endif // VTK_LEGACY_REMOVE
 
-  //@{
+  ///@{
   /**
    * Specify a lookup table for the mapper to use.
    */
   void SetLookupTable(vtkScalarsToColors* lut);
   vtkScalarsToColors* GetLookupTable();
-  //@}
+  ///@}
 
   /**
    * Helper function to set the color of a given column.
@@ -119,20 +111,20 @@ public:
    */
   virtual void CreateDefaultLookupTable();
 
-  //@{
+  ///@{
   /**
    * Get/Set the width of boxes.
    */
   vtkGetMacro(BoxWidth, float);
   vtkSetMacro(BoxWidth, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the vtkTextProperty that governs how the plot title is displayed.
    */
   vtkGetObjectMacro(TitleProperties, vtkTextProperty);
-  //@}
+  ///@}
 
 protected:
   vtkPlotBox();
@@ -145,13 +137,13 @@ protected:
    */
   bool UpdateTableCache(vtkTable* table);
 
-  //@{
+  ///@{
   /**
    * Store a well packed set of XY coordinates for this data series.
    */
   class Private;
   Private* Storage;
-  //@}
+  ///@}
 
   /**
    * The point cache is marked dirty until it has been initialized.

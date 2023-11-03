@@ -36,7 +36,10 @@ public:
   /**
    * Initialize smart pointer to nullptr.
    */
-  vtkWeakPointerBase() noexcept : Object(nullptr) {}
+  vtkWeakPointerBase() noexcept
+    : Object(nullptr)
+  {
+  }
 
   /**
    * Initialize smart pointer to given object.
@@ -58,7 +61,7 @@ public:
    */
   ~vtkWeakPointerBase();
 
-  //@{
+  ///@{
   /**
    * Assign object to reference.  This removes any reference to an old
    * object.
@@ -66,7 +69,7 @@ public:
   vtkWeakPointerBase& operator=(vtkObjectBase* r);
   vtkWeakPointerBase& operator=(const vtkWeakPointerBase& r);
   vtkWeakPointerBase& operator=(vtkWeakPointerBase&& r) noexcept;
-  //@}
+  ///@}
 
   /**
    * Get the contained pointer.

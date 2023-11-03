@@ -60,24 +60,24 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkXMLHyperTreeGridReader* New();
 
-  //@{
+  ///@{
   /**
    * Get the reader's output.
    */
   vtkHyperTreeGrid* GetOutput();
   vtkHyperTreeGrid* GetOutput(int idx);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the fixed level to read.
    * Option avaiblable in 1.0
    */
   vtkSetMacro(FixedLevel, unsigned int);
   vtkGetMacro(FixedLevel, unsigned int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the selected HyperTrees (HTs) to read :
    * by default, all Hts, or
@@ -95,12 +95,12 @@ public:
 
   void ClearAndAddSelectedHT(unsigned int idg, unsigned int fixedLevel = UINT_MAX);
   void AddSelectedHT(unsigned int idg, unsigned int fixedLevel = UINT_MAX);
-  //@}
+  ///@}
 
   // These defer to the HyperTreeGrid output.
-  vtkIdType GetNumberOfPoints();
+  vtkIdType GetNumberOfPoints() const;
 
-  vtkIdType GetNumberOfPieces();
+  vtkIdType GetNumberOfPieces() const;
 
   void SetupUpdateExtent(int piece, int numberOfPieces);
 
@@ -121,10 +121,10 @@ protected:
 
   // Return true if HyperTree identified by treeIndx is selected for
   // the load.
-  bool IsSelectedHT(const vtkHyperTreeGrid* grid, unsigned int treeIndx) const;
+  bool IsSelectedHT(const vtkHyperTreeGrid* grid, vtkIdType treeIndx) const;
 
   // Return the fixedLevel choice for this HyperTree
-  vtkIdType GetFixedLevelOfThisHT(vtkIdType numberOfLevels, unsigned int treeIndx) const;
+  unsigned int GetFixedLevelOfThisHT(unsigned int numberOfLevels, vtkIdType treeIndx) const;
 
   const char* GetDataSetName() override;
 
@@ -161,24 +161,30 @@ protected:
 
   //----------- Used for the major version < 1
 
-  // Recover the structure of the HyperTreeGrid, used by ReadXMLData.
+  // Recover the structure of the HyperTreeGrid, used by ReadXMLData. File
+  // format version 0.
   void ReadTrees_0(vtkXMLDataElement* elem);
 
   // Used by ReadTopology to recursively build the tree
   void SubdivideFromDescriptor_0(vtkHyperTreeGridNonOrientedCursor* treeCursor, unsigned int level,
-    int numChildren, vtkBitArray* desc, vtkIdTypeArray* posByLevel);
+    unsigned int numChildren, vtkBitArray* desc, vtkIdTypeArray* posByLevel);
 
   //---------- Used for other the major version
 
-  // Recover the structure of the HyperTreeGrid, used by ReadXMLData.
+  // Recover the structure of the HyperTreeGrid, used by ReadXMLData. File
+  // format version 1.
   void ReadTrees_1(vtkXMLDataElement* elem);
+
+  // Recover the structure of the HyperTreeGrid, used by ReadXMLData. File
+  // format version 2.
+  void ReadTrees_2(vtkXMLDataElement* elem);
 
   // Number of vertices in HyperTreeGrid being read
   vtkIdType NumberOfPoints;
   vtkIdType NumberOfPieces;
 
   // Fixed the load maximum level
-  unsigned int FixedLevel = UINT_MAX;
+  unsigned int FixedLevel;
 
   bool Verbose = false;
 
@@ -201,12 +207,12 @@ protected:
   // UINT_MAX, this is FixedLevel that is used.
   std::map<unsigned int, unsigned int> IdsSelected;
 
-  int UpdatedPiece;
-  int UpdateNumberOfPieces;
+  vtkIdType UpdatedPiece;
+  vtkIdType UpdateNumberOfPieces;
 
-  int StartPiece;
-  int EndPiece;
-  int Piece;
+  vtkIdType StartPiece;
+  vtkIdType EndPiece;
+  vtkIdType Piece;
 
 private:
   vtkXMLHyperTreeGridReader(const vtkXMLHyperTreeGridReader&) = delete;

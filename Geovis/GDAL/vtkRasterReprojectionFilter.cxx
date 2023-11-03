@@ -39,7 +39,7 @@
 
 vtkStandardNewMacro(vtkRasterReprojectionFilter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal
 {
 public:
@@ -54,7 +54,7 @@ public:
   double OutputImageGeoTransform[6];
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal::
   vtkRasterReprojectionFilterInternal()
 {
@@ -64,7 +64,7 @@ vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal::
   std::fill(this->OutputImageGeoTransform, this->OutputImageGeoTransform + 6, 0.0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal::
   ~vtkRasterReprojectionFilterInternal()
 {
@@ -72,7 +72,7 @@ vtkRasterReprojectionFilter::vtkRasterReprojectionFilterInternal::
   this->GDALReprojection->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRasterReprojectionFilter::vtkRasterReprojectionFilter()
 {
   this->Internal = new vtkRasterReprojectionFilterInternal;
@@ -88,21 +88,15 @@ vtkRasterReprojectionFilter::vtkRasterReprojectionFilter()
   GDALAllRegister();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRasterReprojectionFilter::~vtkRasterReprojectionFilter()
 {
-  if (this->InputProjection)
-  {
-    delete[] this->InputProjection;
-  }
-  if (this->OutputProjection)
-  {
-    delete[] this->OutputProjection;
-  }
+  delete[] this->InputProjection;
+  delete[] this->OutputProjection;
   delete this->Internal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRasterReprojectionFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -137,7 +131,7 @@ void vtkRasterReprojectionFilter::PrintSelf(ostream& os, vtkIndent indent)
      << std::endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -227,7 +221,7 @@ int vtkRasterReprojectionFilter::RequestData(vtkInformation* vtkNotUsed(request)
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -238,7 +232,7 @@ int vtkRasterReprojectionFilter::RequestUpdateExtent(vtkInformation* vtkNotUsed(
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -342,7 +336,7 @@ int vtkRasterReprojectionFilter::RequestInformation(vtkInformation* vtkNotUsed(r
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   this->Superclass::FillInputPortInformation(port, info);
@@ -359,7 +353,7 @@ int vtkRasterReprojectionFilter::FillInputPortInformation(int port, vtkInformati
   return VTK_OK;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkRasterReprojectionFilter::FillOutputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)

@@ -1,36 +1,9 @@
 /*
- * Copyright (c) 2005-2017 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *
- *     * Redistributions in binary form must reproduce the above
- *       copyright notice, this list of conditions and the following
- *       disclaimer in the documentation and/or other materials provided
- *       with the distribution.
- *
- *     * Neither the name of NTESS nor the names of its
- *       contributors may be used to endorse or promote products derived
- *       from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * See packages/seacas/LICENSE for details
  */
 
 /*****************************************************************************
@@ -39,8 +12,8 @@
  *
  *****************************************************************************/
 
-#ifndef EXODUS_II_HDR
-#define EXODUS_II_HDR
+#ifndef EXODUSII_H
+#define EXODUSII_H
 
 #include "exodus_config.h"
 #include "exodusII_cfg.h"
@@ -51,9 +24,22 @@
 #if VTK_MODULE_USE_EXTERNAL_vtknetcdf
 #if defined(NC_HAVE_META_H)
 #include "netcdf_meta.h"
+
+/* Bug in some versions of NetCDF where the netcdf_meta.h define of NC_HAS_SZIP_WRITE is bad */
+#if !defined(NC_HAS_SZIP_WRITE)
+#define NC_HAS_SZIP_WRITE 0
+#elif ~(~NC_HAS_SZIP_WRITE + 0) == 0 && ~(~NC_HAS_SZIP_WRITE + 1) == 1
+#undef NC_HAS_SZIP_WRITE
+#define NC_HAS_SZIP_WRITE 0
+#endif
+
 #if NC_HAS_PARALLEL
 #ifndef PARALLEL_AWARE_EXODUS
 #define PARALLEL_AWARE_EXODUS
+#endif
+#else
+#ifdef PARALLEL_AWARE_EXODUS
+#error "PARALLEL_AWARE_EXODUS defined, but NetCDF NC_HAS_PARALLEL is false"
 #endif
 #endif
 #endif
@@ -72,14 +58,13 @@
 #endif
 
 /* EXODUS version number */
-#define EXODUS_VERSION "7.24"
-#define EXODUS_VERSION_MAJOR 7
-#define EXODUS_VERSION_MINOR 24
-#define EXODUS_RELEASE_DATE "August 5, 2019"
+#define EXODUS_VERSION "8.11"
+#define EXODUS_VERSION_MAJOR 8
+#define EXODUS_VERSION_MINOR 11
+#define EXODUS_RELEASE_DATE "March 15, 2021"
 
-#define EX_API_VERS 7.24f
+#define EX_API_VERS 8.11f
 #define EX_API_VERS_NODOT (100 * EXODUS_VERSION_MAJOR + EXODUS_VERSION_MINOR)
-
 #define EX_VERS EX_API_VERS
 
 /* Retained for backward compatibility */
@@ -156,72 +141,84 @@ extern "C" {
 
 /** @}*/
 
-/*! \sa ex_inquire() */
+/*! \sa ex_inquire() All inquiries return an integer of the current database integer size unless
+ * otherwise noted. */
 enum ex_inquiry {
-  EX_INQ_FILE_TYPE    = 1,  /**< inquire EXODUS file type*/
-  EX_INQ_API_VERS     = 2,  /**< inquire API version number */
-  EX_INQ_DB_VERS      = 3,  /**< inquire database version number */
-  EX_INQ_TITLE        = 4,  /**< inquire database title     */
-  EX_INQ_DIM          = 5,  /**< inquire number of dimensions */
-  EX_INQ_NODES        = 6,  /**< inquire number of nodes    */
-  EX_INQ_ELEM         = 7,  /**< inquire number of elements */
-  EX_INQ_ELEM_BLK     = 8,  /**< inquire number of element blocks */
-  EX_INQ_NODE_SETS    = 9,  /**< inquire number of node sets*/
-  EX_INQ_NS_NODE_LEN  = 10, /**< inquire length of node set node list */
-  EX_INQ_SIDE_SETS    = 11, /**< inquire number of side sets*/
-  EX_INQ_SS_NODE_LEN  = 12, /**< inquire length of side set node list */
-  EX_INQ_SS_ELEM_LEN  = 13, /**< inquire length of side set element list */
-  EX_INQ_QA           = 14, /**< inquire number of QA records */
-  EX_INQ_INFO         = 15, /**< inquire number of info records */
-  EX_INQ_TIME         = 16, /**< inquire number of time steps in the database */
-  EX_INQ_EB_PROP      = 17, /**< inquire number of element block properties */
-  EX_INQ_NS_PROP      = 18, /**< inquire number of node set properties */
-  EX_INQ_SS_PROP      = 19, /**< inquire number of side set properties */
-  EX_INQ_NS_DF_LEN    = 20, /**< inquire length of node set distribution factor list*/
-  EX_INQ_SS_DF_LEN    = 21, /**< inquire length of side set distribution factor list*/
-  EX_INQ_LIB_VERS     = 22, /**< inquire API Lib vers number*/
-  EX_INQ_EM_PROP      = 23, /**< inquire number of element map properties */
-  EX_INQ_NM_PROP      = 24, /**< inquire number of node map properties */
-  EX_INQ_ELEM_MAP     = 25, /**< inquire number of element maps */
-  EX_INQ_NODE_MAP     = 26, /**< inquire number of node maps*/
-  EX_INQ_EDGE         = 27, /**< inquire number of edges    */
-  EX_INQ_EDGE_BLK     = 28, /**< inquire number of edge blocks */
-  EX_INQ_EDGE_SETS    = 29, /**< inquire number of edge sets   */
-  EX_INQ_ES_LEN       = 30, /**< inquire length of concat edge set edge list       */
-  EX_INQ_ES_DF_LEN    = 31, /**< inquire length of concat edge set dist factor list*/
-  EX_INQ_EDGE_PROP    = 32, /**< inquire number of properties stored per edge block    */
-  EX_INQ_ES_PROP      = 33, /**< inquire number of properties stored per edge set      */
-  EX_INQ_FACE         = 34, /**< inquire number of faces */
-  EX_INQ_FACE_BLK     = 35, /**< inquire number of face blocks */
-  EX_INQ_FACE_SETS    = 36, /**< inquire number of face sets */
-  EX_INQ_FS_LEN       = 37, /**< inquire length of concat face set face list */
-  EX_INQ_FS_DF_LEN    = 38, /**< inquire length of concat face set dist factor list*/
-  EX_INQ_FACE_PROP    = 39, /**< inquire number of properties stored per face block */
-  EX_INQ_FS_PROP      = 40, /**< inquire number of properties stored per face set */
-  EX_INQ_ELEM_SETS    = 41, /**< inquire number of element sets */
-  EX_INQ_ELS_LEN      = 42, /**< inquire length of concat element set element list       */
-  EX_INQ_ELS_DF_LEN   = 43, /**< inquire length of concat element set dist factor list*/
-  EX_INQ_ELS_PROP     = 44, /**< inquire number of properties stored per elem set      */
-  EX_INQ_EDGE_MAP     = 45, /**< inquire number of edge maps                     */
-  EX_INQ_FACE_MAP     = 46, /**< inquire number of face maps                     */
-  EX_INQ_COORD_FRAMES = 47, /**< inquire number of coordinate frames */
-  EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH =
-      48,                              /**< inquire size of MAX_NAME_LENGTH dimension on database */
-  EX_INQ_DB_MAX_USED_NAME_LENGTH = 49, /**< inquire size of MAX_NAME_LENGTH dimension on database */
-  EX_INQ_MAX_READ_NAME_LENGTH    = 50, /**< inquire client-specified max size of returned names */
+  EX_INQ_FILE_TYPE                  = 1,  /**< EXODUS file type (deprecated) */
+  EX_INQ_API_VERS                   = 2,  /**< API version number (float) */
+  EX_INQ_DB_VERS                    = 3,  /**< database version number (float) */
+  EX_INQ_TITLE                      = 4,  /**< database title. MAX_LINE_LENGTH+1 char* size */
+  EX_INQ_DIM                        = 5,  /**< number of dimensions */
+  EX_INQ_NODES                      = 6,  /**< number of nodes    */
+  EX_INQ_ELEM                       = 7,  /**< number of elements */
+  EX_INQ_ELEM_BLK                   = 8,  /**< number of element blocks */
+  EX_INQ_NODE_SETS                  = 9,  /**< number of node sets*/
+  EX_INQ_NS_NODE_LEN                = 10, /**< length of node set node list */
+  EX_INQ_SIDE_SETS                  = 11, /**< number of side sets*/
+  EX_INQ_SS_NODE_LEN                = 12, /**< length of side set node list */
+  EX_INQ_SS_ELEM_LEN                = 13, /**< length of side set element list */
+  EX_INQ_QA                         = 14, /**< number of QA records */
+  EX_INQ_INFO                       = 15, /**< number of info records */
+  EX_INQ_TIME                       = 16, /**< number of time steps in the database */
+  EX_INQ_EB_PROP                    = 17, /**< number of element block properties */
+  EX_INQ_NS_PROP                    = 18, /**< number of node set properties */
+  EX_INQ_SS_PROP                    = 19, /**< number of side set properties */
+  EX_INQ_NS_DF_LEN                  = 20, /**< length of node set distribution factor list*/
+  EX_INQ_SS_DF_LEN                  = 21, /**< length of side set distribution factor list*/
+  EX_INQ_LIB_VERS                   = 22, /**< API Lib vers number (float) */
+  EX_INQ_EM_PROP                    = 23, /**< number of element map properties */
+  EX_INQ_NM_PROP                    = 24, /**< number of node map properties */
+  EX_INQ_ELEM_MAP                   = 25, /**< number of element maps */
+  EX_INQ_NODE_MAP                   = 26, /**< number of node maps*/
+  EX_INQ_EDGE                       = 27, /**< number of edges    */
+  EX_INQ_EDGE_BLK                   = 28, /**< number of edge blocks */
+  EX_INQ_EDGE_SETS                  = 29, /**< number of edge sets   */
+  EX_INQ_ES_LEN                     = 30, /**< length of concat edge set edge list       */
+  EX_INQ_ES_DF_LEN                  = 31, /**< length of concat edge set dist factor list*/
+  EX_INQ_EDGE_PROP                  = 32, /**< number of properties stored per edge block    */
+  EX_INQ_ES_PROP                    = 33, /**< number of properties stored per edge set      */
+  EX_INQ_FACE                       = 34, /**< number of faces */
+  EX_INQ_FACE_BLK                   = 35, /**< number of face blocks */
+  EX_INQ_FACE_SETS                  = 36, /**< number of face sets */
+  EX_INQ_FS_LEN                     = 37, /**< length of concat face set face list */
+  EX_INQ_FS_DF_LEN                  = 38, /**< length of concat face set dist factor list*/
+  EX_INQ_FACE_PROP                  = 39, /**< number of properties stored per face block */
+  EX_INQ_FS_PROP                    = 40, /**< number of properties stored per face set */
+  EX_INQ_ELEM_SETS                  = 41, /**< number of element sets */
+  EX_INQ_ELS_LEN                    = 42, /**< length of concat element set element list       */
+  EX_INQ_ELS_DF_LEN                 = 43, /**< length of concat element set dist factor list*/
+  EX_INQ_ELS_PROP                   = 44, /**< number of properties stored per elem set      */
+  EX_INQ_EDGE_MAP                   = 45, /**< number of edge maps                     */
+  EX_INQ_FACE_MAP                   = 46, /**< number of face maps                     */
+  EX_INQ_COORD_FRAMES               = 47, /**< number of coordinate frames */
+  EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH = 48, /**< size of MAX_NAME_LENGTH dimension on database */
+  EX_INQ_DB_MAX_USED_NAME_LENGTH    = 49, /**< size of MAX_NAME_LENGTH dimension on database */
+  EX_INQ_MAX_READ_NAME_LENGTH       = 50, /**< client-specified max size of returned names */
 
-  EX_INQ_DB_FLOAT_SIZE    = 51, /**< inquire size of floating-point values stored on database */
-  EX_INQ_NUM_CHILD_GROUPS = 52, /**< inquire number of groups contained in this (exoid) group */
-  EX_INQ_GROUP_PARENT =
-      53, /**< inquire id of parent of this (exoid) group; returns exoid if at root */
+  EX_INQ_DB_FLOAT_SIZE    = 51, /**< size of floating-point values stored on database */
+  EX_INQ_NUM_CHILD_GROUPS = 52, /**< number of groups contained in this (exoid) group */
+  EX_INQ_GROUP_PARENT     = 53, /**< id of parent of this (exoid) group; returns exoid if at root */
   EX_INQ_GROUP_ROOT =
-      54, /**< inquire id of root group "/" of this (exoid) group; returns exoid if at root */
-  EX_INQ_GROUP_NAME_LEN      = 55, /**< inquire length of name of group exoid */
-  EX_INQ_GROUP_NAME          = 56, /**< inquire name of group exoid. "/" returned for root group */
-  EX_INQ_FULL_GROUP_NAME_LEN = 57, /**< inquire length of full path name of this (exoid) group */
-  EX_INQ_FULL_GROUP_NAME = 58, /**< inquire full "/"-separated path name of this (exoid) group */
-  EX_INQ_THREADSAFE      = 59, /**< Returns 1 if library is thread-safe; 0 otherwise */
-  EX_INQ_INVALID         = -1
+      54, /**< id of root group "/" of this (exoid) group; returns exoid if at root */
+  EX_INQ_GROUP_NAME_LEN = 55, /**< length of name of group exoid */
+  EX_INQ_GROUP_NAME =
+      56, /**< name of group exoid. "/" returned for root group (char* GROUP_NAME_LEN+1 size) */
+  EX_INQ_FULL_GROUP_NAME_LEN = 57, /**< length of full path name of this (exoid) group */
+  EX_INQ_FULL_GROUP_NAME     = 58, /**< full "/"-separated path name of this (exoid) group */
+  EX_INQ_THREADSAFE          = 59, /**< Returns 1 if library is thread-safe; 0 otherwise */
+  EX_INQ_ASSEMBLY            = 60, /**< number of assemblies */
+  EX_INQ_BLOB                = 61, /**< number of blobs */
+  EX_INQ_NUM_NODE_VAR        = 62, /**< number of nodal variables */
+  EX_INQ_NUM_EDGE_BLOCK_VAR  = 63, /**< number of edge block variables */
+  EX_INQ_NUM_FACE_BLOCK_VAR  = 64, /**< number of face block variables */
+  EX_INQ_NUM_ELEM_BLOCK_VAR  = 65, /**< number of element block variables */
+  EX_INQ_NUM_NODE_SET_VAR    = 66, /**< number of node set variables */
+  EX_INQ_NUM_EDGE_SET_VAR    = 67, /**< number of edge set variables */
+  EX_INQ_NUM_FACE_SET_VAR    = 68, /**< number of face set variables */
+  EX_INQ_NUM_ELEM_SET_VAR    = 69, /**< number of element set variables */
+  EX_INQ_NUM_SIDE_SET_VAR    = 70, /**< number of sideset variables */
+  EX_INQ_NUM_GLOBAL_VAR      = 71, /**< number of global variables */
+  EX_INQ_INVALID             = -1
 };
 
 typedef enum ex_inquiry ex_inquiry;
@@ -240,7 +237,11 @@ be expended in the compression and the computational expense increases
 with higher levels; in many cases, a compression level of 1 is
 sufficient.
 
- */
+SZIP-based compression is typically faster than ZLIB, but may not
+be as widely available as ZLIB.  SZIP is also only supported in
+NetCDF-4.?.? and later
+*/
+
 enum ex_option_type {
   EX_OPT_MAX_NAME_LENGTH =
       1, /**< Maximum length of names that will be returned/passed via api call. */
@@ -248,10 +249,17 @@ enum ex_option_type {
   EX_OPT_COMPRESSION_LEVEL,   /**<  In the range [0..9]. A value of 0 indicates no compression */
   EX_OPT_COMPRESSION_SHUFFLE, /**<  1 if enabled, 0 if disabled */
   EX_OPT_INTEGER_SIZE_API, /**<  4 or 8 indicating byte size of integers used in api functions. */
-  EX_OPT_INTEGER_SIZE_DB /**<  Query only, returns 4 or 8 indicating byte size of integers stored on
-                            the database. */
+  EX_OPT_INTEGER_SIZE_DB,  /**<  Query only, returns 4 or 8 indicating byte size of integers stored
+                             on  the database. */
 };
 typedef enum ex_option_type ex_option_type;
+
+enum ex_compression_type {
+  EX_COMPRESS_ZLIB = 1, /**< Use ZLIB-based compression (if available) */
+  EX_COMPRESS_GZIP = 1, /**< Same as ZLIB, but typical alias used */
+  EX_COMPRESS_SZIP,     /**< Use SZIP-based compression (if available) */
+};
+typedef enum ex_compression_type ex_compression_type;
 /** @}*/
 
 enum ex_entity_type {
@@ -274,6 +282,8 @@ enum ex_entity_type {
 
   EX_GLOBAL     = 13, /**< global "block" for variables*/
   EX_COORDINATE = 15, /**< kluge so some internal wrapper functions work */
+  EX_ASSEMBLY   = 16, /**< assembly property code */
+  EX_BLOB       = 17, /**< blob property code */
   EX_INVALID    = -1
 };
 typedef enum ex_entity_type ex_entity_type;
@@ -300,6 +310,10 @@ typedef enum ex_options ex_options;
  * constants that are used as netcdf dimensions must be of type long
  * @{
  */
+
+/** Maximum length of name permitted by NetCDF */
+#define EX_MAX_NAME NC_MAX_NAME
+
 /** Maximum length of QA record, element type name */
 #define MAX_STR_LENGTH 32L
 /** Default maximum length of an entity name, attribute name, variable name.
@@ -309,7 +323,7 @@ typedef enum ex_options ex_options;
 /** Maximum length of the database title or an information record */
 #define MAX_LINE_LENGTH 80L
 /** Maximum length of an error message passed to ex_err() function. Typically, internal use only */
-#define MAX_ERR_LENGTH 256
+#define MAX_ERR_LENGTH 512
 /** @} */
 
 /** Specifies that this argument is the id of an entity: element block, nodeset, sideset, ... */
@@ -349,7 +363,39 @@ typedef struct ex_init_params
   int64_t num_edge_maps;
   int64_t num_face_maps;
   int64_t num_elem_maps;
+  int64_t num_assembly;
+  int64_t num_blob;
 } ex_init_params;
+
+enum ex_type { EX_INTEGER = NC_INT, EX_DOUBLE = NC_DOUBLE, EX_CHAR = NC_CHAR };
+
+typedef enum ex_type ex_type;
+
+typedef struct ex_attribute
+{
+  ex_entity_type entity_type;
+  int64_t        entity_id;
+  char           name[NC_MAX_NAME];
+  ex_type        type; /* int, double, text */
+  size_t         value_count;
+  void *         values; /* not accessed if NULL */
+} ex_attribute;
+
+typedef struct ex_blob
+{
+  int64_t id;
+  char *  name;
+  int64_t num_entry;
+} ex_blob;
+
+typedef struct ex_assembly
+{
+  int64_t        id;
+  char *         name;
+  ex_entity_type type; /* EX_ELEM_BLOCK or EX_ASSEMBLY */
+  int            entity_count;
+  int64_t *      entity_list;
+} ex_assembly;
 
 typedef struct ex_block
 {
@@ -451,12 +497,24 @@ EXODUS_EXPORT int ex_copy_transient(int in_exoid, int out_exoid);
 EXODUS_EXPORT int ex_create_int(const char *path, int cmode, int *comp_ws, int *io_ws,
                                 int run_version);
 
+#define ex_open(path, mode, comp_ws, io_ws, version)                                               \
+  ex_open_int(path, mode, comp_ws, io_ws, version, EX_API_VERS_NODOT)
+
+EXODUS_EXPORT int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
+                              int run_version);
+
 #if defined(PARALLEL_AWARE_EXODUS)
 #define ex_create_par(path, mode, comp_ws, io_ws, comm, info)                                      \
   ex_create_par_int(path, mode, comp_ws, io_ws, comm, info, EX_API_VERS_NODOT)
 
 EXODUS_EXPORT int ex_create_par_int(const char *path, int cmode, int *comp_ws, int *io_ws,
                                     MPI_Comm comm, MPI_Info info, int my_version);
+
+#define ex_open_par(path, mode, comp_ws, io_ws, version, comm, info)                               \
+  ex_open_par_int(path, mode, comp_ws, io_ws, version, comm, info, EX_API_VERS_NODOT)
+
+EXODUS_EXPORT int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
+                                  float *version, MPI_Comm comm, MPI_Info info, int my_version);
 #endif
 
 EXODUS_EXPORT int ex_get_group_id(int parent_id, const char *group_name, int *group_id);
@@ -467,27 +525,13 @@ EXODUS_EXPORT int ex_get_info(int exoid, char **info);
 
 EXODUS_EXPORT int ex_get_qa(int exoid, char *qa_record[][4]);
 
-#if defined(PARALLEL_AWARE_EXODUS)
-#define ex_open_par(path, mode, comp_ws, io_ws, version, comm, info)                               \
-  ex_open_par_int(path, mode, comp_ws, io_ws, version, comm, info, EX_API_VERS_NODOT)
-
-EXODUS_EXPORT int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws,
-                                  float *version, MPI_Comm comm, MPI_Info info, int my_version);
-#endif
-
-#define ex_open(path, mode, comp_ws, io_ws, version)                                               \
-  ex_open_int(path, mode, comp_ws, io_ws, version, EX_API_VERS_NODOT)
-
-EXODUS_EXPORT int ex_open_int(const char *path, int mode, int *comp_ws, int *io_ws, float *version,
-                              int run_version);
-
 EXODUS_EXPORT int ex_put_info(int exoid, int num_info, char *info[]);
 
 EXODUS_EXPORT int ex_put_qa(int exoid, int num_qa_records, char *qa_record[][4]);
 
-EXODUS_EXPORT int ex_update(int exoid);
-EXODUS_EXPORT int ex_get_num_props(int exoid, ex_entity_type obj_type);
-EXODUS_EXPORT int ex_large_model(int exoid);
+EXODUS_EXPORT int    ex_update(int exoid);
+EXODUS_EXPORT int    ex_get_num_props(int exoid, ex_entity_type obj_type);
+EXODUS_EXPORT int    ex_large_model(int exoid);
 EXODUS_EXPORT size_t ex_header_size(int exoid);
 
 EXODUS_EXPORT void ex_err(const char *module_name, const char *message, int err_num);
@@ -498,11 +542,12 @@ EXODUS_EXPORT void        ex_get_err(const char **msg, const char **func, int *e
 EXODUS_EXPORT int         ex_opts(int options);
 EXODUS_EXPORT int         ex_inquire(int exoid, ex_inquiry req_info, void_int * /*ret_int*/,
                                      float * /*ret_float*/, char * /*ret_char*/);
-EXODUS_EXPORT int64_t ex_inquire_int(int exoid, ex_inquiry req_info);
-EXODUS_EXPORT int     ex_int64_status(int exoid);
-EXODUS_EXPORT int     ex_set_int64_status(int exoid, int mode);
+EXODUS_EXPORT int64_t     ex_inquire_int(int exoid, ex_inquiry req_info);
+EXODUS_EXPORT int         ex_int64_status(int exoid);
+EXODUS_EXPORT int         ex_set_int64_status(int exoid, int mode);
 
-EXODUS_EXPORT void ex_print_config(void);
+EXODUS_EXPORT void        ex_print_config(void);
+EXODUS_EXPORT const char *ex_config(void);
 
 EXODUS_EXPORT int ex_set_max_name_length(int exoid, int length);
 
@@ -530,6 +575,14 @@ EXODUS_EXPORT int ex_get_variable_name(int exoid, ex_entity_type obj_type, int v
 
 EXODUS_EXPORT int ex_get_variable_param(int exoid, ex_entity_type obj_type, int *num_vars);
 
+EXODUS_EXPORT int ex_get_reduction_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
+                                                  char *var_names[]);
+EXODUS_EXPORT int ex_get_reduction_variable_name(int exoid, ex_entity_type obj_type, int var_num,
+                                                 char *var_name);
+
+EXODUS_EXPORT int ex_get_reduction_variable_param(int exoid, ex_entity_type obj_type,
+                                                  int *num_vars);
+
 EXODUS_EXPORT int ex_get_object_truth_vector(int exoid, ex_entity_type obj_type,
                                              ex_entity_id entity_id, int num_var, int *var_vec);
 
@@ -552,6 +605,14 @@ EXODUS_EXPORT int ex_put_variable_names(int exoid, ex_entity_type obj_type, int 
 
 EXODUS_EXPORT int ex_put_variable_param(int exoid, ex_entity_type obj_type, int num_vars);
 
+EXODUS_EXPORT int ex_put_reduction_variable_name(int exoid, ex_entity_type obj_type, int var_num,
+                                                 const char *var_name);
+
+EXODUS_EXPORT int ex_put_reduction_variable_names(int exoid, ex_entity_type obj_type, int num_vars,
+                                                  char *var_names[]);
+
+EXODUS_EXPORT int ex_put_reduction_variable_param(int exoid, ex_entity_type obj_type, int num_vars);
+
 EXODUS_EXPORT int ex_put_truth_table(int exoid, ex_entity_type obj_type, int num_blk, int num_var,
                                      int *var_tab);
 
@@ -568,6 +629,11 @@ EXODUS_EXPORT int ex_put_partial_var(int exoid, int time_step, ex_entity_type va
                                      int var_index, ex_entity_id obj_id, int64_t start_index,
                                      int64_t num_entities, const void *var_vals);
 
+/*  Write Edge Face or Element Reduction Variable Values on Blocks or Sets at a Time Step */
+EXODUS_EXPORT int ex_put_reduction_vars(int exoid, int time_step, ex_entity_type obj_type,
+                                        ex_entity_id obj_id, int64_t num_variables,
+                                        const void *var_vals);
+
 /*  Read Edge Face or Element Variable Values Defined On Blocks or Sets at a Time Step */
 EXODUS_EXPORT int ex_get_var(int exoid, int time_step, ex_entity_type var_type, int var_index,
                              ex_entity_id obj_id, int64_t num_entry_this_obj, void *var_vals);
@@ -575,6 +641,10 @@ EXODUS_EXPORT int ex_get_var(int exoid, int time_step, ex_entity_type var_type, 
 EXODUS_EXPORT int ex_get_partial_var(int exoid, int time_step, ex_entity_type var_type,
                                      int var_index, ex_entity_id obj_id, int64_t start_index,
                                      int64_t num_entities, void *var_vals);
+
+/*  Read Edge Face or Element Reduction Variable Values Defined On Blocks or Sets at a Time Step */
+EXODUS_EXPORT int ex_get_reduction_vars(int exoid, int time_step, ex_entity_type obj_type,
+                                        ex_entity_id obj_id, int64_t num_variables, void *var_vals);
 
 /*  Read Edge Face or Element Variable Values Defined On Blocks or Sets Through Time */
 EXODUS_EXPORT int ex_get_var_time(int exoid, ex_entity_type var_type, int var_index, int64_t id,
@@ -855,6 +925,38 @@ EXODUS_EXPORT int ex_put_attr_names(int exoid, ex_entity_type blk_type, ex_entit
 EXODUS_EXPORT int ex_get_attr_names(int exoid, ex_entity_type obj_type, ex_entity_id obj_id,
                                     char **names);
 
+EXODUS_EXPORT int ex_put_assembly(int exoid, const struct ex_assembly assembly);
+EXODUS_EXPORT int ex_get_assembly(int exoid, struct ex_assembly *assembly);
+
+EXODUS_EXPORT int ex_put_assemblies(int exoid, size_t count, const struct ex_assembly *assemblies);
+EXODUS_EXPORT int ex_get_assemblies(int exoid, struct ex_assembly *assemblies);
+
+EXODUS_EXPORT int ex_put_blob(int exoid, const struct ex_blob blob);
+EXODUS_EXPORT int ex_get_blob(int exoid, struct ex_blob *blob);
+
+EXODUS_EXPORT int ex_put_blobs(int exoid, size_t count, const struct ex_blob *blobs);
+EXODUS_EXPORT int ex_get_blobs(int exoid, struct ex_blob *blobs);
+
+/*  Write arbitrary integer, double, or text attributes on an entity */
+EXODUS_EXPORT int ex_put_attribute(int exoid, ex_attribute attributes);
+EXODUS_EXPORT int ex_put_attributes(int exoid, size_t attr_count, ex_attribute *attributes);
+
+EXODUS_EXPORT int ex_put_double_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
+                                          const char *atr_name, int num_values, double *values);
+EXODUS_EXPORT int ex_put_integer_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
+                                           const char *atr_name, int num_values, void_int *values);
+EXODUS_EXPORT int ex_put_text_attribute(int exoid, ex_entity_type obj_type, ex_entity_id id,
+                                        const char *atr_name, const char *value);
+
+/*  Read attribute values on an entity */
+EXODUS_EXPORT int ex_get_attribute(int exoid, ex_attribute *attributes);
+EXODUS_EXPORT int ex_get_attributes(int exoid, size_t count, ex_attribute *attributes);
+
+/* Query attributes on an entity */
+EXODUS_EXPORT int ex_get_attribute_count(int exoid, ex_entity_type obj_type, ex_entity_id id);
+EXODUS_EXPORT int ex_get_attribute_param(int exoid, ex_entity_type obj_type, ex_entity_id id,
+                                         ex_attribute *attributes);
+
 /*  Write Node Edge Face or Side Set Parameters */
 EXODUS_EXPORT int ex_put_set_param(int exoid, ex_entity_type set_type, ex_entity_id set_id,
                                    int64_t num_entries_in_set, int64_t num_dist_fact_in_set);
@@ -1053,6 +1155,16 @@ EXODUS_EXPORT int ex_put_node_cmap(int          exoid,    /**< NetCDF/Exodus fil
                                    int          processor /**< This processor ID */
 );
 
+EXODUS_EXPORT int
+ex_put_partial_node_cmap(int          exoid,            /**< NetCDF/Exodus file ID */
+                         ex_entity_id map_id,           /**< Nodal comm map ID */
+                         int64_t      start_entity_num, /**< Starting position to write to */
+                         int64_t      num_entities,     /**< Number of nodes to write */
+                         void_int *   node_ids,         /**< FEM node IDs */
+                         void_int *   proc_ids,         /**< Processor IDs */
+                         int          processor         /**< This processor ID */
+);
+
 EXODUS_EXPORT int ex_get_elem_cmap(int          exoid,    /**< NetCDF/Exodus file ID */
                                    ex_entity_id map_id,   /**< Elemental comm map ID */
                                    void_int *   elem_ids, /**< Element IDs */
@@ -1099,16 +1211,16 @@ SEACAS_DEPRECATED EXODUS_EXPORT int ex_get_glob_var_time(int exoid, int glob_var
                                                          void *glob_var_vals);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_concat_node_sets(int exoid, void_int *node_set_ids, void_int *num_nodes_per_set,
-                                          void_int *num_df_per_set, void_int *node_sets_node_index,
-                                          void_int *node_sets_df_index, void_int *node_sets_node_list,
-                                          void *node_sets_dist_fact);
+ex_get_concat_node_sets(int exoid, void_int *node_set_ids, void_int *num_nodes_per_set,
+                        void_int *num_df_per_set, void_int *node_sets_node_index,
+                        void_int *node_sets_df_index, void_int *node_sets_node_list,
+                        void *node_sets_dist_fact);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_concat_side_sets(int exoid, void_int *side_set_ids, void_int *num_elem_per_set,
-                                          void_int *num_dist_per_set, void_int *side_sets_elem_index,
-                                          void_int *side_sets_dist_index, void_int *side_sets_elem_list,
-                                          void_int *side_sets_side_list, void *side_sets_dist_fact);
+ex_get_concat_side_sets(int exoid, void_int *side_set_ids, void_int *num_elem_per_set,
+                        void_int *num_dist_per_set, void_int *side_sets_elem_index,
+                        void_int *side_sets_dist_index, void_int *side_sets_elem_list,
+                        void_int *side_sets_side_list, void *side_sets_dist_fact);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int ex_get_elem_attr(int exoid, ex_entity_id elem_blk_id,
                                                      void *attrib);
@@ -1224,16 +1336,16 @@ SEACAS_DEPRECATED EXODUS_EXPORT int ex_get_var_tab(int exoid, const char *var_ty
                                                    int num_var, int *var_tab);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_concat_node_sets(int exoid, void_int *node_set_ids, void_int *num_nodes_per_set,
-                                          void_int *num_dist_per_set, void_int *node_sets_node_index,
-                                          void_int *node_sets_df_index, void_int *node_sets_node_list,
-                                          void *node_sets_dist_fact);
+ex_put_concat_node_sets(int exoid, void_int *node_set_ids, void_int *num_nodes_per_set,
+                        void_int *num_dist_per_set, void_int *node_sets_node_index,
+                        void_int *node_sets_df_index, void_int *node_sets_node_list,
+                        void *node_sets_dist_fact);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_concat_side_sets(int exoid, void_int *side_set_ids, void_int *num_elem_per_set,
-                                          void_int *num_dist_per_set, void_int *side_sets_elem_index,
-                                          void_int *side_sets_dist_index, void_int *side_sets_elem_list,
-                                          void_int *side_sets_side_list, void *side_sets_dist_fact);
+ex_put_concat_side_sets(int exoid, void_int *side_set_ids, void_int *num_elem_per_set,
+                        void_int *num_dist_per_set, void_int *side_sets_elem_index,
+                        void_int *side_sets_dist_index, void_int *side_sets_elem_list,
+                        void_int *side_sets_side_list, void *side_sets_dist_fact);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int ex_put_concat_var_param(int exoid, int num_g, int num_n,
                                                             int num_e, int num_elem_blk,
@@ -1245,8 +1357,8 @@ SEACAS_DEPRECATED EXODUS_EXPORT int ex_put_elem_attr(int exoid, ex_entity_id ele
                                                      const void *attrib);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_elem_block(int exoid, ex_entity_id elem_blk_id, const char *elem_type,
-                                    int64_t num_elem_this_blk, int64_t num_nodes_per_elem, int64_t num_attr_per_elem);
+ex_put_elem_block(int exoid, ex_entity_id elem_blk_id, const char *elem_type,
+                  int64_t num_elem_this_blk, int64_t num_nodes_per_elem, int64_t num_attr_per_elem);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int ex_put_elem_conn(int exoid, ex_entity_id elem_blk_id,
                                                      const void_int *connect);
@@ -1357,126 +1469,126 @@ SEACAS_DEPRECATED EXODUS_EXPORT int ex_get_n_elem_var(int exoid, int time_step, 
                                                       void *elem_var_vals);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_n_side_set(int          exoid,              /**< NetCDF/Exodus file ID */
-                                    ex_entity_id side_set_id,        /**< Side-set ID to read */
-                                    int64_t      start_side_num,     /**< Starting element number */
-                                    int64_t      num_sides,          /**< Number of sides to read */
-                                    void_int *   side_set_elem_list, /**< List of element IDs */
-                                    void_int *   side_set_side_list  /**< List of side IDs */
-                  );
+ex_get_n_side_set(int          exoid,              /**< NetCDF/Exodus file ID */
+                  ex_entity_id side_set_id,        /**< Side-set ID to read */
+                  int64_t      start_side_num,     /**< Starting element number */
+                  int64_t      num_sides,          /**< Number of sides to read */
+                  void_int *   side_set_elem_list, /**< List of element IDs */
+                  void_int *   side_set_side_list  /**< List of side IDs */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_n_side_set(int             exoid,          /**< NetCDF/Exodus file ID */
-                                    ex_entity_id    side_set_id,    /**< Side-set ID to write */
-                                    int64_t         start_side_num, /**< Starting element number */
-                                    int64_t         num_sides,      /**< Number of sides to write */
-                                    const void_int *side_set_elem_list, /**< List of element IDs */
-                                    const void_int *side_set_side_list  /**< List of side IDs */
-                  );
+ex_put_n_side_set(int             exoid,              /**< NetCDF/Exodus file ID */
+                  ex_entity_id    side_set_id,        /**< Side-set ID to write */
+                  int64_t         start_side_num,     /**< Starting element number */
+                  int64_t         num_sides,          /**< Number of sides to write */
+                  const void_int *side_set_elem_list, /**< List of element IDs */
+                  const void_int *side_set_side_list  /**< List of side IDs */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_n_side_set_df(int          exoid,         /**< NetCDF/Exodus file ID */
-                                       ex_entity_id side_set_id,   /**< Side-set ID */
-                                       int64_t      start_num,     /**< Starting df number */
-                                       int64_t      num_df_to_get, /**< Number of df's to read */
-                                       void *       side_set_dist_fact /**< Distribution factors */
-                  );
+ex_get_n_side_set_df(int          exoid,             /**< NetCDF/Exodus file ID */
+                     ex_entity_id side_set_id,       /**< Side-set ID */
+                     int64_t      start_num,         /**< Starting df number */
+                     int64_t      num_df_to_get,     /**< Number of df's to read */
+                     void *       side_set_dist_fact /**< Distribution factors */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_n_side_set_df(int          exoid,         /**< NetCDF/Exodus file ID */
-                                       ex_entity_id side_set_id,   /**< Side-set ID */
-                                       int64_t      start_num,     /**< Starting df number */
-                                       int64_t      num_df_to_get, /**< Number of df's to write */
-                                       void *       side_set_dist_fact /**< Distribution factors */
-                  );
+ex_put_n_side_set_df(int          exoid,             /**< NetCDF/Exodus file ID */
+                     ex_entity_id side_set_id,       /**< Side-set ID */
+                     int64_t      start_num,         /**< Starting df number */
+                     int64_t      num_df_to_get,     /**< Number of df's to write */
+                     void *       side_set_dist_fact /**< Distribution factors */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_n_node_set(int          exoid,          /**< NetCDF/Exodus file ID */
-                                    ex_entity_id node_set_id,    /**< Node set ID */
-                                    int64_t      start_node_num, /**< Node index to start reading at */
-                                    int64_t      num_nodes,      /**< Number of nodes to read */
-                                    void_int *   node_set_node_list /**< List of nodes in node set */
-                  );
+ex_get_n_node_set(int          exoid,             /**< NetCDF/Exodus file ID */
+                  ex_entity_id node_set_id,       /**< Node set ID */
+                  int64_t      start_node_num,    /**< Node index to start reading at */
+                  int64_t      num_nodes,         /**< Number of nodes to read */
+                  void_int *   node_set_node_list /**< List of nodes in node set */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_n_node_set(int             exoid,       /**< NetCDF/Exodus file ID */
-                                    ex_entity_id    node_set_id, /**< Node set ID */
-                                    int64_t         start_node_num, /**< Node index to start writing at */
-                                    int64_t         num_nodes, /**< Number of nodes to write */
-                                    const void_int *node_set_node_list /**< List of nodes in node set */
-                  );
+ex_put_n_node_set(int             exoid,             /**< NetCDF/Exodus file ID */
+                  ex_entity_id    node_set_id,       /**< Node set ID */
+                  int64_t         start_node_num,    /**< Node index to start writing at */
+                  int64_t         num_nodes,         /**< Number of nodes to write */
+                  const void_int *node_set_node_list /**< List of nodes in node set */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_n_node_set_df(int          exoid,         /**< NetCDF/Exodus file ID */
-                                       ex_entity_id node_set_id,   /**< Node-set ID */
-                                       int64_t      start_num,     /**< Starting df number */
-                                       int64_t      num_df_to_get, /**< Number of df's to read */
-                                       void *       node_set_dist_fact /**< Distribution factors */
-                  );
+ex_get_n_node_set_df(int          exoid,             /**< NetCDF/Exodus file ID */
+                     ex_entity_id node_set_id,       /**< Node-set ID */
+                     int64_t      start_num,         /**< Starting df number */
+                     int64_t      num_df_to_get,     /**< Number of df's to read */
+                     void *       node_set_dist_fact /**< Distribution factors */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_n_node_set_df(int          exoid,         /**< NetCDF/Exodus file ID */
-                                       ex_entity_id node_set_id,   /**< Node-set ID */
-                                       int64_t      start_num,     /**< Starting df number */
-                                       int64_t      num_df_to_get, /**< Number of df's to write */
-                                       void *       node_set_dist_fact /**< Distribution factors */
-                  );
+ex_put_n_node_set_df(int          exoid,             /**< NetCDF/Exodus file ID */
+                     ex_entity_id node_set_id,       /**< Node-set ID */
+                     int64_t      start_num,         /**< Starting df number */
+                     int64_t      num_df_to_get,     /**< Number of df's to write */
+                     void *       node_set_dist_fact /**< Distribution factors */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_n_elem_conn(int          exoid,       /**< NetCDF/Exodus file ID */
-                                     ex_entity_id elem_blk_id, /**< Element block ID */
-                                     int64_t      start_elem_num, /**< Starting position to read from */
-                                     int64_t      num_elems,      /**< Number of elements to read */
-                                     void_int *   connect         /**< Connectivity vector */
-                  );
+ex_get_n_elem_conn(int          exoid,          /**< NetCDF/Exodus file ID */
+                   ex_entity_id elem_blk_id,    /**< Element block ID */
+                   int64_t      start_elem_num, /**< Starting position to read from */
+                   int64_t      num_elems,      /**< Number of elements to read */
+                   void_int *   connect         /**< Connectivity vector */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_n_elem_conn(int             exoid,       /**< NetCDF/Exodus file ID */
-                                     ex_entity_id    elem_blk_id, /**< Element block ID */
-                                     int64_t         start_elem_num, /**< Starting position to write to */
-                                     int64_t         num_elems, /**< Number of elements to write */
-                                     const void_int *connect    /**< Connectivity vector */
-                  );
+ex_put_n_elem_conn(int             exoid,          /**< NetCDF/Exodus file ID */
+                   ex_entity_id    elem_blk_id,    /**< Element block ID */
+                   int64_t         start_elem_num, /**< Starting position to write to */
+                   int64_t         num_elems,      /**< Number of elements to write */
+                   const void_int *connect         /**< Connectivity vector */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_n_elem_attr(int          exoid,       /**< NetCDF/Exodus file ID */
-                                     ex_entity_id elem_blk_id, /**< Element block ID */
-                                     int64_t      start_elem_num, /**< Starting position to read from */
-                                     int64_t      num_elems,      /**< Number of elements to read */
-                                     void *       attrib          /**< Attribute */
-                  );
+ex_get_n_elem_attr(int          exoid,          /**< NetCDF/Exodus file ID */
+                   ex_entity_id elem_blk_id,    /**< Element block ID */
+                   int64_t      start_elem_num, /**< Starting position to read from */
+                   int64_t      num_elems,      /**< Number of elements to read */
+                   void *       attrib          /**< Attribute */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_n_elem_attr(int          exoid,          /**< NetCDF/Exodus file ID */
-                                     ex_entity_id elem_blk_id,    /**< Element block ID */
-                                     int64_t      start_elem_num, /**< Starting position to write to */
-                                     int64_t      num_elems, /**< Number of elements to write */
-                                     void *       attrib     /**< Attribute */
-                  );
+ex_put_n_elem_attr(int          exoid,          /**< NetCDF/Exodus file ID */
+                   ex_entity_id elem_blk_id,    /**< Element block ID */
+                   int64_t      start_elem_num, /**< Starting position to write to */
+                   int64_t      num_elems,      /**< Number of elements to write */
+                   void *       attrib          /**< Attribute */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_n_elem_num_map(int       exoid,     /**< NetCDF/Exodus file ID */
-                                        int64_t   start_ent, /**< Starting position to read from */
-                                        int64_t   num_ents,  /**< Number of elements to read */
-                                        void_int *elem_map   /**< element map numbers */
-                  );
+ex_get_n_elem_num_map(int       exoid,     /**< NetCDF/Exodus file ID */
+                      int64_t   start_ent, /**< Starting position to read from */
+                      int64_t   num_ents,  /**< Number of elements to read */
+                      void_int *elem_map   /**< element map numbers */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_n_node_num_map(int       exoid,     /**< NetCDF/Exodus file ID */
-                                        int64_t   start_ent, /**< starting node number */
-                                        int64_t   num_ents,  /**< number of nodes to read */
-                                        void_int *node_map   /**< vector for node map */
-                  );
+ex_get_n_node_num_map(int       exoid,     /**< NetCDF/Exodus file ID */
+                      int64_t   start_ent, /**< starting node number */
+                      int64_t   num_ents,  /**< number of nodes to read */
+                      void_int *node_map   /**< vector for node map */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int ex_put_n_coord(int exoid, int64_t start_node_num,
                                                    int64_t num_nodes, const void *x_coor,
                                                    const void *y_coor, const void *z_coor);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_n_elem_num_map(int exoid, int64_t start_ent, int64_t num_ents, const void_int *elem_map);
+ex_put_n_elem_num_map(int exoid, int64_t start_ent, int64_t num_ents, const void_int *elem_map);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_n_node_num_map(int exoid, int64_t start_ent, int64_t num_ents, const void_int *node_map);
+ex_put_n_node_num_map(int exoid, int64_t start_ent, int64_t num_ents, const void_int *node_map);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int ex_put_n_one_attr(int exoid, ex_entity_type obj_type,
                                                       ex_entity_id obj_id, int64_t start_num,
@@ -1494,76 +1606,76 @@ SEACAS_DEPRECATED EXODUS_EXPORT int ex_put_n_nodal_var(int exoid, int time_step,
                                                        const void *nodal_var_vals);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_elem_var(int exoid, int time_step, int elem_var_index, ex_entity_id elem_blk_id,
-                                          int64_t num_elem_this_blk, int64_t start_elem_num, int64_t num_elem,
-                                          void *elem_var_vals);
+ex_get_partial_elem_var(int exoid, int time_step, int elem_var_index, ex_entity_id elem_blk_id,
+                        int64_t num_elem_this_blk, int64_t start_elem_num, int64_t num_elem,
+                        void *elem_var_vals);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int ex_get_partial_elem_map(int exoid, ex_entity_id map_id,
                                                             int64_t ent_start, int64_t ent_count,
                                                             void_int *elem_map);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_elem_conn(int          exoid,       /**< NetCDF/Exodus file ID */
-                                           ex_entity_id elem_blk_id, /**< Element block ID */
-                                           int64_t      start_elem_num, /**< Starting position to read from */
-                                           int64_t      num_elems, /**< Number of elements to read */
-                                           void_int *   connect    /**< Connectivity vector */
-                  );
+ex_get_partial_elem_conn(int          exoid,          /**< NetCDF/Exodus file ID */
+                         ex_entity_id elem_blk_id,    /**< Element block ID */
+                         int64_t      start_elem_num, /**< Starting position to read from */
+                         int64_t      num_elems,      /**< Number of elements to read */
+                         void_int *   connect         /**< Connectivity vector */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_elem_attr(int          exoid,       /**< NetCDF/Exodus file ID */
-                                           ex_entity_id elem_blk_id, /**< Element block ID */
-                                           int64_t      start_elem_num, /**< Starting position to read from */
-                                           int64_t      num_elems, /**< Number of elements to read */
-                                           void *       attrib     /**< Attribute */
-                  );
+ex_get_partial_elem_attr(int          exoid,          /**< NetCDF/Exodus file ID */
+                         ex_entity_id elem_blk_id,    /**< Element block ID */
+                         int64_t      start_elem_num, /**< Starting position to read from */
+                         int64_t      num_elems,      /**< Number of elements to read */
+                         void *       attrib          /**< Attribute */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_elem_num_map(int       exoid, /**< NetCDF/Exodus file ID */
-                                              int64_t   start_ent, /**< Starting position to read from */
-                                              int64_t   num_ents, /**< Number of elements to read */
-                                              void_int *elem_map  /**< element map numbers */
-                  );
+ex_get_partial_elem_num_map(int       exoid,     /**< NetCDF/Exodus file ID */
+                            int64_t   start_ent, /**< Starting position to read from */
+                            int64_t   num_ents,  /**< Number of elements to read */
+                            void_int *elem_map   /**< element map numbers */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_node_num_map(int       exoid,     /**< NetCDF/Exodus file ID */
-                                              int64_t   start_ent, /**< starting node number */
-                                              int64_t   num_ents,  /**< number of nodes to read */
-                                              void_int *node_map   /**< vector for node map */
-                  );
+ex_get_partial_node_num_map(int       exoid,     /**< NetCDF/Exodus file ID */
+                            int64_t   start_ent, /**< starting node number */
+                            int64_t   num_ents,  /**< number of nodes to read */
+                            void_int *node_map   /**< vector for node map */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_node_set(int          exoid,       /**< NetCDF/Exodus file ID */
-                                          ex_entity_id node_set_id, /**< Node set ID */
-                                          int64_t      start_node_num, /**< Node index to start reading at */
-                                          int64_t      num_nodes, /**< Number of nodes to read */
-                                          void_int *   node_set_node_list /**< List of nodes in node set */
-                  );
+ex_get_partial_node_set(int          exoid,             /**< NetCDF/Exodus file ID */
+                        ex_entity_id node_set_id,       /**< Node set ID */
+                        int64_t      start_node_num,    /**< Node index to start reading at */
+                        int64_t      num_nodes,         /**< Number of nodes to read */
+                        void_int *   node_set_node_list /**< List of nodes in node set */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_node_set_df(int          exoid,       /**< NetCDF/Exodus file ID */
-                                             ex_entity_id node_set_id, /**< Node-set ID */
-                                             int64_t      start_num,   /**< Starting df number */
-                                             int64_t      num_df_to_get, /**< Number of df's to read */
-                                             void *       node_set_dist_fact /**< Distribution factors */
-                  );
+ex_get_partial_node_set_df(int          exoid,             /**< NetCDF/Exodus file ID */
+                           ex_entity_id node_set_id,       /**< Node-set ID */
+                           int64_t      start_num,         /**< Starting df number */
+                           int64_t      num_df_to_get,     /**< Number of df's to read */
+                           void *       node_set_dist_fact /**< Distribution factors */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_side_set(int          exoid,          /**< NetCDF/Exodus file ID */
-                                          ex_entity_id side_set_id,    /**< Side-set ID to read */
-                                          int64_t      start_side_num, /**< Starting element number */
-                                          int64_t      num_sides, /**< Number of sides to read */
-                                          void_int *   side_set_elem_list, /**< List of element IDs */
-                                          void_int *   side_set_side_list /**< List of side IDs */
-                  );
+ex_get_partial_side_set(int          exoid,              /**< NetCDF/Exodus file ID */
+                        ex_entity_id side_set_id,        /**< Side-set ID to read */
+                        int64_t      start_side_num,     /**< Starting element number */
+                        int64_t      num_sides,          /**< Number of sides to read */
+                        void_int *   side_set_elem_list, /**< List of element IDs */
+                        void_int *   side_set_side_list  /**< List of side IDs */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_get_partial_side_set_df(int          exoid,       /**< NetCDF/Exodus file ID */
-                                             ex_entity_id side_set_id, /**< Side-set ID */
-                                             int64_t      start_num,   /**< Starting df number */
-                                             int64_t      num_df_to_get, /**< Number of df's to read */
-                                             void *       side_set_dist_fact /**< Distribution factors */
-                  );
+ex_get_partial_side_set_df(int          exoid,             /**< NetCDF/Exodus file ID */
+                           ex_entity_id side_set_id,       /**< Side-set ID */
+                           int64_t      start_num,         /**< Starting df number */
+                           int64_t      num_df_to_get,     /**< Number of df's to read */
+                           void *       side_set_dist_fact /**< Distribution factors */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int ex_put_partial_node_num_map(int exoid, int64_t start_ent,
                                                                 int64_t         num_ents,
@@ -1578,72 +1690,72 @@ SEACAS_DEPRECATED EXODUS_EXPORT int ex_put_partial_elem_map(int exoid, ex_entity
                                                             const void_int *elem_map);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_partial_side_set(int             exoid,       /**< NetCDF/Exodus file ID */
-                                          ex_entity_id    side_set_id, /**< Side-set ID to write */
-                                          int64_t         start_side_num, /**< Starting element number */
-                                          int64_t         num_sides, /**< Number of sides to write */
-                                          const void_int *side_set_elem_list, /**< List of element IDs */
-                                          const void_int *side_set_side_list /**< List of side IDs */
-                  );
+ex_put_partial_side_set(int             exoid,              /**< NetCDF/Exodus file ID */
+                        ex_entity_id    side_set_id,        /**< Side-set ID to write */
+                        int64_t         start_side_num,     /**< Starting element number */
+                        int64_t         num_sides,          /**< Number of sides to write */
+                        const void_int *side_set_elem_list, /**< List of element IDs */
+                        const void_int *side_set_side_list  /**< List of side IDs */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_partial_side_set_df(int          exoid,       /**< NetCDF/Exodus file ID */
-                                             ex_entity_id side_set_id, /**< Side-set ID */
-                                             int64_t      start_num,   /**< Starting df number */
-                                             int64_t      num_df_to_get, /**< Number of df's to write */
-                                             void *       side_set_dist_fact /**< Distribution factors */
-                  );
+ex_put_partial_side_set_df(int          exoid,             /**< NetCDF/Exodus file ID */
+                           ex_entity_id side_set_id,       /**< Side-set ID */
+                           int64_t      start_num,         /**< Starting df number */
+                           int64_t      num_df_to_get,     /**< Number of df's to write */
+                           void *       side_set_dist_fact /**< Distribution factors */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_partial_node_set(int             exoid,       /**< NetCDF/Exodus file ID */
-                                          ex_entity_id    node_set_id, /**< Node set ID */
-                                          int64_t         start_node_num, /**< Node index to start writing at */
-                                          int64_t         num_nodes, /**< Number of nodes to write */
-                                          const void_int *node_set_node_list /**< List of nodes in node set */
-                  );
+ex_put_partial_node_set(int             exoid,             /**< NetCDF/Exodus file ID */
+                        ex_entity_id    node_set_id,       /**< Node set ID */
+                        int64_t         start_node_num,    /**< Node index to start writing at */
+                        int64_t         num_nodes,         /**< Number of nodes to write */
+                        const void_int *node_set_node_list /**< List of nodes in node set */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_partial_node_set_df(int          exoid,       /**< NetCDF/Exodus file ID */
-                                             ex_entity_id node_set_id, /**< Node-set ID */
-                                             int64_t      start_num,   /**< Starting df number */
-                                             int64_t      num_df_to_get, /**< Number of df's to write */
-                                             void *       node_set_dist_fact /**< Distribution factors */
-                  );
+ex_put_partial_node_set_df(int          exoid,             /**< NetCDF/Exodus file ID */
+                           ex_entity_id node_set_id,       /**< Node-set ID */
+                           int64_t      start_num,         /**< Starting df number */
+                           int64_t      num_df_to_get,     /**< Number of df's to write */
+                           void *       node_set_dist_fact /**< Distribution factors */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_partial_elem_conn(int             exoid, /**< NetCDF/Exodus file ID */
-                                           ex_entity_id    elem_blk_id, /**< Element block ID */
-                                           int64_t         start_elem_num, /**< Starting position to write to */
-                                           int64_t         num_elems, /**< Number of elements to write */
-                                           const void_int *connect /**< Connectivity vector */
-                  );
+ex_put_partial_elem_conn(int             exoid,          /**< NetCDF/Exodus file ID */
+                         ex_entity_id    elem_blk_id,    /**< Element block ID */
+                         int64_t         start_elem_num, /**< Starting position to write to */
+                         int64_t         num_elems,      /**< Number of elements to write */
+                         const void_int *connect         /**< Connectivity vector */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_partial_elem_attr(int          exoid,       /**< NetCDF/Exodus file ID */
-                                           ex_entity_id elem_blk_id, /**< Element block ID */
-                                           int64_t      start_elem_num, /**< Starting position to write to */
-                                           int64_t      num_elems, /**< Number of elements to write */
-                                           void *       attrib     /**< Attribute */
-                  );
+ex_put_partial_elem_attr(int          exoid,          /**< NetCDF/Exodus file ID */
+                         ex_entity_id elem_blk_id,    /**< Element block ID */
+                         int64_t      start_elem_num, /**< Starting position to write to */
+                         int64_t      num_elems,      /**< Number of elements to write */
+                         void *       attrib          /**< Attribute */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_elem_var_slab(int          exoid,          /**< NetCDF/Exodus file ID */
-                                       int          time_step,      /**< time index */
-                                       int          elem_var_index, /**< elemental variable index */
-                                       ex_entity_id elem_blk_id,    /**< elemental block id */
-                                       int64_t      start_pos, /**< Starting position to write to */
-                                       int64_t      num_vals,  /**< Number of elements to write */
-                                       void *       elem_var_vals /**< variable values */
-                  );
+ex_put_elem_var_slab(int          exoid,          /**< NetCDF/Exodus file ID */
+                     int          time_step,      /**< time index */
+                     int          elem_var_index, /**< elemental variable index */
+                     ex_entity_id elem_blk_id,    /**< elemental block id */
+                     int64_t      start_pos,      /**< Starting position to write to */
+                     int64_t      num_vals,       /**< Number of elements to write */
+                     void *       elem_var_vals   /**< variable values */
+);
 
 SEACAS_DEPRECATED EXODUS_EXPORT int
-                  ex_put_nodal_var_slab(int     exoid,           /**< NetCDF/Exodus file ID */
-                                        int     time_step,       /**< The time step index */
-                                        int     nodal_var_index, /**< Nodal variable index */
-                                        int64_t start_pos,       /**< Start position for write */
-                                        int64_t num_vals,        /**< Number of nodal variables */
-                                        void *  nodal_var_vals   /**< Nodal variable values */
-                  );
+ex_put_nodal_var_slab(int     exoid,           /**< NetCDF/Exodus file ID */
+                      int     time_step,       /**< The time step index */
+                      int     nodal_var_index, /**< Nodal variable index */
+                      int64_t start_pos,       /**< Start position for write */
+                      int64_t num_vals,        /**< Number of nodal variables */
+                      void *  nodal_var_vals   /**< Nodal variable values */
+);
 
 #endif
 /* End of Deprecated functions and their replacements
@@ -1669,7 +1781,7 @@ EXODUS_EXPORT EX_errval_t *ex_errval;
 EXODUS_EXPORT int exerrval; /**< shared error return value                */
 #endif
 
-EXODUS_EXPORT char *ex_name_of_object(ex_entity_type obj_type);
+EXODUS_EXPORT char *         ex_name_of_object(ex_entity_type obj_type);
 EXODUS_EXPORT ex_entity_type ex_var_type_to_ex_entity_type(char var_type);
 EXODUS_EXPORT int            ex_set_parallel(int exoid, int is_parallel);
 
@@ -1693,12 +1805,15 @@ EXODUS_EXPORT int ex_get_idx(int         exoid,       /**< NetCDF/Exodus file ID
 #define EX_LOOKUPFAIL 1004    /**< id table lookup failed                   */
 #define EX_BADPARAM 1005      /**< bad parameter passed                     */
 #define EX_INTERNAL 1006      /**< internal logic error                     */
+#define EX_DUPLICATEID 1007   /**< duplicate id found                       */
+#define EX_DUPLICATEOPEN 1008 /**< duplicate open                           */
 #define EX_MSG -1000          /**< message print code - no error implied    */
 #define EX_PRTLASTMSG -1001   /**< print last error message msg code        */
 #define EX_NOTROOTID -1002    /**< file id is not the root id; it is a subgroup id */
 #define EX_LASTERR -1003      /**< in ex_err, use existing err_num value */
 #define EX_NULLENTITY -1006   /**< null entity found                        */
-#define EX_DUPLICATEID -1007  /**< duplicate id found                        */
+#define EX_NOENTITY -1007     /**< no entities of that type on database    */
+#define EX_NOTFOUND -1008     /**< could not find requested variable on database */
 
 #define EX_FATAL -1 /**< fatal error flag def                     */
 #define EX_NOERR 0  /**< no error flag def                        */

@@ -38,7 +38,7 @@ public:
 
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Hue is an angle. Maximum specifies when it maps back to 0.
    * HueMaximum defaults to 255 instead of 2PI, because unsigned char
@@ -47,11 +47,11 @@ public:
    */
   vtkSetMacro(Maximum, double);
   vtkGetMacro(Maximum, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageHSIToRGB();
-  ~vtkImageHSIToRGB() override {}
+  ~vtkImageHSIToRGB() override = default;
 
   double Maximum;
 

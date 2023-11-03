@@ -32,20 +32,21 @@ class VTKCOMMONEXECUTIONMODEL_EXPORT vtkExplicitStructuredGridAlgorithm : public
 public:
   static vtkExplicitStructuredGridAlgorithm* New();
   vtkTypeMacro(vtkExplicitStructuredGridAlgorithm, vtkAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the output data object for a port on this algorithm.
    */
   vtkExplicitStructuredGrid* GetOutput();
   vtkExplicitStructuredGrid* GetOutput(int);
   virtual void SetOutput(vtkDataObject* d);
-  //@}
+  ///@}
 
   /**
    * see vtkAlgorithm for details
    */
-  virtual vtkTypeBool ProcessRequest(
+  vtkTypeBool ProcessRequest(
     vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   // this method is not recommended for use, but lots of old style filters
@@ -54,7 +55,7 @@ public:
   vtkDataObject* GetInput(int port);
   vtkExplicitStructuredGrid* GetExplicitStructuredGridInput(int port);
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use SetInputConnection() to
@@ -62,9 +63,9 @@ public:
    */
   void SetInputData(vtkDataObject*);
   void SetInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Assign a data object as input. Note that this method does not
    * establish a pipeline connection. Use AddInputConnection() to
@@ -72,7 +73,7 @@ public:
    */
   void AddInputData(vtkDataObject*);
   void AddInputData(int, vtkDataObject*);
-  //@}
+  ///@}
 
 protected:
   vtkExplicitStructuredGridAlgorithm();
@@ -96,8 +97,8 @@ protected:
   virtual int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*);
 
   // see algorithm for more info
-  virtual int FillOutputPortInformation(int port, vtkInformation* info) override;
-  virtual int FillInputPortInformation(int port, vtkInformation* info) override;
+  int FillOutputPortInformation(int port, vtkInformation* info) override;
+  int FillInputPortInformation(int port, vtkInformation* info) override;
 
 private:
   vtkExplicitStructuredGridAlgorithm(const vtkExplicitStructuredGridAlgorithm&) = delete;

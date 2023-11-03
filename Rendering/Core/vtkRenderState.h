@@ -52,7 +52,7 @@ public:
    * Destructor. As a vtkRenderState does not own any of its variables,
    * the destructor does nothing.
    */
-  ~vtkRenderState();
+  ~vtkRenderState() = default;
 
   /**
    * Tells if the RenderState is a valid one (Renderer is not null).
@@ -136,7 +136,7 @@ protected:
    */
   vtkFrameBufferObjectBase* FrameBuffer;
 
-  //@{
+  ///@{
   /**
    * Subset of props to render. A renderpass might ignore this filtered list
    * and access to all the props of the vtkRenderer object directly.
@@ -146,7 +146,7 @@ protected:
    */
   vtkProp** PropArray;
   int PropArrayCount;
-  //@}
+  ///@}
 
   /**
    * It tells that the current render pass it supposed to render only props
@@ -155,7 +155,7 @@ protected:
   vtkInformation* RequiredKeys;
 
 private:
-  vtkRenderState(); // no default constructor.
+  vtkRenderState() = delete; // no default constructor.
   vtkRenderState(const vtkRenderState&) = delete;
   void operator=(const vtkRenderState&) = delete;
 };

@@ -45,7 +45,7 @@ public:
   /**
    * Is the given file a GESigna file?
    */
-  int CanReadFile(const char* fname) override;
+  int CanReadFile(VTK_FILEPATH const char* fname) override;
 
   /**
    * Valid extentsions
@@ -58,8 +58,8 @@ public:
   const char* GetDescriptiveName() override { return "GESigna"; }
 
 protected:
-  vtkGESignaReader() {}
-  ~vtkGESignaReader() override {}
+  vtkGESignaReader() = default;
+  ~vtkGESignaReader() override = default;
 
   void ExecuteInformation() override;
   void ExecuteDataWithInformation(vtkDataObject* out, vtkInformation* outInfo) override;

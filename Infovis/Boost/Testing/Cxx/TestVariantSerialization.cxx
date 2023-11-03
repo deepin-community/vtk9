@@ -17,7 +17,12 @@
  * Use, modification and distribution is subject to the Boost Software
  * License, Version 1.0. (See http://www.boost.org/LICENSE_1_0.txt)
  */
+
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkSmartPointer.h"
+#include "vtkUnicodeString.h"
 #include "vtkVariant.h"
 #include "vtkVariantArray.h"
 #include "vtkVariantBoostSerialization.h"
@@ -61,7 +66,7 @@ int TestVariantSerialization(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
   in >> *sinkArray;
 
   // Check that the arrays are the same
-  if (strcmp(sourceArray->GetName(), sinkArray->GetName()))
+  if (strcmp(sourceArray->GetName(), sinkArray->GetName()) != 0)
   {
     cerr << "Sink array has name \"" << sinkArray->GetName() << "\", should be \""
          << sourceArray->GetName() << "\".\n";
@@ -98,7 +103,7 @@ int TestVariantSerialization(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
   VTK_VARIANT_ARRAY_DATA_CHECK(0, ToChar, "Character");
   VTK_VARIANT_ARRAY_DATA_CHECK(1, ToFloat, "Float");
   VTK_VARIANT_ARRAY_DATA_CHECK(2, ToDouble, "Double");
-  if (strcmp(sourceArray->GetValue(3).ToString(), sinkArray->GetValue(3).ToString()))
+  if (strcmp(sourceArray->GetValue(3).ToString(), sinkArray->GetValue(3).ToString()) != 0)
   {
     cerr << "String mismatch: \"" << sourceArray->GetValue(3).ToString() << "\" vs. \""
          << sinkArray->GetValue(3).ToString() << "\".\n";

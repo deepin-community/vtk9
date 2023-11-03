@@ -48,9 +48,9 @@ vtkStandardNewMacro(vtkBoostPrimMinimumSpanningTree);
 // Constructor/Destructor
 vtkBoostPrimMinimumSpanningTree::vtkBoostPrimMinimumSpanningTree()
 {
-  this->EdgeWeightArrayName = 0;
+  this->EdgeWeightArrayName = nullptr;
   this->OriginVertexIndex = 0;
-  this->ArrayName = 0;
+  this->ArrayName = nullptr;
   this->SetArrayName("Not Set");
   this->ArrayNameSet = false;
   this->NegateEdgeWeights = false;
@@ -59,11 +59,11 @@ vtkBoostPrimMinimumSpanningTree::vtkBoostPrimMinimumSpanningTree()
   this->CreateGraphVertexIdArray = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoostPrimMinimumSpanningTree::~vtkBoostPrimMinimumSpanningTree()
 {
-  this->SetEdgeWeightArrayName(0);
-  this->SetArrayName(0);
+  this->SetEdgeWeightArrayName(nullptr);
+  this->SetArrayName(nullptr);
 }
 
 // Description:
@@ -106,7 +106,7 @@ void vtkBoostPrimMinimumSpanningTree::SetNegateEdgeWeights(bool value)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkBoostPrimMinimumSpanningTree::GetVertexIndex(
   vtkAbstractArray* abstract, vtkVariant value)
 {
@@ -141,7 +141,7 @@ vtkIdType vtkBoostPrimMinimumSpanningTree::GetVertexIndex(
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostPrimMinimumSpanningTree::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -263,7 +263,7 @@ int vtkBoostPrimMinimumSpanningTree::RequestData(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostPrimMinimumSpanningTree::FillInputPortInformation(int port, vtkInformation* info)
 {
   // now add our info
@@ -274,7 +274,7 @@ int vtkBoostPrimMinimumSpanningTree::FillInputPortInformation(int port, vtkInfor
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoostPrimMinimumSpanningTree::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

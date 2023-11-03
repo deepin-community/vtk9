@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #define VTK_EPSILON 1e-10
 
 // Subclass of vtkCell
@@ -55,13 +59,14 @@
 #include "vtkQuadraticLinearQuad.h"
 #include "vtkQuadraticLinearWedge.h"
 #include "vtkTriQuadraticHexahedron.h"
+#include "vtkTriQuadraticPyramid.h"
 
 #include <vector>
 
 template <class TCell>
 int TestOneInterpolationFunction(double eps = VTK_EPSILON)
 {
-  TCell* cell = TCell::New();
+  auto cell = vtkSmartPointer<TCell>::New();
   int numPts = cell->GetNumberOfPoints();
   std::vector<double> sf(numPts);
   double* coords = cell->GetParametricCoords();
@@ -111,14 +116,14 @@ int TestOneInterpolationFunction(double eps = VTK_EPSILON)
     ++r;
   }
 
-  cell->Delete();
   return r;
 }
 
 int TestInterpolationFunctions(int, char*[])
 {
   int r = 0;
-  // Subclass of vtkCell3D
+
+  // Subclasses of vtkCell3D
   // r += TestOneInterpolationFunction<vtkEmptyCell>(); // not implemented
   // r += TestOneInterpolationFunction<vtkGenericCell>(); // not implemented
   r += TestOneInterpolationFunction<vtkLine>();
@@ -131,7 +136,7 @@ int TestInterpolationFunctions(int, char*[])
   // r += TestOneInterpolationFunction<vtkTriangleStrip>(); // not implemented
   r += TestOneInterpolationFunction<vtkVertex>();
 
-  // Subclass of vtkCell3D
+  // Subclasses of vtkCell3D
   // r += TestOneInterpolationFunction<vtkConvexPointSet>(); // not implemented
   r += TestOneInterpolationFunction<vtkHexagonalPrism>();
   r += TestOneInterpolationFunction<vtkHexahedron>();
@@ -141,7 +146,7 @@ int TestInterpolationFunctions(int, char*[])
   r += TestOneInterpolationFunction<vtkVoxel>();
   r += TestOneInterpolationFunction<vtkWedge>();
 
-  // Subclass of vtkNonLinearCell
+  // Subclasses of vtkNonLinearCell
   r += TestOneInterpolationFunction<vtkQuadraticEdge>();
   r += TestOneInterpolationFunction<vtkQuadraticHexahedron>();
   r += TestOneInterpolationFunction<vtkQuadraticPyramid>();
@@ -154,11 +159,12 @@ int TestInterpolationFunctions(int, char*[])
   r += TestOneInterpolationFunction<vtkBiQuadraticQuad>();
   r += TestOneInterpolationFunction<vtkBiQuadraticQuadraticHexahedron>();
   r += TestOneInterpolationFunction<vtkBiQuadraticQuadraticWedge>();
+  r += TestOneInterpolationFunction<vtkBiQuadraticTriangle>();
+  r += TestOneInterpolationFunction<vtkCubicLine>();
   r += TestOneInterpolationFunction<vtkQuadraticLinearQuad>();
   r += TestOneInterpolationFunction<vtkQuadraticLinearWedge>();
   r += TestOneInterpolationFunction<vtkTriQuadraticHexahedron>();
-  r += TestOneInterpolationFunction<vtkBiQuadraticTriangle>();
-  r += TestOneInterpolationFunction<vtkCubicLine>();
+  r += TestOneInterpolationFunction<vtkTriQuadraticPyramid>();
 
   return r;
 }

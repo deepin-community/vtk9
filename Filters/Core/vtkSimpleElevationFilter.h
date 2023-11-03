@@ -54,17 +54,17 @@ public:
    */
   static vtkSimpleElevationFilter* New();
 
-  //@{
+  ///@{
   /**
    * Define the vector with which to dot against.
    */
   vtkSetVector3Macro(Vector, double);
   vtkGetVectorMacro(Vector, double, 3);
-  //@}
+  ///@}
 
 protected:
   vtkSimpleElevationFilter();
-  ~vtkSimpleElevationFilter() override {}
+  ~vtkSimpleElevationFilter() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   double Vector[3];

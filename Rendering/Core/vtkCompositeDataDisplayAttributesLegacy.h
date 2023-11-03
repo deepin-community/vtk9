@@ -47,13 +47,13 @@ public:
    */
   bool HasBlockVisibilities() const;
 
-  //@{
+  ///@{
   /**
    * Set/get the visibility for the block with \p flat_index.
    */
   void SetBlockVisibility(unsigned int flat_index, bool visible);
   bool GetBlockVisibility(unsigned int flat_index) const;
-  //@}
+  ///@}
 
   /**
    * Returns true if the block with the given flat_index has a visibility
@@ -71,21 +71,19 @@ public:
    * for all blocks to true.
    */
   void RemoveBlockVisibilities();
-  // This method is deprecated and will be removed in VTK 8.2. It is misspelled.
-  VTK_LEGACY(void RemoveBlockVisibilites());
 
   /**
    * Returns true if any block has any block visibility is set.
    */
   bool HasBlockPickabilities() const;
 
-  //@{
+  ///@{
   /**
    * Set/get the visibility for the block with \p flat_index.
    */
   void SetBlockPickability(unsigned int flat_index, bool visible);
   bool GetBlockPickability(unsigned int flat_index) const;
-  //@}
+  ///@}
 
   /**
    * Returns true if the block with the given flat_index has a visibility
@@ -104,14 +102,14 @@ public:
    */
   void RemoveBlockPickabilities();
 
-  //@{
+  ///@{
   /**
    * Set/get the color for the block with \p flat_index.
    */
   void SetBlockColor(unsigned int flat_index, const double color[3]);
   void GetBlockColor(unsigned int flat_index, double color[3]) const;
   vtkColor3d GetBlockColor(unsigned int flat_index) const;
-  //@}
+  ///@}
 
   /**
    * Returns true if any block has any block color is set.
@@ -133,13 +131,13 @@ public:
    */
   void RemoveBlockColors();
 
-  //@{
+  ///@{
   /**
    * Set/get the opacity for the block with flat_index.
    */
   void SetBlockOpacity(unsigned int flat_index, double opacity);
   double GetBlockOpacity(unsigned int flat_index) const;
-  //@}
+  ///@}
 
   /**
    * Returns true if any block has an opacity set.

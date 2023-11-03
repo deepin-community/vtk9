@@ -66,13 +66,13 @@ public:
    */
   void SetDimensions(const int arg[4]);
 
-  //@{
+  ///@{
   /**
    * Get the dimensions of the pie, elements 0 and 1 are the x and y coordinate
    * of the bottom corner. Elements 2 and 3 are the width and height.
    */
   vtkGetVector4Macro(Dimensions, int);
-  //@}
+  ///@}
 
   /**
    * Set the color series to use for the Pie.
@@ -90,16 +90,8 @@ public:
    * -1.
    */
   vtkIdType GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
-    vtkVector2f* location,
-#ifndef VTK_LEGACY_REMOVE
-    vtkIdType* segmentId) override;
-#else
-    vtkIdType* segmentId = nullptr) override;
-#endif // VTK_LEGACY_REMOVE
-
-#ifndef VTK_LEGACY_REMOVE
+    vtkVector2f* location, vtkIdType* segmentId) override;
   using vtkPlot::GetNearestPoint;
-#endif // VTK_LEGACY_REMOVE
 
 protected:
   vtkPlotPie();

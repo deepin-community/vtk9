@@ -58,6 +58,7 @@ class VTKCOMMONDATAMODEL_EXPORT vtkStructuredGrid : public vtkPointSet
 {
 public:
   static vtkStructuredGrid* New();
+  static vtkStructuredGrid* ExtendedNew();
 
   vtkTypeMacro(vtkStructuredGrid, vtkPointSet);
   void PrintSelf(ostream& os, vtkIndent indent) override;
@@ -72,7 +73,7 @@ public:
    */
   void CopyStructure(vtkDataSet* ds) override;
 
-  //@{
+  ///@{
   /**
    * Standard vtkDataSet API methods. See vtkDataSet for more information.
    */
@@ -97,39 +98,39 @@ public:
   int GetMaxCellSize() override { return 8; } // hexahedron is the largest
   void GetCellNeighbors(vtkIdType cellId, vtkIdList* ptIds, vtkIdList* cellIds) override;
   void GetCellNeighbors(vtkIdType cellId, vtkIdList* ptIds, vtkIdList* cellIds, int* seedLoc);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * following methods are specific to structured grid
    */
   void SetDimensions(int i, int j, int k);
   void SetDimensions(const int dim[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get dimensions of this structured points dataset.
    */
   virtual int* GetDimensions() VTK_SIZEHINT(3);
   virtual void GetDimensions(int dim[3]);
-  //@}
+  ///@}
 
   /**
    * Return the dimensionality of the data.
    */
   int GetDataDimension();
 
-  //@{
+  ///@{
   /**
    * Different ways to set the extent of the data array.  The extent
    * should be set before the "Scalars" are set or allocated.
    * The Extent is stored in the order (X, Y, Z).
    */
   void SetExtent(int extent[6]);
-  void SetExtent(int x1, int x2, int y1, int y2, int z1, int z2);
+  void SetExtent(int xMin, int xMax, int yMin, int yMax, int zMin, int zMax);
   vtkGetVector6Macro(Extent, int);
-  //@}
+  ///@}
 
   /**
    * Return the actual size of the data in kibibytes (1024 bytes). This number
@@ -141,20 +142,20 @@ public:
    */
   unsigned long GetActualMemorySize() override;
 
-  //@{
+  ///@{
   /**
    * Shallow and Deep copy.
    */
   void ShallowCopy(vtkDataObject* src) override;
   void DeepCopy(vtkDataObject* src) override;
-  //@}
+  ///@}
 
   /**
    * The extent type is a 3D extent
    */
   int GetExtentType() override { return VTK_3D_EXTENT; }
 
-  //@{
+  ///@{
   /**
    * Methods for supporting blanking of cells. Blanking turns on or off
    * points in the structured grid, and hence the cells connected to them.
@@ -163,9 +164,9 @@ public:
    */
   void BlankPoint(vtkIdType ptId);
   void UnBlankPoint(vtkIdType ptId);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods for supporting blanking of cells. Blanking turns on or off
    * cells in the structured grid, and hence the points connected to them.
@@ -174,7 +175,7 @@ public:
    */
   void BlankCell(vtkIdType ptId);
   void UnBlankCell(vtkIdType ptId);
-  //@}
+  ///@}
 
   /**
    * Return non-zero value if specified point is visible.
@@ -216,13 +217,13 @@ public:
    */
   void Crop(const int* updateExtent) override;
 
-  //@{
+  ///@{
   /**
    * Retrieve an instance of this class from an information object.
    */
   static vtkStructuredGrid* GetData(vtkInformation* info);
   static vtkStructuredGrid* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
   /**
    * Get a point in the grid. If adjustForExtent is true, (i,j,k) is
@@ -268,8 +269,6 @@ private:
 
   // Internal method used by DeepCopy and ShallowCopy.
   void InternalStructuredGridCopy(vtkStructuredGrid* src);
-
-  static unsigned char MASKED_CELL_VALUE;
 
 private:
   vtkStructuredGrid(const vtkStructuredGrid&) = delete;

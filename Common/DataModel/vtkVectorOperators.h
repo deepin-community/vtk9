@@ -47,6 +47,20 @@ vtkVector<A, Size> operator+(const vtkVector<A, Size>& v1, const vtkVector<A, Si
 }
 
 // Description:
+// Add the vector b to the vector a of the same basic type.
+template <typename T, int Size>
+vtkVector<T, Size> operator+=(vtkVector<T, Size>& a, const vtkVector<T, Size>& b)
+{
+  vtkVector<T, Size> ret;
+  for (int dim = 0; dim < Size; ++dim)
+  {
+    a[dim] += b[dim];
+  }
+
+  return ret;
+}
+
+// Description:
 // Performs subtraction of vectors of the same basic type.
 template <typename A, int Size>
 vtkVector<A, Size> operator-(const vtkVector<A, Size>& v1, const vtkVector<A, Size>& v2)
@@ -56,6 +70,20 @@ vtkVector<A, Size> operator-(const vtkVector<A, Size>& v1, const vtkVector<A, Si
   {
     ret[i] = v1[i] - v2[i];
   }
+  return ret;
+}
+
+// Description:
+// Substract the vector b to the vector a of the same basic type.
+template <typename T, int Size>
+vtkVector<T, Size> operator-=(vtkVector<T, Size>& a, const vtkVector<T, Size>& b)
+{
+  vtkVector<T, Size> ret;
+  for (int dim = 0; dim < Size; ++dim)
+  {
+    a[dim] -= b[dim];
+  }
+
   return ret;
 }
 
@@ -103,46 +131,46 @@ vtkVector<A, Size> operator/(const vtkVector<A, Size>& v1, const vtkVector<A, Si
 #define vtkVectorOperatorNegate(vectorType, type, size)                                            \
   inline vectorType operator-(const vectorType& v)                                                 \
   {                                                                                                \
-    return vectorType((-static_cast<vtkVector<type, size> >(v)).GetData());                        \
+    return vectorType((-static_cast<vtkVector<type, size>>(v)).GetData());                         \
   }
 #define vtkVectorOperatorPlus(vectorType, type, size)                                              \
   inline vectorType operator+(const vectorType& v1, const vectorType& v2)                          \
   {                                                                                                \
     return vectorType(                                                                             \
-      (static_cast<vtkVector<type, size> >(v1) + static_cast<vtkVector<type, size> >(v2))          \
+      (static_cast<vtkVector<type, size>>(v1) + static_cast<vtkVector<type, size>>(v2))            \
         .GetData());                                                                               \
   }
 #define vtkVectorOperatorMinus(vectorType, type, size)                                             \
   inline vectorType operator-(const vectorType& v1, const vectorType& v2)                          \
   {                                                                                                \
     return vectorType(                                                                             \
-      (static_cast<vtkVector<type, size> >(v1) - static_cast<vtkVector<type, size> >(v2))          \
+      (static_cast<vtkVector<type, size>>(v1) - static_cast<vtkVector<type, size>>(v2))            \
         .GetData());                                                                               \
   }
 #define vtkVectorOperatorMultiply(vectorType, type, size)                                          \
   inline vectorType operator*(const vectorType& v1, const vectorType& v2)                          \
   {                                                                                                \
     return vectorType(                                                                             \
-      (static_cast<vtkVector<type, size> >(v1) * static_cast<vtkVector<type, size> >(v2))          \
+      (static_cast<vtkVector<type, size>>(v1) * static_cast<vtkVector<type, size>>(v2))            \
         .GetData());                                                                               \
   }
 #define vtkVectorOperatorMultiplyScalar(vectorType, type, size)                                    \
   template <typename B>                                                                            \
   inline vectorType operator*(const vectorType& v1, const B& scalar)                               \
   {                                                                                                \
-    return vectorType((static_cast<vtkVector<type, size> >(v1) * scalar).GetData());               \
+    return vectorType((static_cast<vtkVector<type, size>>(v1) * scalar).GetData());                \
   }
 #define vtkVectorOperatorMultiplyScalarPre(vectorType, type, size)                                 \
   template <typename B>                                                                            \
   inline vectorType operator*(const B& scalar, const vectorType& v1)                               \
   {                                                                                                \
-    return vectorType((static_cast<vtkVector<type, size> >(v1) * scalar).GetData());               \
+    return vectorType((static_cast<vtkVector<type, size>>(v1) * scalar).GetData());                \
   }
 #define vtkVectorOperatorDivide(vectorType, type, size)                                            \
   inline vectorType operator/(const vectorType& v1, const vectorType& v2)                          \
   {                                                                                                \
     return vectorType(                                                                             \
-      (static_cast<vtkVector<type, size> >(v1) / static_cast<vtkVector<type, size> >(v2))          \
+      (static_cast<vtkVector<type, size>>(v1) / static_cast<vtkVector<type, size>>(v2))            \
         .GetData());                                                                               \
   }
 

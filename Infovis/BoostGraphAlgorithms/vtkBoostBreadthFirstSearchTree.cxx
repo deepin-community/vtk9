@@ -70,7 +70,7 @@ template <typename IdMap>
 class bfs_tree_builder : public default_bfs_visitor
 {
 public:
-  bfs_tree_builder() {}
+  bfs_tree_builder() = default;
 
   bfs_tree_builder(IdMap& g2t, IdMap& t2g, vtkGraph* g, vtkMutableDirectedGraph* t, vtkIdType root)
     : graph_to_tree(g2t)
@@ -133,7 +133,7 @@ vtkBoostBreadthFirstSearchTree::vtkBoostBreadthFirstSearchTree()
 {
   // Default values for the origin vertex
   this->OriginVertexIndex = 0;
-  this->ArrayName = 0;
+  this->ArrayName = nullptr;
   this->SetArrayName("Not Set");
   this->ArrayNameSet = false;
   this->OriginValue = 0;

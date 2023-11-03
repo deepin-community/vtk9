@@ -25,12 +25,15 @@
 #define vtkXMLReader_h
 
 #include "vtkAlgorithm.h"
-#include "vtkIOXMLModule.h" // For export macro
+#include "vtkIOXMLModule.h"  // For export macro
+#include "vtkSmartPointer.h" // for vtkSmartPointer.
 
 #include <string> // for std::string
 
 class vtkAbstractArray;
 class vtkCallbackCommand;
+class vtkCommand;
+class vtkDataArray;
 class vtkDataArraySelection;
 class vtkDataSet;
 class vtkDataSetAttributes;
@@ -38,7 +41,7 @@ class vtkXMLDataElement;
 class vtkXMLDataParser;
 class vtkInformationVector;
 class vtkInformation;
-class vtkCommand;
+class vtkStringArray;
 
 class VTKIOXML_EXPORT vtkXMLReader : public vtkAlgorithm
 {
@@ -53,15 +56,15 @@ public:
     OTHER
   };
 
-  //@{
+  ///@{
   /**
    * Get/Set the name of the input file.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable reading from an InputString instead of the default, a file.
    */
@@ -69,7 +72,7 @@ public:
   vtkGetMacro(ReadFromInputString, vtkTypeBool);
   vtkBooleanMacro(ReadFromInputString, vtkTypeBool);
   void SetInputString(const std::string& s) { this->InputString = s; }
-  //@}
+  ///@}
 
   /**
    * Test whether the file (type) with the given name can be read by this
@@ -78,17 +81,17 @@ public:
    * This enables clients (ParaView) to distinguish between failures when we
    * need to look for another reader and failures when we don't.
    */
-  virtual int CanReadFile(const char* name);
+  virtual int CanReadFile(VTK_FILEPATH const char* name);
 
-  //@{
+  ///@{
   /**
    * Get the output as a vtkDataSet pointer.
    */
   vtkDataSet* GetOutputAsDataSet();
   vtkDataSet* GetOutputAsDataSet(int index);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the data array selection tables used to configure which data
    * arrays are loaded by the reader.
@@ -96,30 +99,50 @@ public:
   vtkGetObjectMacro(PointDataArraySelection, vtkDataArraySelection);
   vtkGetObjectMacro(CellDataArraySelection, vtkDataArraySelection);
   vtkGetObjectMacro(ColumnArraySelection, vtkDataArraySelection);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the number of point, cell or column arrays available in the input.
    */
   int GetNumberOfPointArrays();
   int GetNumberOfCellArrays();
   int GetNumberOfColumnArrays();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Get the name of the point, cell or column array with the given index in
+   * Getters for time data array candidates.
+   */
+  int GetNumberOfTimeDataArrays() const;
+  const char* GetTimeDataArray(int idx) const;
+  vtkGetObjectMacro(TimeDataStringArray, vtkStringArray);
+  ///@}
+
+  ///@{
+  /**
+   * Setter / Getter on ActiveTimeDataArrayName. This string
+   * holds the selected time array name. If set to `nullptr`,
+   * time values are the sequence of positive integers starting at zero.
+   * Default value is `TimeValue` for legacy reasons.
+   */
+  vtkGetStringMacro(ActiveTimeDataArrayName);
+  vtkSetStringMacro(ActiveTimeDataArrayName);
+  ///@}
+
+  ///@{
+  /**
+   * Get the name of the point, cell, column or time array with the given index in
    * the input.
    */
   const char* GetPointArrayName(int index);
   const char* GetCellArrayName(int index);
   const char* GetColumnArrayName(int index);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
-   * Get/Set whether the point, cell or column array with the given name is to
+   * Get/Set whether the point, cell, column or time array with the given name is to
    * be read.
    */
   int GetPointArrayStatus(const char* name);
@@ -128,28 +151,28 @@ public:
   void SetCellArrayStatus(const char* name, int status);
   int GetColumnArrayStatus(const char* name);
   void SetColumnArrayStatus(const char* name, int status);
-  //@}
+  ///@}
 
   // For the specified port, copy the information this reader sets up in
   // SetupOutputInformation to outInfo
   virtual void CopyOutputInformation(vtkInformation* vtkNotUsed(outInfo), int vtkNotUsed(port)) {}
 
-  //@{
+  ///@{
   /**
    * Which TimeStep to read.
    */
   vtkSetMacro(TimeStep, int);
   vtkGetMacro(TimeStep, int);
-  //@}
+  ///@}
 
   vtkGetMacro(NumberOfTimeSteps, int);
-  //@{
+  ///@{
   /**
    * Which TimeStepRange to read
    */
   vtkGetVector2Macro(TimeStepRange, int);
   vtkSetVector2Macro(TimeStepRange, int);
-  //@}
+  ///@}
 
   /**
    * Returns the internal XML parser. This can be used to access
@@ -160,23 +183,23 @@ public:
   vtkTypeBool ProcessRequest(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
 
-  //@{
+  ///@{
   /**
    * Set/get the ErrorObserver for the internal reader
    * This is useful for applications that want to catch error messages.
    */
   void SetReaderErrorObserver(vtkCommand*);
   vtkGetObjectMacro(ReaderErrorObserver, vtkCommand);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the ErrorObserver for the internal xml parser
    * This is useful for applications that want to catch error messages.
    */
   void SetParserErrorObserver(vtkCommand*);
   vtkGetObjectMacro(ParserErrorObserver, vtkCommand);
-  //@}
+  ///@}
 
 protected:
   vtkXMLReader();
@@ -293,6 +316,17 @@ protected:
   // at the end of RequestData.
   virtual void SqueezeOutputArrays(vtkDataObject*) {}
 
+  /**
+   * XML files have not consistently saved out adequate meta-data in past to
+   * correctly create vtkIdTypeArray for global ids and pedigree ids. This was
+   * fixed in vtk/vtk!4819, but all older files don't recreated vtkIdTypeArray
+   * correctly. If global ids or pedigree ids are not of type vtkIdTypeArray VTK
+   * does not handle them correctly, resulting in paraview/paraview#20239. This
+   * methods "annotates" the XML for arrays that are tagged as global/pedigree
+   * ids so they are read properly.
+   */
+  void MarkIdTypeArrays(vtkXMLDataElement* da);
+
   // The vtkXMLDataParser instance used to hide XML reading details.
   vtkXMLDataParser* XMLParser;
 
@@ -316,6 +350,19 @@ protected:
   vtkDataArraySelection* PointDataArraySelection;
   vtkDataArraySelection* CellDataArraySelection;
   vtkDataArraySelection* ColumnArraySelection;
+  vtkStringArray* TimeDataStringArray;
+
+  /**
+   * Name of the field-data array used to determine the time for the dataset
+   * being read.
+   */
+  char* ActiveTimeDataArrayName;
+
+  /**
+   * Populated in `ReadXMLInformation` from the field data for the array chosen
+   * using ActiveTimeDataArrayName, if any. `nullptr` otherwise.
+   */
+  vtkSmartPointer<vtkDataArray> TimeDataArray;
 
   // The observer to modify this object when the array selections are
   // modified.

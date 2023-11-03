@@ -1,9 +1,7 @@
 Description: _matplotlib
-Index: VTK-9.0.1/Rendering/Matplotlib/vtkMatplotlibMathTextUtilities.h
-===================================================================
---- VTK-9.0.1.orig/Rendering/Matplotlib/vtkMatplotlibMathTextUtilities.h
-+++ VTK-9.0.1/Rendering/Matplotlib/vtkMatplotlibMathTextUtilities.h
-@@ -151,6 +151,10 @@ private:
+--- vtk9.orig/Rendering/Matplotlib/vtkMatplotlibMathTextUtilities.h
++++ vtk9/Rendering/Matplotlib/vtkMatplotlibMathTextUtilities.h
+@@ -197,6 +197,10 @@
     * to implement IsAvailable.
     */
    static Availability CheckMPLAvailability();
@@ -12,5 +10,5 @@ Index: VTK-9.0.1/Rendering/Matplotlib/vtkMatplotlibMathTextUtilities.h
 +    MPLMathTextAvailable = UNAVAILABLE;
 +    };
  
-   //@{
+   ///@{
    /**

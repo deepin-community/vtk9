@@ -55,7 +55,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* window) override;
 
-  //@{
+  ///@{
   /**
    * Get the maximum number of LOD. OpenGL context must be bound.
    * The maximum number of LOD depends on GPU capabilities.
@@ -75,9 +75,9 @@ public:
    *
    * @sa vtkDecimatePro::SetTargetReduction
    */
-  virtual void SetLODDistanceAndTargetReduction(
+  void SetLODDistanceAndTargetReduction(
     vtkIdType index, float distance, float targetReduction) override;
-  //@}
+  ///@}
 
 protected:
   vtkOpenGLGlyph3DMapper();
@@ -106,7 +106,7 @@ protected:
   /**
    * Build data structures associated with
    */
-  virtual void RebuildStructures(vtkOpenGLGlyph3DMapperSubArray* entry, vtkIdType numPts,
+  virtual void RebuildStructures(vtkOpenGLGlyph3DMapperSubArray* subarray, vtkIdType numPts,
     vtkActor* actor, vtkDataSet* dataset, vtkBitArray* maskArray);
 
   vtkMTimeType BlockMTime; // Last time BlockAttributes was modified.

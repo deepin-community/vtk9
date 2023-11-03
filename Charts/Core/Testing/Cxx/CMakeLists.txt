@@ -39,7 +39,8 @@ set(TestParallelCoordinatesDouble_ARGS
 vtk_add_test_cxx(vtkChartsCoreCxxTests tests
   TestAdjustLowerBoundForLogPlot.cxx
   TestContextScene.cxx,NO_DATA,NO_VALID
-  TestControlPointsItem.cxx,NO_DATA,NO_VALID
+  TestColorTransferControlPointsItem.cxx,NO_DATA,NO_VALID
+  TestCompositeControlPointsItem.cxx,NO_DATA,NO_VALID
   TestControlPointsItemEvents.cxx,NO_DATA,NO_VALID
   TestAreaPlot.cxx
   TestAxes.cxx
@@ -57,11 +58,17 @@ vtk_add_test_cxx(vtkChartsCoreCxxTests tests
   TestChartDoubleColors.cxx
   TestChartDoubleColorsOpaque.cxx
   TestChartMatrix.cxx
+  TestChartMatrix2.cxx
+  TestChartMatrix3.cxx
+  TestChartPicking.cxx,NO_DATA,NO_VALID
   TestChartTileScaling.cxx
   TestChartUnicode.cxx
   TestChartsOn3D.cxx
   TestChartXYInvertedAxis.cxx
   TestChartXYZ.cxx
+  TestChartXYZMarginsRotations.cxx
+  TestChartXYZOuterEdgeLabelling.cxx
+  TestChartXYZUnconstrained.cxx
   TestContext.cxx
   TestContextArea.cxx
   TestContextAreaFixedAspect.cxx
@@ -85,13 +92,16 @@ vtk_add_test_cxx(vtkChartsCoreCxxTests tests
   TestLinePlotInteraction.cxx
   TestLinePlotSelection.cxx
   TestLinePlotSelection2.cxx
+  TestLinePlotSelectionMultiBlock.cxx
   TestMultipleChartRenderers.cxx
   TestMultipleRenderers.cxx
   TestMultipleScalarsToColors.cxx
   TestParallelCoordinates.cxx
   TestParallelCoordinatesDouble.cxx
   TestPieChart.cxx
+  TestPlotBarRangeHandlesItem.cxx,NO_DATA,NO_VALID
   TestPlotMatrix.cxx
+  TestPlotRangeHandlesItem.cxx,NO_DATA,NO_VALID
   TestPropItem.cxx
   TestRangeHandlesItemEvents.cxx,NO_DATA,NO_VALID
   TestScalarsToColors.cxx

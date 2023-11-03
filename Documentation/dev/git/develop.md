@@ -44,7 +44,7 @@ Before you begin, perform initial setup:
     "Subscribe to this project" on the right of VTK.
 
 [GitLab Access]: https://gitlab.kitware.com/users/sign_in
-[Fork VTK]: https://gitlab.kitware.com/vtk/vtk/forks/new
+[Fork VTK]: https://gitlab.kitware.com/vtk/vtk/-/forks/new
 [developer setup script]: /Utilities/SetupForDevelopment.sh
 
 Workflow
@@ -127,6 +127,7 @@ A reader should have a general idea of the feature or fix to be developed given 
     * To add data follow [these instructions](data.md).
     * If your change modifies third party code, see [its
       documentation](../../../ThirdParty/UPDATING.md).
+    * To deprecate APIs, follow [these instructions](deprecation.md).
 
 Guidelines for Commit logs
 --------------------------
@@ -196,7 +197,7 @@ left, and use the "**New Merge Request**" button in the upper right to
 reach the URL printed at the end of the [previous step](#share-a-topic).
 It should be of the form:
 
-    https://gitlab.kitware.com/<username>/vtk/merge_requests/new
+    https://gitlab.kitware.com/<username>/vtk/-/merge_requests/new
 
 Follow these steps:
 
@@ -277,7 +278,6 @@ Although it may take you a little more time to write a good merge request,
 you'll likely see payback in faster reviews and better understood and
 maintainable software.
 
-
 Review a Merge Request
 ----------------------
 
@@ -286,6 +286,44 @@ draw their attention and have the topic reviewed.  After typing `@` and
 some text, GitLab will offer completions for developers whose real names
 or user names match.
 
+Here is a list of developers usernames and their specific area of
+expertise. A merge request without a developer tagged has very low chance
+to be merged in a reasonable timeframe.
+
+ * @mwestphal: Qt, filters, data Model, widgets, parallel, anything else.
+ * @charles.gueunet: filters, data model, SMP, events, pipeline.
+ * @kmorel: General VTK Expertise, VTK-m accelerators.
+ * @demarle: Ray tracing.
+ * @will.schroeder: algorithms, computational geometry, filters, SPH, SMP, widgets,  point cloud, spatial locators.
+ * @sujin.philip: VTK-m Accelerators, SMP, DIY.
+ * @robertmaynard: build-system, VTK-m accelerators, filters, data model, IO.
+ * @yohann.bearzi: filters, data model, HTG, computational geometry, algorithms.
+ * @ken-martin: OpenGL, polygonal and volume rendering, OpenVR, Vulkan, native windows, WebAssembly.
+ * @sebastien.jourdain: web, WebAssembly, Python, Java
+ * @allisonvacanti: VTK-m, vtkDataArray, vtkArrayDispatch, vtk::Range, data model, text rendering.
+ * @sankhesh: volume rendering, Qt, OpenGL, widgets, vtkImageData, DICOM, VR.
+ * @ben.boeckel: CMake, module system, third-parties.
+ * @cory.quammen: readers, filters, data modeling, general usage, documentation.
+ * @seanm: macOS, Cocoa, cppcheck, clang
+
+If you would like to be included in this list, juste create a merge request.
+
+### Human Reviews ###
+
+Reviewers may add comments providing feedback or to acknowledge their
+approval. When a human reviewers suggest a change, please take it into
+account or discuss your choices with the reviewers until an agreement
+is reached. At this point, please `resolve` the discussion by clicking
+on the dedicated button.
+
+When all discussion have been adressed, the reviewers will either do
+another pass of comment or acknowledge their approval in some form.
+
+Please be swift to adress or discuss comments, it will increase
+the speed at which your changes will be merged.
+
+### Comments Formatting ###
+
 Comments use [GitLab Flavored Markdown][] for formatting.  See GitLab
 documentation on [Special GitLab References][] to add links to things
 like merge requests and commits in other repositories.
@@ -293,10 +331,8 @@ like merge requests and commits in other repositories.
 [GitLab Flavored Markdown]: https://gitlab.kitware.com/help/markdown/markdown
 [Special GitLab References]: https://gitlab.kitware.com/help/markdown/markdown#special-gitlab-references
 
-### Human Reviews ###
 
-Reviewers may add comments providing feedback or to acknowledge their
-approval.  Lines of specific forms will be extracted during
+Lines of specific forms will be extracted during
 [merging](#merge-a-topic) and included as trailing lines of the
 generated merge commit message.
 
@@ -374,53 +410,52 @@ succeeds.
 
 ### Testing ###
 
-VTK has a [buildbot](http://buildbot.net) instance watching for merge requests
-to test.  A developer must issue a command to buildbot to enable builds:
+VTK uses [gitlab-ci](https://gitlab.kitware.com/help/ci/examples/README.md) to
+test its functionality. CI results are published to CDash and a link is added
+to the `External` stage of the CI pipeline by `@kwrobot`. Developers and
+reviewers should start jobs which make sense for the change using the following
+methods:
+
+- The first thing to check is that CI is enabled in your fork of VTK. If you
+  see a `CI/CD` item on the left sidebar in your fork's project, you're all
+  set. If not, go to `Settings > General` and enable `CI/CD` for "Everyone With
+  Access" under the "Visibility, project features, permissions" section.
+
+- Merge request authors should visit their merge request's pipeline and click
+  the "Play" button on one or more jobs manually. If the merge request has the
+  "Allow commits from members who can merge to the target branch" check box
+  enabled, VTK developers and maintainers may use the "Play" button as well.
+  This flag is visible when editing the merge request.
+
+- VTK Project developers may trigger CI on a merge request by adding a comment
+  with a command among the [trailing lines][#trailing-lines]:
 
     Do: test
 
-The buildbot user (@buildbot) will respond with a comment linking to the CDash
-results when it schedules builds.
+  `@kwrobot` will add an award emoji to the comment to indicate that it was
+  processed and trigger all jobs that are awaiting manual interaction in the
+  merge request's pipeline.
 
-The `Do: test` command accepts the following arguments:
+  The `Do: test` command accepts the following arguments:
 
-  * `--stop`
-        clear the list of commands for the merge request
-  * `--superbuild`
-        build the superbuilds related to the project
-  * `--clear`
-        clear previous commands before adding this command
-  * `--regex-include <arg>` or `-i <arg>`
-        only build on builders matching `<arg>` (a Python regular expression)
-  * `--regex-exclude <arg>` or `-e <arg>`
-        excludes builds on builders matching `<arg>` (a Python regular
-        expression)
+  * `--named <regex>` or `-n <regex>`: Trigger jobs matching `<regex>` anywhere
+    in their name. Job names may be seen on the merge request's pipeline page.
+  * `--stage <stage>` or `-s <stage>`: Only affect jobs in a given stage. Stage
+    names may be seen on the merge request's pipeline page. Note that the stage
+    names are determined by what is in the `.gitlab-ci.yml` file and may be
+    capitalized in the web page, so lowercasing the webpage's display name for
+    stages may be required.
+  * `--action <action>` or `-a <action>`: The action to perform on the jobs.
+    Possible actions:
 
-Multiple `Do: test` commands may be given in separate comments. A new `Do: test`
-command must be explicitly issued for each branch update for which testing is
-desired. Buildbot may skip tests for older branch updates that have not started
-before a test for a new update is requested.
+    - `manual` (the default): Start jobs awaiting manual interaction.
+    - `unsuccessful`: Start or restart jobs which have not completed
+      successfully.
+    - `failed`: Restart jobs which have completed, but without success.
+    - `completed`: Restart all completed jobs.
 
-Builder names always follow this pattern:
-
-        project-host-os-libtype-buildtype+feature1+feature2
-
-  * project: always `vtk` for vtk
-  * host: the buildbot host
-  * os: one of `windows`, `osx`, or `linux`
-  * libtype: `shared` or `static`
-  * buildtype: `release` or `debug`
-  * feature: alphabetical list of features enabled for the build
-
-For a list of all builders, visit the
-[VTK project on open.cdash.org](https://open.cdash.org/index.php?project=VTK).
-
-Otherwise, `Expected`, `Superbuild`, or `Experimental` builds can be
-directly accesssed from within Kitware at the following sites:
-
-  * [vtk-expected](https://buildbot.kitware.com/builders?category=vtk-expected)
-  * [vtk-superbuild](https://buildbot.kitware.com/builders?category=vtk-superbuild)
-  * [vtk-experimental](https://buildbot.kitware.com/builders?category=vtk-experimental)
+If the merge request topic branch is updated by a push, a new manual trigger
+using one of the above methods is needed to start CI again.
 
 Revise a Topic
 --------------
@@ -451,10 +486,46 @@ authorized developers may add a comment with a single
 
     Do: merge
 
-to ask that the change be merged into the upstream repository.  By
-convention, do not request a merge if any `-1` or `Rejected-by:`
+in order for your change to be merged into the upstream repository.
+
+If your merge request has been already approved by developers
+but not merged yet, do not hesitate to tag an authorized developer
+and ask for a merge.
+
+By convention, do not request a merge if any `-1` or `Rejected-by:`
 review comments have not been resolved and superseded by at least
 `+1` or `Acked-by:` review comments from the same user.
+
+The `Do: merge` command accepts the following arguments:
+
+* `-t <topic>`: substitute `<topic>` for the name of the MR topic
+  branch in the constructed merge commit message.
+
+Additionally, `Do: merge` extracts configuration from trailing lines
+in the MR description (the following have no effect if used in a MR
+comment instead):
+
+* `Backport: release[:<commit-ish>]`: merge the topic branch into
+  the `release` branch to backport the change.  This is allowed
+  only if the topic branch is based on a commit in `release` already.
+  If only part of the topic branch should be backported, specify it as
+  `:<commit-ish>`.  The `<commit-ish>` may use [git rev-parse](https://git-scm.com/docs/git-rev-parse)
+  syntax to reference commits relative to the topic `HEAD`.
+  See additional [backport instructions](https://gitlab.kitware.com/utils/git-workflow/-/wikis/Backport-topics) for details.
+  For example:
+
+ * `Backport: release`
+    Merge the topic branch head into both `release` and `master`.
+ * `Backport: release:HEAD~1^2`
+    Merge the topic branch head's parent's second parent commit into
+    the `release` branch.  Merge the topic branch head to `master`.
+
+* `Topic-rename: <topic>`: substitute `<topic>` for the name of
+  the MR topic branch in the constructed merge commit message.
+  It is also used in merge commits constructed by `Do: stage`.
+  The `-t` option to a `Do: merge` command overrides any topic
+  rename set in the MR description.
+
 
 ### Merge Success ###
 

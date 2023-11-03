@@ -51,7 +51,7 @@
 
 vtkStandardNewMacro(vtkQtListView);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtListView::vtkQtListView()
 {
   this->ApplyColors = vtkSmartPointer<vtkApplyColors>::New();
@@ -95,7 +95,7 @@ vtkQtListView::vtkQtListView()
     SLOT(slotQtSelectionChanged(const QItemSelection&, const QItemSelection&)));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQtListView::~vtkQtListView()
 {
   delete this->ListView;
@@ -103,25 +103,25 @@ vtkQtListView::~vtkQtListView()
   delete this->TableSorter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 QWidget* vtkQtListView::GetWidget()
 {
   return this->ListView;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtListView::SetAlternatingRowColors(bool state)
 {
   this->ListView->setAlternatingRowColors(state);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtListView::SetEnableDragDrop(bool state)
 {
   this->ListView->setDragEnabled(state);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtListView::SetFieldType(int type)
 {
   this->DataObjectToTable->SetFieldType(type);
@@ -159,12 +159,20 @@ void vtkQtListView::SetDecorationStrategy(int value)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 12, 0))
+void vtkQtListView::SetFilterRegExp(const QRegularExpression& pattern)
+{
+  this->ListView->selectionModel()->clearSelection();
+  this->TableSorter->setFilterRegularExpression(pattern);
+}
+#else
 void vtkQtListView::SetFilterRegExp(const QRegExp& pattern)
 {
   this->ListView->selectionModel()->clearSelection();
   this->TableSorter->setFilterRegExp(pattern);
 }
+#endif
 
 void vtkQtListView::SetColorByArray(bool b)
 {
@@ -219,7 +227,7 @@ void vtkQtListView::RemoveRepresentationInternal(vtkDataRepresentation* rep)
   this->TableAdapter->SetVTKDataObject(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtListView::slotQtSelectionChanged(
   const QItemSelection& vtkNotUsed(s1), const QItemSelection& vtkNotUsed(s2))
 {
@@ -254,7 +262,7 @@ void vtkQtListView::slotQtSelectionChanged(
   this->LastSelectionMTime = rep->GetAnnotationLink()->GetMTime();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtListView::SetVTKSelection()
 {
   vtkDataRepresentation* rep = this->GetRepresentation();
@@ -293,7 +301,7 @@ void vtkQtListView::SetVTKSelection()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtListView::Update()
 {
   vtkDataRepresentation* rep = this->GetRepresentation();
@@ -359,7 +367,7 @@ void vtkQtListView::ApplyViewTheme(vtkViewTheme* theme)
   this->ApplyColors->SetSelectedCellOpacity(theme->GetSelectedCellOpacity());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQtListView::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

@@ -32,10 +32,10 @@
 
 #include <cmath>
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOpenGLTexture);
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLTexture::vtkOpenGLTexture()
 {
   this->RenderWindow = nullptr;
@@ -45,7 +45,7 @@ vtkOpenGLTexture::vtkOpenGLTexture()
   this->TextureObject = nullptr;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLTexture::~vtkOpenGLTexture()
 {
   if (this->RenderWindow)
@@ -60,7 +60,7 @@ vtkOpenGLTexture::~vtkOpenGLTexture()
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release the graphics resources used by this texture.
 void vtkOpenGLTexture::ReleaseGraphicsResources(vtkWindow* win)
 {
@@ -73,7 +73,7 @@ void vtkOpenGLTexture::ReleaseGraphicsResources(vtkWindow* win)
   this->Modified();
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLTexture::SetTextureObject(vtkTextureObject* textureObject)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting TextureObject to "
@@ -95,7 +95,7 @@ void vtkOpenGLTexture::SetTextureObject(vtkTextureObject* textureObject)
   }
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOpenGLTexture::GetTextureUnit()
 {
   if (this->TextureObject)
@@ -105,13 +105,13 @@ int vtkOpenGLTexture::GetTextureUnit()
   return -1;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLTexture::CopyTexImage(int x, int y, int width, int height)
 {
   this->TextureObject->CopyFromFrameBuffer(x, y, x, y, width, height);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Implement base class method.
 void vtkOpenGLTexture::Render(vtkRenderer* ren)
 {
@@ -124,7 +124,7 @@ void vtkOpenGLTexture::Render(vtkRenderer* ren)
   this->Superclass::Render(ren);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Implement base class method.
 void vtkOpenGLTexture::Load(vtkRenderer* ren)
 {
@@ -358,18 +358,30 @@ void vtkOpenGLTexture::Load(vtkRenderer* ren)
         this->TextureObject->SetMinificationFilter(vtkTextureObject::Nearest);
         this->TextureObject->SetMagnificationFilter(vtkTextureObject::Nearest);
       }
-      if (this->Repeat)
+      int wrap = this->GetWrap();
+      switch (this->GetWrap())
       {
-        this->TextureObject->SetWrapS(vtkTextureObject::Repeat);
-        this->TextureObject->SetWrapT(vtkTextureObject::Repeat);
-        this->TextureObject->SetWrapR(vtkTextureObject::Repeat);
+        case vtkTexture::ClampToEdge:
+          wrap = vtkTextureObject::ClampToEdge;
+          break;
+        case vtkTexture::Repeat:
+          wrap = vtkTextureObject::Repeat;
+          break;
+        case vtkTexture::MirroredRepeat:
+          wrap = vtkTextureObject::MirroredRepeat;
+          break;
+        case vtkTexture::ClampToBorder:
+#ifndef GL_ES_VERSION_3_0
+          wrap = vtkTextureObject::ClampToBorder;
+#else
+          wrap = vtkTextureObject::ClampToEdge;
+#endif
+          break;
       }
-      else
-      {
-        this->TextureObject->SetWrapS(vtkTextureObject::ClampToEdge);
-        this->TextureObject->SetWrapT(vtkTextureObject::ClampToEdge);
-        this->TextureObject->SetWrapR(vtkTextureObject::ClampToEdge);
-      }
+      this->TextureObject->SetWrapS(wrap);
+      this->TextureObject->SetWrapT(wrap);
+      this->TextureObject->SetWrapR(wrap);
+      this->TextureObject->SetBorderColor(this->GetBorderColor());
 
       // modify the load time to the current time
       this->LoadTime.Modified();
@@ -384,6 +396,8 @@ void vtkOpenGLTexture::Load(vtkRenderer* ren)
     {
       this->RenderWindow = renWin;
       this->TextureObject->SetContext(renWin);
+      // modify the load time to the current time
+      this->LoadTime.Modified();
     }
   }
 
@@ -401,7 +415,7 @@ void vtkOpenGLTexture::Load(vtkRenderer* ren)
   vtkOpenGLCheckErrorMacro("failed after Load");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLTexture::PostRender(vtkRenderer* ren)
 {
   if (this->TextureObject)
@@ -418,7 +432,7 @@ void vtkOpenGLTexture::PostRender(vtkRenderer* ren)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static int FindPowerOfTwo(int i, int maxDimGL)
 {
   int size = vtkMath::NearestPowerOfTwo(i);
@@ -436,7 +450,7 @@ static int FindPowerOfTwo(int i, int maxDimGL)
   return size;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Creates resampled unsigned char texture map that is a power of two in both
 // x and y.
 unsigned char* vtkOpenGLTexture::ResampleToPowerOfTwo(
@@ -464,7 +478,9 @@ unsigned char* vtkOpenGLTexture::ResampleToPowerOfTwo(
   double hx = xsize > 1 ? (xs - 1.0) / (xsize - 1.0) : 0;
   double hy = ysize > 1 ? (ys - 1.0) / (ysize - 1.0) : 0;
 
-  tptr = p = new unsigned char[xsize * ysize * bpp];
+  // make sure to promote the size calc to size_t as int can easily overflow
+  tptr = p = new unsigned char[static_cast<size_t>(xsize) * static_cast<size_t>(ysize) *
+    static_cast<size_t>(bpp)];
 
   // Resample from the previous image. Compute parametric coordinates and
   // interpolate
@@ -540,13 +556,13 @@ unsigned char* vtkOpenGLTexture::ResampleToPowerOfTwo(
   return tptr;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLTexture::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOpenGLTexture::IsTranslucent()
 {
   if (this->ExternalTextureObject && this->TextureObject)

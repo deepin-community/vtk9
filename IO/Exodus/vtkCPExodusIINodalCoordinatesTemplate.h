@@ -38,8 +38,8 @@ class vtkCPExodusIINodalCoordinatesTemplate : public vtkMappedDataArray<Scalar>
 public:
   vtkAbstractTemplateTypeMacro(
     vtkCPExodusIINodalCoordinatesTemplate<Scalar>, vtkMappedDataArray<Scalar>)
-    vtkMappedDataArrayNewInstanceMacro(vtkCPExodusIINodalCoordinatesTemplate<
-      Scalar>) static vtkCPExodusIINodalCoordinatesTemplate* New();
+  vtkMappedDataArrayNewInstanceMacro(vtkCPExodusIINodalCoordinatesTemplate<
+    Scalar>) static vtkCPExodusIINodalCoordinatesTemplate* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   typedef typename Superclass::ValueType ValueType;
@@ -68,7 +68,7 @@ public:
   ValueType& GetValueReference(vtkIdType idx) override;
   void GetTypedTuple(vtkIdType idx, Scalar* t) const override;
 
-  //@{
+  ///@{
   /**
    * This container is read only -- this method does nothing but print a
    * warning.
@@ -105,7 +105,7 @@ public:
   void SetValue(vtkIdType idx, Scalar value) override;
   vtkIdType InsertNextValue(Scalar v) override;
   void InsertValue(vtkIdType idx, Scalar v) override;
-  //@}
+  ///@}
 
 protected:
   vtkCPExodusIINodalCoordinatesTemplate();

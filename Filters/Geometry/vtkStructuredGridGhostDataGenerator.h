@@ -56,8 +56,8 @@ class vtkMultiBlockDataSet;
 class vtkIndent;
 class vtkStructuredGridConnectivity;
 
-class VTKFILTERSGEOMETRY_EXPORT vtkStructuredGridGhostDataGenerator
-  : public vtkDataSetGhostGenerator
+class VTK_DEPRECATED_IN_9_1_0("Use vtkGhostCellsGenerator instead")
+  VTKFILTERSGEOMETRY_EXPORT vtkStructuredGridGhostDataGenerator : public vtkDataSetGhostGenerator
 {
 public:
   static vtkStructuredGridGhostDataGenerator* New();
@@ -91,3 +91,5 @@ private:
 };
 
 #endif /* vtkStructuredGridGhostDataGenerator_h */
+
+// VTK-HeaderTest-Exclude: vtkStructuredGridGhostDataGenerator.h

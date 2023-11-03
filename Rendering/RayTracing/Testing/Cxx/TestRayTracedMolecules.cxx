@@ -22,6 +22,7 @@
 #include "vtkMoleculeMapper.h"
 #include "vtkNew.h"
 #include "vtkOSPRayPass.h"
+#include "vtkOSPRayRendererNode.h"
 #include "vtkPDBReader.h"
 #include "vtkPlaneSource.h"
 #include "vtkPolyDataMapper.h"
@@ -37,6 +38,23 @@
 // molecule rendering.
 int TestRayTracedMolecules(int argc, char* argv[])
 {
+  vtkNew<vtkRenderer> ren;
+
+  bool useOSPRay = true;
+  vtkOSPRayRendererNode::SetSamplesPerPixel(7, ren);
+  vtkOSPRayRendererNode::SetRendererType("pathtracer", ren);
+  for (int i = 0; i < argc; ++i)
+  {
+    if (!strcmp(argv[i], "-GL"))
+    {
+      useOSPRay = false;
+    }
+    if (!strcmp(argv[i], "-scivis"))
+    {
+      vtkOSPRayRendererNode::SetRendererType("scivis", ren);
+    }
+  }
+
   char* fileName = vtkTestUtilities::ExpandDataFileName(argc, argv, "Data/2LYZ.pdb");
 
   // read protein from pdb
@@ -62,9 +80,11 @@ int TestRayTracedMolecules(int argc, char* argv[])
   actor->GetProperty()->SetSpecular(0.4);
   actor->GetProperty()->SetSpecularPower(40);
 
-  vtkNew<vtkRenderer> ren;
   vtkSmartPointer<vtkOSPRayPass> ospray = vtkSmartPointer<vtkOSPRayPass>::New();
-  ren->SetPass(ospray);
+  if (useOSPRay)
+  {
+    ren->SetPass(ospray);
+  }
 
   vtkNew<vtkRenderWindow> win;
   win->AddRenderer(ren);
@@ -75,6 +95,9 @@ int TestRayTracedMolecules(int argc, char* argv[])
   ren->ResetCamera();
   ren->GetActiveCamera()->Zoom(1.7);
   ren->SetBackground(0.4, 0.5, 0.6);
+  ren->SetEnvironmentalBG(1.0, 0.0, 1.0);
+  vtkOSPRayRendererNode::SetBackgroundMode(
+    vtkOSPRayRendererNode::Backplate, ren); // test use BP instead of ENV
   win->SetSize(450, 450);
 
   // add a plane
@@ -93,14 +116,14 @@ int TestRayTracedMolecules(int argc, char* argv[])
   light1->SetFocalPoint(0, 0, 0);
   light1->SetPosition(0, 1, 0.2);
   light1->SetColor(0.95, 0.97, 1.0);
-  light1->SetIntensity(0.8);
+  light1->SetIntensity(0.6);
   ren->AddLight(light1);
 
   vtkNew<vtkLight> light2;
   light2->SetFocalPoint(0, 0, 0);
   light2->SetPosition(1.0, 1.0, 1.0);
   light2->SetColor(1.0, 0.8, 0.7);
-  light2->SetIntensity(0.3);
+  light2->SetIntensity(0.07);
   ren->AddLight(light2);
 
   ren->UseShadowsOn();

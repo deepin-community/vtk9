@@ -30,14 +30,14 @@
 class VTKCOMMONCORE_EXPORT vtkIdList : public vtkObject
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation, type information, and printing.
    */
   static vtkIdList* New();
   vtkTypeMacro(vtkIdList, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
   /**
    * Release memory and restore to unallocated state.
@@ -54,7 +54,7 @@ public:
   /**
    * Return the number of id's in the list.
    */
-  vtkIdType GetNumberOfIds() { return this->NumberOfIds; }
+  vtkIdType GetNumberOfIds() const noexcept { return this->NumberOfIds; }
 
   /**
    * Return the id at location i.
@@ -113,6 +113,12 @@ public:
    * vtkSMPTools::Sort() so it can be sped up if built properly.
    */
   void Sort();
+
+  /**
+   * Fill the ids with the input value. This method uses
+   * vtkSMPTools::Fill() so it can be sped up if built properly.
+   */
+  void Fill(vtkIdType value);
 
   /**
    * Get a pointer to a particular data index.
@@ -176,7 +182,17 @@ public:
    */
   void IntersectWith(vtkIdList& otherIds) { this->IntersectWith(&otherIds); }
 
-  //@{
+#ifndef __VTK_WRAP__
+  /**
+   * This releases the ownership of the internal vtkIdType array and returns the
+   * pointer to it. The caller is responsible of calling `delete []` on the
+   * returned value. This vtkIdList will be set to initialized state after this
+   * call.
+   */
+  vtkIdType* Release();
+#endif
+
+  ///@{
   /**
    * To support range-based `for` loops
    */
@@ -184,7 +200,7 @@ public:
   vtkIdType* end() { return this->Ids + this->NumberOfIds; }
   const vtkIdType* begin() const { return this->Ids; }
   const vtkIdType* end() const { return this->Ids + this->NumberOfIds; }
-  //@}
+  ///@}
 protected:
   vtkIdList();
   ~vtkIdList() override;

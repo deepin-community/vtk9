@@ -45,7 +45,7 @@ public:
   std::map<int, int> PartIdMap;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericEnSightReader::vtkGenericEnSightReader()
 {
   this->Reader = nullptr;
@@ -67,9 +67,11 @@ vtkGenericEnSightReader::vtkGenericEnSightReader()
 
   this->NumberOfScalarsPerNode = 0;
   this->NumberOfVectorsPerNode = 0;
+  this->NumberOfTensorsAsymPerNode = 0;
   this->NumberOfTensorsSymmPerNode = 0;
   this->NumberOfScalarsPerElement = 0;
   this->NumberOfVectorsPerElement = 0;
+  this->NumberOfTensorsAsymPerElement = 0;
   this->NumberOfTensorsSymmPerElement = 0;
   this->NumberOfScalarsPerMeasuredNode = 0;
   this->NumberOfVectorsPerMeasuredNode = 0;
@@ -111,7 +113,7 @@ vtkGenericEnSightReader::vtkGenericEnSightReader()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericEnSightReader::~vtkGenericEnSightReader()
 {
   int i;
@@ -165,13 +167,13 @@ vtkGenericEnSightReader::~vtkGenericEnSightReader()
   delete this->TranslationTable;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::CanReadFile(const char* casefilename)
 {
   return IsEnSightFile(casefilename);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGenericEnSightReader::IsEnSightFile(const char* casefilename)
 {
   vtkGenericEnSightReader* reader = vtkGenericEnSightReader::New();
@@ -181,7 +183,7 @@ bool vtkGenericEnSightReader::IsEnSightFile(const char* casefilename)
   return (type != -1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -222,9 +224,11 @@ int vtkGenericEnSightReader::RequestData(vtkInformation* vtkNotUsed(request),
 
   this->NumberOfScalarsPerNode = this->Reader->GetNumberOfScalarsPerNode();
   this->NumberOfVectorsPerNode = this->Reader->GetNumberOfVectorsPerNode();
+  this->NumberOfTensorsAsymPerNode = this->Reader->GetNumberOfTensorsAsymPerNode();
   this->NumberOfTensorsSymmPerNode = this->Reader->GetNumberOfTensorsSymmPerNode();
   this->NumberOfScalarsPerElement = this->Reader->GetNumberOfScalarsPerElement();
   this->NumberOfVectorsPerElement = this->Reader->GetNumberOfVectorsPerElement();
+  this->NumberOfTensorsAsymPerElement = this->Reader->GetNumberOfTensorsAsymPerElement();
   this->NumberOfTensorsSymmPerElement = this->Reader->GetNumberOfTensorsSymmPerElement();
   this->NumberOfScalarsPerMeasuredNode = this->Reader->GetNumberOfScalarsPerMeasuredNode();
   this->NumberOfVectorsPerMeasuredNode = this->Reader->GetNumberOfVectorsPerMeasuredNode();
@@ -279,7 +283,7 @@ int vtkGenericEnSightReader::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetTimeValue(float value)
 {
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting TimeValue to " << value);
@@ -291,7 +295,7 @@ void vtkGenericEnSightReader::SetTimeValue(float value)
   this->TimeValueInitialized = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::DetermineEnSightVersion(int quiet)
 {
   char line[256], subLine[256], subLine1[256], subLine2[256], binaryLine[81];
@@ -582,13 +586,13 @@ int vtkGenericEnSightReader::DetermineEnSightVersion(int quiet)
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::ClearForNewCaseFileName()
 {
   this->TranslationTable->PartIdMap.clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetCaseFileName(const char* fileName)
 {
   char* endingSlash;
@@ -642,7 +646,7 @@ void vtkGenericEnSightReader::SetCaseFileName(const char* fileName)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Internal function to read in a line up to 256 characters.
 // Returns zero if there was an error.
 int vtkGenericEnSightReader::ReadLine(char result[256])
@@ -660,7 +664,7 @@ int vtkGenericEnSightReader::ReadLine(char result[256])
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Internal function to read in a line (from a binary file) up
 // to 80 characters.  Returns zero if there was an error.
 int vtkGenericEnSightReader::ReadBinaryLine(char result[80])
@@ -675,7 +679,17 @@ int vtkGenericEnSightReader::ReadBinaryLine(char result[80])
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Determines whether a non-comment line should be skipped.
+// Currently skips:
+//  'maximum time steps:'
+//
+bool vtkGenericEnSightReader::SkipDataLine(char line[256])
+{
+  return (strncmp(line, "maximum time steps:", 19) == 0);
+}
+
+//------------------------------------------------------------------------------
 // Internal function that skips blank lines and comment lines
 // and reads the next line it finds (up to 256 characters).
 // Returns 0 is there was an error.
@@ -687,7 +701,7 @@ int vtkGenericEnSightReader::ReadNextDataLine(char result[256])
   while (isComment && value)
   {
     value = this->ReadLine(result);
-    if (*result && result[0] != '#')
+    if (*result && result[0] != '#' && !this->SkipDataLine(result))
     {
       size_t len = strlen(result);
       unsigned int i = 0;
@@ -708,7 +722,7 @@ int vtkGenericEnSightReader::ReadNextDataLine(char result[256])
   return value;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -840,7 +854,7 @@ int vtkGenericEnSightReader::RequestInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::AddVariableDescription(const char* description)
 {
   int size = this->NumberOfVariables;
@@ -875,7 +889,7 @@ void vtkGenericEnSightReader::AddVariableDescription(const char* description)
   vtkDebugMacro("description: " << this->VariableDescriptions[size]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::AddComplexVariableDescription(const char* description)
 {
   int i;
@@ -909,7 +923,7 @@ void vtkGenericEnSightReader::AddComplexVariableDescription(const char* descript
   vtkDebugMacro("description: " << this->ComplexVariableDescriptions[size]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::GetNumberOfVariables(int type)
 {
   switch (type)
@@ -918,12 +932,16 @@ int vtkGenericEnSightReader::GetNumberOfVariables(int type)
       return this->GetNumberOfScalarsPerNode();
     case vtkEnSightReader::VECTOR_PER_NODE:
       return this->GetNumberOfVectorsPerNode();
+    case vtkEnSightReader::TENSOR_ASYM_PER_NODE:
+      return this->GetNumberOfTensorsAsymPerNode();
     case vtkEnSightReader::TENSOR_SYMM_PER_NODE:
       return this->GetNumberOfTensorsSymmPerNode();
     case vtkEnSightReader::SCALAR_PER_ELEMENT:
       return this->GetNumberOfScalarsPerElement();
     case vtkEnSightReader::VECTOR_PER_ELEMENT:
       return this->GetNumberOfVectorsPerElement();
+    case vtkEnSightReader::TENSOR_ASYM_PER_ELEMENT:
+      return this->GetNumberOfTensorsAsymPerElement();
     case vtkEnSightReader::TENSOR_SYMM_PER_ELEMENT:
       return this->GetNumberOfTensorsSymmPerElement();
     case vtkEnSightReader::SCALAR_PER_MEASURED_NODE:
@@ -944,7 +962,7 @@ int vtkGenericEnSightReader::GetNumberOfVariables(int type)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGenericEnSightReader::GetDescription(int n)
 {
   if (n < this->NumberOfVariables)
@@ -954,7 +972,7 @@ const char* vtkGenericEnSightReader::GetDescription(int n)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGenericEnSightReader::GetComplexDescription(int n)
 {
   if (n < this->NumberOfComplexVariables)
@@ -964,12 +982,16 @@ const char* vtkGenericEnSightReader::GetComplexDescription(int n)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGenericEnSightReader::GetDescription(int n, int type)
 {
   int i, numMatches = 0;
+  bool complexType = type == vtkEnSightReader::COMPLEX_SCALAR_PER_NODE ||
+    type == vtkEnSightReader::COMPLEX_VECTOR_PER_NODE ||
+    type == vtkEnSightReader::COMPLEX_SCALAR_PER_ELEMENT ||
+    type == vtkEnSightReader::COMPLEX_VECTOR_PER_ELEMENT;
 
-  if (type < 8)
+  if (!complexType)
   {
     for (i = 0; i < this->NumberOfVariables; i++)
     {
@@ -1007,7 +1029,7 @@ const char* vtkGenericEnSightReader::GetDescription(int n, int type)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::AddVariableType(int variableType)
 {
   int size;
@@ -1034,7 +1056,7 @@ void vtkGenericEnSightReader::AddVariableType(int variableType)
   vtkDebugMacro("variable type: " << this->VariableTypes[size]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::AddComplexVariableType(int variableType)
 {
   int i;
@@ -1065,7 +1087,7 @@ void vtkGenericEnSightReader::AddComplexVariableType(int variableType)
   vtkDebugMacro("complex variable type: " << this->ComplexVariableTypes[size]);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::GetVariableType(int n)
 {
   if (n < this->NumberOfVariables)
@@ -1075,7 +1097,7 @@ int vtkGenericEnSightReader::GetVariableType(int n)
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::GetComplexVariableType(int n)
 {
   if (n < this->NumberOfComplexVariables)
@@ -1085,7 +1107,7 @@ int vtkGenericEnSightReader::GetComplexVariableType(int n)
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::ReplaceWildcards(char* fileName, int timeSet, int fileSet)
 {
   char line[256], subLine[256];
@@ -1256,98 +1278,81 @@ int vtkGenericEnSightReader::ReplaceWildcards(char* fileName, int timeSet, int f
   }
 
   // So far we have got a file name index
-  this->ReplaceWildcardsHelper(fileName, fileNameNum);
+  vtkGenericEnSightReader::ReplaceWildcardsHelper(fileName, fileNameNum);
   delete this->IS;
   this->IS = nullptr;
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
-void vtkGenericEnSightReader::ReplaceWildcardsHelper(char* fileName, int num)
+//------------------------------------------------------------------------------
+void vtkGenericEnSightReader::ReplaceWildcardsHelper(char* filename, int num)
 {
-  int wildcardPos, numWildcards, numDigits = 1, i;
-  int tmpNum = num, multTen = 1;
-  char newChar;
-  int newNum;
+  // TODO Rewrite using std::regex and std::string
 
-  wildcardPos = static_cast<int>(strcspn(fileName, "*"));
-  numWildcards = static_cast<int>(strspn(fileName + wildcardPos, "*"));
+  size_t wildcardPos = strcspn(filename, "*");
 
-  tmpNum /= 10;
-  while (tmpNum >= 1)
+  // Check if no wildcard
+  if (strlen(filename) == wildcardPos)
   {
-    numDigits++;
-    multTen *= 10;
-    tmpNum /= 10;
+    return;
   }
 
-  for (i = 0; i < numWildcards - numDigits; i++)
+  size_t numWildcards = strspn(filename + wildcardPos, "*");
+
+  char pattern[32];
+  if (numWildcards == 1)
   {
-    fileName[i + wildcardPos] = '0';
+    strcpy(pattern, "%d");
+  }
+  else
+  {
+    snprintf(pattern, sizeof(pattern), "%%0%dd", static_cast<int>(numWildcards));
   }
 
-  tmpNum = num;
-  for (i = numWildcards - numDigits; i < numWildcards; i++)
+  char numStr[32];
+  snprintf(numStr, sizeof(numStr), pattern, num);
+
+  int numStrLen = static_cast<int>(strlen(numStr));
+  int len = static_cast<int>(strlen(filename));
+  int cnt = 0;
+  bool foundWildcard = false;
+  char filenameTmp[2048];
+  for (int i = 0; i < len; i++)
   {
-    newNum = tmpNum / multTen;
-    switch (newNum)
+    if (filename[i] == '*')
     {
-      case 0:
-        newChar = '0';
-        break;
-      case 1:
-        newChar = '1';
-        break;
-      case 2:
-        newChar = '2';
-        break;
-      case 3:
-        newChar = '3';
-        break;
-      case 4:
-        newChar = '4';
-        break;
-      case 5:
-        newChar = '5';
-        break;
-      case 6:
-        newChar = '6';
-        break;
-      case 7:
-        newChar = '7';
-        break;
-      case 8:
-        newChar = '8';
-        break;
-      case 9:
-        newChar = '9';
-        break;
-      default:
-        // This case should never be reached.
-        return;
+      if (!foundWildcard)
+      {
+        for (int j = 0; j < numStrLen; j++)
+        {
+          filenameTmp[cnt++] = numStr[j];
+        }
+        foundWildcard = true;
+      }
     }
-    assert(newChar == ('0' + newNum));
-
-    fileName[i + wildcardPos] = newChar;
-    tmpNum -= multTen * newNum;
-    multTen /= 10;
+    else
+    {
+      filenameTmp[cnt++] = filename[i];
+    }
   }
+  filenameTmp[cnt] = '\0';
+  strcpy(filename, filenameTmp);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetByteOrderToBigEndian()
 {
   this->ByteOrder = FILE_BIG_ENDIAN;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetByteOrderToLittleEndian()
 {
   this->ByteOrder = FILE_LITTLE_ENDIAN;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGenericEnSightReader::GetByteOrderAsString()
 {
   if (this->ByteOrder == FILE_LITTLE_ENDIAN)
@@ -1360,7 +1365,7 @@ const char* vtkGenericEnSightReader::GetByteOrderAsString()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1372,6 +1377,7 @@ void vtkGenericEnSightReader::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "NumberOfVariables: " << this->NumberOfVariables << endl;
   os << indent << "NumberOfComplexScalarsPerNode: " << this->NumberOfComplexScalarsPerNode << endl;
   os << indent << "NumberOfVectorsPerElement :" << this->NumberOfVectorsPerElement << endl;
+  os << indent << "NumberOfTensorsAsymPerElement: " << this->NumberOfTensorsAsymPerElement << endl;
   os << indent << "NumberOfTensorsSymmPerElement: " << this->NumberOfTensorsSymmPerElement << endl;
   os << indent << "NumberOfComplexVectorsPerNode: " << this->NumberOfComplexVectorsPerNode << endl;
   os << indent << "NumberOfScalarsPerElement: " << this->NumberOfScalarsPerElement << endl;
@@ -1379,6 +1385,7 @@ void vtkGenericEnSightReader::PrintSelf(ostream& os, vtkIndent indent)
      << endl;
   os << indent << "NumberOfComplexScalarsPerElement: " << this->NumberOfComplexScalarsPerElement
      << endl;
+  os << indent << "NumberOfTensorsAsymPerNode: " << this->NumberOfTensorsAsymPerNode << endl;
   os << indent << "NumberOfTensorsSymmPerNode: " << this->NumberOfTensorsSymmPerNode << endl;
   os << indent << "NumberOfScalarsPerMeasuredNode: " << this->NumberOfScalarsPerMeasuredNode
      << endl;
@@ -1400,7 +1407,7 @@ void vtkGenericEnSightReader::PrintSelf(ostream& os, vtkIndent indent)
      << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char** vtkGenericEnSightReader::CreateStringArray(int numStrings)
 {
   char** strings = new char*[numStrings];
@@ -1412,7 +1419,7 @@ char** vtkGenericEnSightReader::CreateStringArray(int numStrings)
   return strings;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::DestroyStringArray(int numStrings, char** strings)
 {
   for (int i = 0; i < numStrings; ++i)
@@ -1422,16 +1429,16 @@ void vtkGenericEnSightReader::DestroyStringArray(int numStrings, char** strings)
   delete[] strings;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetDataArraySelectionSetsFromVariables()
 {
   int numPointArrays = (this->NumberOfScalarsPerNode + this->NumberOfVectorsPerNode +
-    this->NumberOfTensorsSymmPerNode + this->NumberOfScalarsPerMeasuredNode +
-    this->NumberOfVectorsPerMeasuredNode + this->NumberOfComplexScalarsPerNode +
-    this->NumberOfComplexVectorsPerNode);
+    this->NumberOfTensorsAsymPerNode + this->NumberOfTensorsSymmPerNode +
+    this->NumberOfScalarsPerMeasuredNode + this->NumberOfVectorsPerMeasuredNode +
+    this->NumberOfComplexScalarsPerNode + this->NumberOfComplexVectorsPerNode);
   int numCellArrays = (this->NumberOfScalarsPerElement + this->NumberOfVectorsPerElement +
-    this->NumberOfTensorsSymmPerElement + this->NumberOfComplexScalarsPerElement +
-    this->NumberOfComplexVectorsPerElement);
+    this->NumberOfTensorsAsymPerElement + this->NumberOfTensorsSymmPerElement +
+    this->NumberOfComplexScalarsPerElement + this->NumberOfComplexVectorsPerElement);
 
   char** pointNames = this->CreateStringArray(numPointArrays);
   char** cellNames = this->CreateStringArray(numCellArrays);
@@ -1445,6 +1452,7 @@ void vtkGenericEnSightReader::SetDataArraySelectionSetsFromVariables()
     {
       case vtkEnSightReader::SCALAR_PER_NODE:
       case vtkEnSightReader::VECTOR_PER_NODE:
+      case vtkEnSightReader::TENSOR_ASYM_PER_NODE:
       case vtkEnSightReader::TENSOR_SYMM_PER_NODE:
       case vtkEnSightReader::SCALAR_PER_MEASURED_NODE:
       case vtkEnSightReader::VECTOR_PER_MEASURED_NODE:
@@ -1454,6 +1462,7 @@ void vtkGenericEnSightReader::SetDataArraySelectionSetsFromVariables()
         break;
       case vtkEnSightReader::SCALAR_PER_ELEMENT:
       case vtkEnSightReader::VECTOR_PER_ELEMENT:
+      case vtkEnSightReader::TENSOR_ASYM_PER_ELEMENT:
       case vtkEnSightReader::TENSOR_SYMM_PER_ELEMENT:
         cellNames[cellArrayCount] = new char[strlen(this->VariableDescriptions[i]) + 1];
         strcpy(cellNames[cellArrayCount], this->VariableDescriptions[i]);
@@ -1488,7 +1497,7 @@ void vtkGenericEnSightReader::SetDataArraySelectionSetsFromVariables()
   this->DestroyStringArray(numCellArrays, cellNames);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetDataArraySelectionSetsFromReader()
 {
   this->SelectionModifiedDoNotCallModified = 1;
@@ -1497,7 +1506,7 @@ void vtkGenericEnSightReader::SetDataArraySelectionSetsFromReader()
   this->SelectionModifiedDoNotCallModified = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetReaderDataArraySelectionSetsFromSelf()
 {
   // Set the real reader's data array selections from ours.
@@ -1505,14 +1514,14 @@ void vtkGenericEnSightReader::SetReaderDataArraySelectionSetsFromSelf()
   this->Reader->GetCellDataArraySelection()->CopySelections(this->CellDataArraySelection);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SelectionModifiedCallback(
   vtkObject*, unsigned long, void* clientdata, void*)
 {
   static_cast<vtkGenericEnSightReader*>(clientdata)->SelectionModified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SelectionModified()
 {
   if (!this->SelectionModifiedDoNotCallModified)
@@ -1521,25 +1530,25 @@ void vtkGenericEnSightReader::SelectionModified()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::GetNumberOfPointArrays()
 {
   return this->PointDataArraySelection->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGenericEnSightReader::GetPointArrayName(int index)
 {
   return this->PointDataArraySelection->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::GetPointArrayStatus(const char* name)
 {
   return this->PointDataArraySelection->ArrayIsEnabled(name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetPointArrayStatus(const char* name, int status)
 {
   if (status)
@@ -1552,25 +1561,25 @@ void vtkGenericEnSightReader::SetPointArrayStatus(const char* name, int status)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::GetNumberOfCellArrays()
 {
   return this->CellDataArraySelection->GetNumberOfArrays();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGenericEnSightReader::GetCellArrayName(int index)
 {
   return this->CellDataArraySelection->GetArrayName(index);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::GetCellArrayStatus(const char* name)
 {
   return this->CellDataArraySelection->ArrayIsEnabled(name);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGenericEnSightReader::SetCellArrayStatus(const char* name, int status)
 {
   if (status)
@@ -1583,7 +1592,7 @@ void vtkGenericEnSightReader::SetCellArrayStatus(const char* name, int status)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::InsertNewPartId(int partId)
 {
   int lastId = static_cast<int>(this->TranslationTable->PartIdMap.size());
@@ -1593,7 +1602,7 @@ int vtkGenericEnSightReader::InsertNewPartId(int partId)
   return lastId;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericEnSightReader::FillOutputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkMultiBlockDataSet");

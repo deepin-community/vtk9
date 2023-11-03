@@ -23,7 +23,7 @@
 #include "vtkOSPRayMoleculeMapperNode.h"
 #include "vtkOSPRayPolyDataMapperNode.h"
 #include "vtkOSPRayRendererNode.h"
-#include "vtkOSPRayTetrahedraMapperNode.h"
+#include "vtkOSPRayUnstructuredVolumeMapperNode.h"
 #include "vtkOSPRayVolumeMapperNode.h"
 #include "vtkOSPRayVolumeNode.h"
 
@@ -88,14 +88,14 @@ vtkViewNode* cpd_maker()
 
 vtkViewNode* tetm_maker()
 {
-  vtkOSPRayTetrahedraMapperNode* vn = vtkOSPRayTetrahedraMapperNode::New();
+  vtkOSPRayUnstructuredVolumeMapperNode* vn = vtkOSPRayUnstructuredVolumeMapperNode::New();
   return vn;
 }
 
 //============================================================================
 vtkStandardNewMacro(vtkOSPRayViewNodeFactory);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayViewNodeFactory::vtkOSPRayViewNodeFactory()
 {
   // see vtkRenderWindow::GetRenderLibrary
@@ -113,6 +113,7 @@ vtkOSPRayViewNodeFactory::vtkOSPRayViewNodeFactory()
   this->RegisterOverride("vtkSmartVolumeMapper", vm_maker);
   this->RegisterOverride("vtkOSPRayVolumeMapper", vm_maker);
   this->RegisterOverride("vtkOpenGLGPUVolumeRayCastMapper", vm_maker);
+  this->RegisterOverride("vtkMultiBlockVolumeMapper", vm_maker);
   this->RegisterOverride("vtkCompositePolyDataMapper2", cpd_maker);
   this->RegisterOverride("vtkOpenGLProjectedTetrahedraMapper", tetm_maker);
   this->RegisterOverride("vtkUnstructuredGridVolumeZSweepMapper", tetm_maker);
@@ -121,10 +122,10 @@ vtkOSPRayViewNodeFactory::vtkOSPRayViewNodeFactory()
   this->RegisterOverride("vtkMoleculeMapper", molecule_maker);
 }
 
-//----------------------------------------------------------------------------
-vtkOSPRayViewNodeFactory::~vtkOSPRayViewNodeFactory() {}
+//------------------------------------------------------------------------------
+vtkOSPRayViewNodeFactory::~vtkOSPRayViewNodeFactory() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayViewNodeFactory::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

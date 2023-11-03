@@ -51,31 +51,6 @@ int CompareArrays(T* a, T* b, vtkIdType n)
   return errors;
 }
 
-const char* SelectionTypeToString(int type)
-{
-  switch (type)
-  {
-    case vtkSelectionNode::SELECTIONS:
-      return "Selections";
-    case vtkSelectionNode::GLOBALIDS:
-      return "Global IDs";
-    case vtkSelectionNode::PEDIGREEIDS:
-      return "Pedigree IDs";
-    case vtkSelectionNode::VALUES:
-      return "Values";
-    case vtkSelectionNode::INDICES:
-      return "Indices";
-    case vtkSelectionNode::FRUSTUM:
-      return "Frustum";
-    case vtkSelectionNode::THRESHOLDS:
-      return "Thresholds";
-    case vtkSelectionNode::LOCATIONS:
-      return "Locations";
-    default:
-      return "Unknown";
-  }
-}
-
 int CompareSelections(vtkSelectionNode* a, vtkSelectionNode* b)
 {
   int errors = 0;
@@ -87,8 +62,9 @@ int CompareSelections(vtkSelectionNode* a, vtkSelectionNode* b)
   }
   if (a->GetContentType() != b->GetContentType())
   {
-    cerr << "ERROR: Content type " << SelectionTypeToString(a->GetContentType())
-         << " does not match " << SelectionTypeToString(b->GetContentType()) << endl;
+    cerr << "ERROR: Content type " << vtkSelectionNode::GetContentTypeAsString(a->GetContentType())
+         << " does not match " << vtkSelectionNode::GetContentTypeAsString(b->GetContentType())
+         << endl;
     errors++;
   }
   if (a->GetFieldType() != b->GetFieldType())
@@ -109,7 +85,7 @@ int CompareSelections(vtkSelectionNode* a, vtkSelectionNode* b)
     cerr << "ERROR: Array name a is null but b is not" << endl;
     errors++;
   }
-  else if (arra->GetName() && strcmp(arra->GetName(), arrb->GetName()))
+  else if (arra->GetName() && strcmp(arra->GetName(), arrb->GetName()) != 0)
   {
     cerr << "ERROR: Array name " << arra->GetName() << " does not match " << arrb->GetName()
          << endl;
@@ -140,12 +116,12 @@ int CompareSelections(vtkSelectionNode* a, vtkSelectionNode* b)
   return errors;
 }
 
-int TestConvertSelectionType(std::map<int, vtkSmartPointer<vtkSelection> >& selMap,
+int TestConvertSelectionType(std::map<int, vtkSmartPointer<vtkSelection>>& selMap,
   vtkDataObject* data, int inputType, int outputType, vtkStringArray* arr = nullptr,
   bool allowMissingArray = false)
 {
-  cerr << "Testing conversion from type " << SelectionTypeToString(inputType) << " to "
-       << SelectionTypeToString(outputType) << "..." << endl;
+  cerr << "Testing conversion from type " << vtkSelectionNode::GetContentTypeAsString(inputType)
+       << " to " << vtkSelectionNode::GetContentTypeAsString(outputType) << "..." << endl;
   vtkSelection* s = vtkConvertSelection::ToSelectionType(
     selMap[inputType], data, outputType, arr, -1, allowMissingArray);
   int errors = 0;
@@ -199,7 +175,7 @@ void GraphConvertSelections(int& errors, int size)
     g->AddEdge(i, i);
   }
 
-  std::map<int, vtkSmartPointer<vtkSelection> > selMap;
+  std::map<int, vtkSmartPointer<vtkSelection>> selMap;
 
   VTK_CREATE(vtkSelection, globalIdsSelection);
   VTK_CREATE(vtkSelectionNode, globalIdsSelectionNode);
@@ -419,7 +395,7 @@ void PolyDataConvertSelections(int& errors, int size)
   }
   g->SetLines(newLines);
 
-  std::map<int, vtkSmartPointer<vtkSelection> > selMap;
+  std::map<int, vtkSmartPointer<vtkSelection>> selMap;
 
   VTK_CREATE(vtkSelection, globalIdsSelection);
   VTK_CREATE(vtkSelectionNode, globalIdsSelectionNode);

@@ -186,7 +186,7 @@ public:
    */
   void SetExtents(const vtkArrayExtents& extents);
 
-  //@{
+  ///@{
   /**
    * Adds a new non-null element to the array.  Does not test to see if an element with
    * matching coordinates already exists.  Useful for providing fast initialization of the
@@ -197,7 +197,7 @@ public:
   inline void AddValue(CoordinateT i, CoordinateT j, const T& value);
   inline void AddValue(CoordinateT i, CoordinateT j, CoordinateT k, const T& value);
   void AddValue(const vtkArrayCoordinates& coordinates, const T& value);
-  //@}
+  ///@}
 
   /**
    * Validate the contents of the array, returning false if there are any problems.
@@ -238,20 +238,20 @@ private:
    * Stores the coordinates of each non-null element within the array,
    * using one contiguous array to store the coordinates for each dimension.
    */
-  std::vector<std::vector<CoordinateT> > Coordinates;
+  std::vector<std::vector<CoordinateT>> Coordinates;
 
   /**
    * Stores the value of each non-null element within the array
    */
   std::vector<T> Values;
 
-  //@{
+  ///@{
   /**
    * Stores the value that will be returned when accessing nullptr areas
    * of the array.
    */
   T NullValue;
-  //@}
+  ///@}
 };
 
 #include "vtkSparseArray.txx"

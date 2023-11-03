@@ -53,13 +53,13 @@ public:
 
   static vtkDistributedDataFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the communicator object
    */
   void SetController(vtkMultiProcessController* c);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
   /**
    * Get a pointer to the parallel k-d tree object.  Required for changing
@@ -126,7 +126,7 @@ public:
     SPLIT_BOUNDARY_CELLS = 2
   };
 
-  //@{
+  ///@{
   /**
    * Handling of ClipCells and IncludeAllIntersectingCells.
    */
@@ -144,7 +144,7 @@ public:
     this->SetBoundaryMode(vtkDistributedDataFilter::SPLIT_BOUNDARY_CELLS);
   }
   int GetBoundaryMode();
-  //@}
+  ///@}
 
   /**
    * Ensure previous filters don't send up ghost cells
@@ -213,18 +213,16 @@ protected:
   /**
    * Build a vtkUnstructuredGrid to store the input.
    */
-  virtual int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-  virtual int RequestInformation(
-    vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
-  virtual int FillInputPortInformation(int port, vtkInformation* info) override;
+  int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int FillInputPortInformation(int port, vtkInformation* info) override;
 
   /**
    * Overridden to create the correct type of data output. If input is dataset,
    * output is vtkUnstructuredGrid. If input is composite dataset, output is
    * vtkMultiBlockDataSet.
    */
-  virtual int RequestDataObject(
-    vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
+  int RequestDataObject(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   vtkPKdTree* Kdtree;
   vtkMultiProcessController* Controller;

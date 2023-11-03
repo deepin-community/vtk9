@@ -41,7 +41,6 @@ public:
   int m_iVelCount;
   double m_dVelAvg;
 
-public:
   CPIDControl(double dKp, double dKd, double dKi);
   double PIDCalc(double dX, double dFinalX);
   void SetCoefficients(double dKp, double dKd, double dKi);
@@ -93,7 +92,7 @@ void CPIDControl::SetCoefficients(double dKp, double dKd, double dKi)
   // should reset internal params here, but no need for this simple usage
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleFlight::vtkInteractorStyleFlight()
 {
   this->KeysDown = 0;
@@ -117,14 +116,14 @@ vtkInteractorStyleFlight::vtkInteractorStyleFlight()
   Transform = vtkPerspectiveTransform::New();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkInteractorStyleFlight::~vtkInteractorStyleFlight()
 {
   Transform->Delete();
   delete PID_Yaw;
   delete PID_Pitch;
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::ForwardFly()
 {
   if (this->CurrentRenderer == nullptr)
@@ -145,14 +144,14 @@ void vtkInteractorStyleFlight::ForwardFly()
   //
   this->FinishCamera(camera);
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::ReverseFly()
 {
   // The code is the same, just the state variable that is tracked...
   ForwardFly();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::StartForwardFly()
 {
   if (this->State != VTKIS_NONE)
@@ -162,7 +161,7 @@ void vtkInteractorStyleFlight::StartForwardFly()
   this->StartState(VTKIS_FORWARDFLY);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::EndForwardFly()
 {
   if (this->State != VTKIS_FORWARDFLY)
@@ -172,7 +171,7 @@ void vtkInteractorStyleFlight::EndForwardFly()
   this->StopState();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::StartReverseFly()
 {
   if (this->State != VTKIS_NONE)
@@ -182,7 +181,7 @@ void vtkInteractorStyleFlight::StartReverseFly()
   this->StartState(VTKIS_REVERSEFLY);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::EndReverseFly()
 {
   if (this->State != VTKIS_REVERSEFLY)
@@ -192,9 +191,9 @@ void vtkInteractorStyleFlight::EndReverseFly()
   this->StopState();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // All actual motion is performed in the timer
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnTimer()
 {
   switch (this->State)
@@ -212,9 +211,9 @@ void vtkInteractorStyleFlight::OnTimer()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Mouse event handlers
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnMouseMove()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -231,7 +230,7 @@ void vtkInteractorStyleFlight::OnMouseMove()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnLeftButtonDown()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -257,7 +256,7 @@ void vtkInteractorStyleFlight::OnLeftButtonDown()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnLeftButtonUp()
 {
   switch (this->State)
@@ -274,13 +273,13 @@ void vtkInteractorStyleFlight::OnLeftButtonUp()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnMiddleButtonDown() {}
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnMiddleButtonUp() {}
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnRightButtonDown()
 {
   int x = this->Interactor->GetEventPosition()[0];
@@ -306,7 +305,7 @@ void vtkInteractorStyleFlight::OnRightButtonDown()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnRightButtonUp()
 {
   switch (this->State)
@@ -323,11 +322,11 @@ void vtkInteractorStyleFlight::OnRightButtonUp()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Keyboard event handlers
 // Note, OnChar is a key press down and then up event
 // Note, OnKeyDown/OnKeyUp are more sensitive for controlling motion
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnKeyDown()
 {
   // New Flight mode behaviour
@@ -393,7 +392,7 @@ void vtkInteractorStyleFlight::OnKeyDown()
 #endif
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnKeyUp()
 {
 #ifdef _WIN32
@@ -445,7 +444,7 @@ void vtkInteractorStyleFlight::OnKeyUp()
 #endif
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::OnChar()
 {
   switch (this->Interactor->GetKeyCode())
@@ -462,7 +461,7 @@ void vtkInteractorStyleFlight::OnChar()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::JumpTo(double campos[3], double focpos[3])
 {
   if (this->CurrentRenderer == nullptr)
@@ -504,12 +503,12 @@ void vtkInteractorStyleFlight::FinishCamera(vtkCamera* cam)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Use this mouse pos and last mouse pos to get the amount of motion
 // Compute an "Ideal" focal point, The flight will sterr towards this ideal
 // point, but will be damped in Yaw/Pitch by our PID Controllers.
 // The damping and motion is done in the timer event.
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::UpdateMouseSteering(vtkCamera* cam)
 {
   int* thispos = this->Interactor->GetEventPosition();
@@ -627,9 +626,9 @@ void vtkInteractorStyleFlight::UpdateSteering(vtkCamera* vtkNotUsed(cam))
   */
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // useful utility functions
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::SetupMotionVars(vtkCamera* cam)
 {
   lPitch = 0;
@@ -650,7 +649,7 @@ void vtkInteractorStyleFlight::SetupMotionVars(vtkCamera* cam)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::MotionAlongVector(double vector[3], double amount, vtkCamera* cam)
 {
   double oldcampos[3], oldcamfoc[3];
@@ -663,7 +662,7 @@ void vtkInteractorStyleFlight::MotionAlongVector(double vector[3], double amount
     oldcamfoc[2] - amount * vector[2]);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::GetLRVector(double vector[3], vtkCamera* cam)
 {
   vtkMatrix4x4* vtm;
@@ -673,9 +672,9 @@ void vtkInteractorStyleFlight::GetLRVector(double vector[3], vtkCamera* cam)
   vector[2] = vtm->GetElement(0, 2);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Perform the motion
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::FlyByMouse(vtkCamera* cam)
 {
   double a_vector[3];
@@ -724,7 +723,7 @@ void vtkInteractorStyleFlight::FlyByMouse(vtkCamera* cam)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::FlyByKey(vtkCamera* cam)
 {
   double speed = this->DiagonalLength * this->MotionStepSize * this->MotionUserScale;
@@ -799,7 +798,7 @@ void vtkInteractorStyleFlight::FlyByKey(vtkCamera* cam)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkInteractorStyleFlight::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

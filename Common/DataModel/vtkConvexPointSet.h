@@ -51,7 +51,7 @@ public:
    */
   virtual int HasFixedTopology() { return 0; }
 
-  //@{
+  ///@{
   /**
    * See vtkCell3D API for description of these methods.
    * @warning These method are unimplemented in vtkConvexPointSet
@@ -61,22 +61,28 @@ public:
     vtkWarningMacro(<< "vtkConvexPointSet::GetEdgePoints Not Implemented");
   }
   // @deprecated Replaced by GetEdgePoints(vtkIdType, const vtkIdType*&) as of VTK 9.0
-  VTK_LEGACY(void GetEdgePoints(int vtkNotUsed(edgeId), int*& vtkNotUsed(pts)) override {
-    vtkWarningMacro(<< "vtkConvexPointSet::GetEdgePoints Not Implemented. "
-                    << "Also note that this signature is deprecated. "
-                    << "Please use GetEdgePoints(vtkIdType, const vtkIdType*& instead");
-  });
+  VTK_DEPRECATED_IN_9_0_0(
+    "Replaced by vtkConvexPointSet::GetEdgePoints(vtkIdType, const vtkIdType*&)")
+  void GetEdgePoints(int vtkNotUsed(edgeId), int*& vtkNotUsed(pts)) override
+  {
+    vtkErrorMacro(<< "vtkConvexPointSet::GetEdgePoints Not Implemented. "
+                     "Also note that this signature is deprecated. "
+                     "Please use GetEdgePoints(vtkIdType, const vtkIdType*& instead");
+  }
   vtkIdType GetFacePoints(vtkIdType vtkNotUsed(faceId), const vtkIdType*& vtkNotUsed(pts)) override
   {
     vtkWarningMacro(<< "vtkConvexPointSet::GetFacePoints Not Implemented");
     return 0;
   }
   // @deprecated Replaced by GetFacePoints(vtkIdType, const vtkIdType*&) as of VTK 9.0
-  VTK_LEGACY(void GetFacePoints(int vtkNotUsed(faceId), int*& vtkNotUsed(pts)) override {
-    vtkWarningMacro(<< "vtkConvexPointSet::GetFacePoints Not Implemented. "
-                    << "Also note that this signature is deprecated. "
-                    << "Please use GetFacePoints(vtkIdType, const vtkIdType*& instead");
-  });
+  VTK_DEPRECATED_IN_9_0_0(
+    "Replaced by vtkConvexPointSet::GetFacePoints(vtkIdType, const vtkIdType*&)")
+  void GetFacePoints(int vtkNotUsed(faceId), int*& vtkNotUsed(pts)) override
+  {
+    vtkErrorMacro(<< "vtkConvexPointSet::GetFacePoints Not Implemented. "
+                     "Also note that this signature is deprecated. "
+                     "Please use GetFacePoints(vtkIdType, const vtkIdType*& instead");
+  }
   void GetEdgeToAdjacentFaces(
     vtkIdType vtkNotUsed(edgeId), const vtkIdType*& vtkNotUsed(pts)) override
   {
@@ -109,9 +115,9 @@ public:
   bool GetCentroid(double vtkNotUsed(centroid)[3]) const override
   {
     vtkWarningMacro(<< "vtkConvexPointSet::GetCentroid Not Implemented");
-    return 0;
+    return false;
   }
-  //@}
+  ///@}
 
   /**
    * See vtkCell3D API for description of this method.
@@ -129,7 +135,7 @@ public:
   int RequiresInitialization() override { return 1; }
   void Initialize() override;
 
-  //@{
+  ///@{
   /**
    * A convex point set has no explicit cell edge or faces; however
    * implicitly (after triangulation) it does. Currently the method
@@ -144,7 +150,7 @@ public:
   vtkCell* GetEdge(int) override { return nullptr; }
   int GetNumberOfFaces() override;
   vtkCell* GetFace(int faceId) override;
-  //@}
+  ///@}
 
   /**
    * Satisfy the vtkCell API. This method contours by triangulating the
@@ -213,14 +219,14 @@ public:
    */
   int IsPrimaryCell() override { return 0; }
 
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
    */
   void InterpolateFunctions(const double pcoords[3], double* sf) override;
   void InterpolateDerivs(const double pcoords[3], double* derivs) override;
-  //@}
+  ///@}
 
 protected:
   vtkConvexPointSet();

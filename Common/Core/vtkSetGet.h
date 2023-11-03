@@ -28,8 +28,9 @@
 #define vtkSetGet_h
 
 #include "vtkCommonCoreModule.h" // For export macro
+#include "vtkCompiler.h"
+#include "vtkLegacy.h"
 #include "vtkSystemIncludes.h"
-#include <math.h>
 #include <type_traits> // for std::underlying type.
 #include <typeinfo>
 
@@ -67,8 +68,6 @@
   (((type) == VTK_UNSIGNED_LONG) ? "unsigned long" :                                               \
   (((type) == VTK_LONG_LONG) ? "long long" :                                                       \
   (((type) == VTK_UNSIGNED_LONG_LONG) ? "unsigned long long" :                                     \
-  (((type) == 18 /*VTK___INT64*/) ? "__int64" :                                                    \
-  (((type) == 19 /*VTK_UNSIGNED___INT64*/) ? "unsigned __int64" :                                  \
   (((type) == VTK_FLOAT) ? "float" :                                                               \
   (((type) == VTK_DOUBLE) ? "double" :                                                             \
   (((type) == VTK_ID_TYPE) ? "idtype" :                                                            \
@@ -76,7 +75,7 @@
   (((type) == VTK_UNICODE_STRING) ? "unicode string" :                                             \
   (((type) == VTK_VARIANT) ? "variant" :                                                           \
   (((type) == VTK_OBJECT) ? "object" :                                                             \
-  "Undefined"))))))))))))))))))))))
+  "Undefined"))))))))))))))))))))
 // clang-format on
 
 /* Various compiler-specific performance hints. */
@@ -177,6 +176,10 @@
 #define vtkSetStringMacro(name)                                                                    \
   virtual void Set##name(const char* _arg) vtkSetStringBodyMacro(name, _arg)
 
+// Set a file path, like vtkSetStringMacro but with VTK_FILEPATH hint.
+#define vtkSetFilePathMacro(name)                                                                  \
+  virtual void Set##name(VTK_FILEPATH const char* _arg) vtkSetStringBodyMacro(name, _arg)
+
 // This macro defines a body of set string macro. It can be used either in
 // the header file using vtkSetStringMacro or in the implementation.
 #define vtkSetStringBodyMacro(name, _arg)                                                          \
@@ -214,12 +217,49 @@
 // Get character string.  Creates member Get"name"()
 // (e.g., char *GetFilename());
 //
-#define vtkGetStringMacro(name)                                                                    \
-  virtual char* Get##name()                                                                        \
+#define vtkGetStringMacro(name) virtual char* Get##name() vtkGetStringBodyMacro(name)
+
+// Get a file path, like vtkGetStringMacro but with VTK_FILEPATH hint.
+#define vtkGetFilePathMacro(name) virtual VTK_FILEPATH char* Get##name() vtkGetStringBodyMacro(name)
+
+// This macro defines a body of get string macro. It can be used either in
+// the header file using vtkGetStringMacro or in the implementation.
+#define vtkGetStringBodyMacro(name)                                                                \
   {                                                                                                \
     vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning " << #name " of "       \
                   << (this->name ? this->name : "(null)"));                                        \
     return this->name;                                                                             \
+  }
+
+//
+// Set std::string. Creates a member Set"name"()
+//
+#define vtkSetStdStringFromCharMacro(name)                                                         \
+  virtual void Set##name(const char* arg)                                                          \
+  {                                                                                                \
+    vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting " << #name " to "         \
+                  << (arg ? arg : "(null)"));                                                      \
+    if (arg)                                                                                       \
+    {                                                                                              \
+      this->name = arg;                                                                            \
+    }                                                                                              \
+    else                                                                                           \
+    {                                                                                              \
+      this->name.clear();                                                                          \
+    }                                                                                              \
+    this->Modified();                                                                              \
+  }
+
+//
+// Get character string.  Creates member Get"name"()
+// (e.g., char *GetFilename());
+//
+#define vtkGetCharFromStdStringMacro(name)                                                         \
+  virtual const char* Get##name()                                                                  \
+  {                                                                                                \
+    vtkDebugMacro(<< this->GetClassName() << " (" << this << "): returning " << #name " of "       \
+                  << this->name);                                                                  \
+    return this->name.c_str();                                                                     \
   }
 
 //
@@ -734,7 +774,11 @@ extern VTKCOMMONCORE_EXPORT void vtkOutputWindowDisplayDebugText(
 // Don't use it as a way to shut up the compiler while you take your
 // sweet time getting around to implementing the method.
 //
+#ifdef __VTK_WRAP__
+#define vtkNotUsed(x) x
+#else
 #define vtkNotUsed(x)
+#endif
 
 //
 // This macro is used for functions which may not be used in a translation unit
@@ -819,14 +863,14 @@ public:                                                                         
 
 // Same as vtkTypeMacro, but adapted for cases where thisClass is abstract.
 #define vtkAbstractTypeMacro(thisClass, superclass)                                                \
-  vtkAbstractTypeMacroWithNewInstanceType(thisClass, superclass, thisClass, #thisClass);           \
+  vtkAbstractTypeMacroWithNewInstanceType(thisClass, superclass, thisClass, #thisClass)            \
                                                                                                    \
 public:
 
 // Macro used to determine whether a class is the same class or
 // a subclass of the named class.
 #define vtkTypeMacro(thisClass, superclass)                                                        \
-  vtkAbstractTypeMacro(thisClass, superclass);                                                     \
+  vtkAbstractTypeMacro(thisClass, superclass)                                                      \
                                                                                                    \
 protected:                                                                                         \
   vtkObjectBase* NewInstanceInternal() const override { return thisClass::New(); }                 \
@@ -840,7 +884,7 @@ public:
 // of the named class.
 
 #define vtkBaseTypeMacro(thisClass, superclass)                                                    \
-  vtkAbstractTypeMacro(thisClass, superclass);                                                     \
+  vtkAbstractTypeMacro(thisClass, superclass)                                                      \
                                                                                                    \
 protected:                                                                                         \
   virtual vtkObjectBase* NewInstanceInternal() const { return thisClass::New(); }                  \
@@ -860,7 +904,7 @@ public:
 // template class and pass that into the macro instead.
 #define vtkAbstractTemplateTypeMacro(thisClass, superclass)                                        \
   vtkAbstractTypeMacroWithNewInstanceType(                                                         \
-    thisClass, superclass, thisClass, typeid(thisClass).name());                                   \
+    thisClass, superclass, thisClass, typeid(thisClass).name())                                    \
                                                                                                    \
 public:
 
@@ -1005,69 +1049,6 @@ public:
   vtkArrayIteratorTemplateMacroCase(VTK_UNSIGNED_CHAR, unsigned char, call);                       \
   vtkArrayIteratorTemplateMacroCase(VTK_STRING, vtkStdString, call);                               \
   vtkTemplateMacroCase(VTK_BIT, vtkBitArrayIterator, call)
-
-//----------------------------------------------------------------------------
-// Setup legacy code policy.
-
-// Define VTK_LEGACY macro to mark legacy methods where they are
-// declared in their class.  Example usage:
-//
-//   // @deprecated Replaced by MyOtherMethod() as of VTK 5.0.
-//   VTK_LEGACY(void MyMethod());
-#if defined(VTK_LEGACY_REMOVE)
-// Remove legacy methods completely.  Put a bogus declaration in
-// place to avoid stray semicolons because this is an error for some
-// compilers.  Using a class forward declaration allows any number
-// of repeats in any context without generating unique names.
-
-#define VTK_LEGACY(method) VTK_LEGACY__0(method, __LINE__)
-#define VTK_LEGACY__0(method, line) VTK_LEGACY__1(method, line)
-#define VTK_LEGACY__1(method, line) class vtkLegacyMethodRemoved##line
-
-#elif defined(VTK_LEGACY_SILENT) || defined(VTK_WRAPPING_CXX)
-// Provide legacy methods with no warnings.
-#define VTK_LEGACY(method) method
-#else
-// Setup compile-time warnings for uses of deprecated methods if
-// possible on this compiler.
-#if defined(__GNUC__) && !defined(__INTEL_COMPILER)
-#define VTK_LEGACY(method) method __attribute__((deprecated))
-#elif defined(_MSC_VER)
-#define VTK_LEGACY(method) __declspec(deprecated) method
-#else
-#define VTK_LEGACY(method) method
-#endif
-#endif
-
-// Macros to create runtime deprecation warning messages in function
-// bodies.  Example usage:
-//
-//   #if !defined(VTK_LEGACY_REMOVE)
-//   void vtkMyClass::MyOldMethod()
-//   {
-//     VTK_LEGACY_BODY(vtkMyClass::MyOldMethod, "VTK 5.0");
-//   }
-//   #endif
-//
-//   #if !defined(VTK_LEGACY_REMOVE)
-//   void vtkMyClass::MyMethod()
-//   {
-//     VTK_LEGACY_REPLACED_BODY(vtkMyClass::MyMethod, "VTK 5.0",
-//                              vtkMyClass::MyOtherMethod);
-//   }
-//   #endif
-#if defined(VTK_LEGACY_REMOVE) || defined(VTK_LEGACY_SILENT)
-#define VTK_LEGACY_BODY(method, version)
-#define VTK_LEGACY_REPLACED_BODY(method, version, replace)
-#else
-#define VTK_LEGACY_BODY(method, version)                                                           \
-  vtkGenericWarningMacro(                                                                          \
-    #method " was deprecated for " version " and will be removed in a future version.")
-#define VTK_LEGACY_REPLACED_BODY(method, version, replace)                                         \
-  vtkGenericWarningMacro(                                                                          \
-    #method " was deprecated for " version                                                         \
-            " and will be removed in a future version.  Use " #replace " instead.")
-#endif
 
 //----------------------------------------------------------------------------
 // Deprecation attribute.

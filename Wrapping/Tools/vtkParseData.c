@@ -146,6 +146,8 @@ void vtkParse_InitFunction(FunctionInfo* func)
   func->Preconds = NULL;
   func->Macro = NULL;
   func->SizeHint = NULL;
+  func->DeprecatedReason = NULL;
+  func->DeprecatedVersion = NULL;
   func->IsStatic = 0;
   func->IsVirtual = 0;
   func->IsPureVirtual = 0;
@@ -156,8 +158,8 @@ void vtkParse_InitFunction(FunctionInfo* func)
   func->IsFinal = 0;
   func->IsOverride = 0;
   func->IsExplicit = 0;
-  func->IsLegacy = 0;
   func->IsExcluded = 0;
+  func->IsDeprecated = 0;
 
 #ifndef VTK_PARSE_LEGACY_REMOVE
   /* everything below here is legacy information, *
@@ -170,6 +172,7 @@ void vtkParse_InitFunction(FunctionInfo* func)
   func->ArrayFailure = 0;
   func->IsPublic = 0;
   func->IsProtected = 0;
+  func->IsLegacy = 0;
 
   for (i = 0; i < MAX_ARGS; i++)
   {
@@ -231,6 +234,8 @@ void vtkParse_CopyFunction(FunctionInfo* func, const FunctionInfo* orig)
 
   func->Macro = orig->Macro;
   func->SizeHint = orig->SizeHint;
+  func->DeprecatedReason = orig->DeprecatedReason;
+  func->DeprecatedVersion = orig->DeprecatedVersion;
   func->IsStatic = orig->IsStatic;
   func->IsVirtual = orig->IsVirtual;
   func->IsPureVirtual = orig->IsPureVirtual;
@@ -243,6 +248,7 @@ void vtkParse_CopyFunction(FunctionInfo* func, const FunctionInfo* orig)
   func->IsExplicit = orig->IsExplicit;
   func->IsLegacy = orig->IsLegacy;
   func->IsExcluded = orig->IsExcluded;
+  func->IsDeprecated = orig->IsDeprecated;
 
 #ifndef VTK_PARSE_LEGACY_REMOVE
   /* everything below here is legacy information, *
@@ -306,6 +312,7 @@ void vtkParse_InitValue(ValueInfo* val)
   val->Name = NULL;
   val->Comment = NULL;
   val->Value = NULL;
+  val->Attributes = 0;
   val->Type = 0;
   val->Class = NULL;
   val->Count = 0;
@@ -329,6 +336,7 @@ void vtkParse_CopyValue(ValueInfo* val, const ValueInfo* orig)
   val->Name = orig->Name;
   val->Comment = orig->Comment;
   val->Value = orig->Value;
+  val->Attributes = orig->Attributes;
   val->Type = orig->Type;
   val->Class = orig->Class;
   val->Count = orig->Count;
@@ -458,10 +466,13 @@ void vtkParse_InitClass(ClassInfo* cls)
   cls->Namespaces = NULL;
   cls->NumberOfComments = 0;
   cls->Comments = NULL;
+  cls->DeprecatedReason = NULL;
+  cls->DeprecatedVersion = NULL;
   cls->IsAbstract = 0;
   cls->IsFinal = 0;
   cls->HasDelete = 0;
   cls->IsExcluded = 0;
+  cls->IsDeprecated = 0;
 }
 
 /* Copy a Class struct */
@@ -612,10 +623,13 @@ void vtkParse_CopyClass(ClassInfo* cls, const ClassInfo* orig)
     }
   }
 
+  cls->DeprecatedReason = orig->DeprecatedReason;
+  cls->DeprecatedVersion = orig->DeprecatedVersion;
   cls->IsAbstract = orig->IsAbstract;
   cls->IsFinal = orig->IsFinal;
   cls->HasDelete = orig->HasDelete;
   cls->IsExcluded = orig->IsExcluded;
+  cls->IsDeprecated = orig->IsDeprecated;
 }
 
 /* Free a Class struct */

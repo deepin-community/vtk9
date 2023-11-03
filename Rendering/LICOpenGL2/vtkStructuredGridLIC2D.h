@@ -57,19 +57,19 @@ public:
   vtkTypeMacro(vtkStructuredGridLIC2D, vtkStructuredGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the context. Context must be a vtkOpenGLRenderWindow.
    * This does not increase the reference count of the
    * context to avoid reference loops.
-   * SetContext() may raise an error is the OpenGL context does not support the
+   * SetContext() may raise an error if the OpenGL context does not support the
    * required OpenGL extensions. Return 0 upon failure and 1 upon success.
    */
   int SetContext(vtkRenderWindow* context);
   vtkRenderWindow* GetContext();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Number of steps. Initial value is 1.
    * class invariant: Steps>0.
@@ -77,9 +77,9 @@ public:
    */
   vtkSetMacro(Steps, int);
   vtkGetMacro(Steps, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Step size.
    * WE ARE NOT SURE YET about the space where we define the step.
@@ -94,15 +94,15 @@ public:
    */
   vtkSetMacro(StepSize, double);
   vtkGetMacro(StepSize, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The magnification factor. Default is 1
    */
   vtkSetClampMacro(Magnification, int, 1, VTK_INT_MAX);
   vtkGetMacro(Magnification, int);
-  //@}
+  ///@}
 
   /**
    * Check if FBO is started properly.

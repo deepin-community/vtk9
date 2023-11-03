@@ -33,13 +33,19 @@
 
 vtkStandardNewMacro(vtkXMLDataSetWriter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkXMLDataSetWriter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 vtkXMLDataSetWriter::vtkXMLDataSetWriter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXMLDataSetWriter::~vtkXMLDataSetWriter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXMLDataSetWriter::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");

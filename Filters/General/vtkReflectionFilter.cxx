@@ -40,8 +40,7 @@ namespace
  * method to determine which arrays from a field data can be flipped.
  * Only 3/6/9 component signed data array are considered flippable.
  */
-static void FindFlippableArrays(
-  vtkFieldData* fd, std::vector<std::pair<vtkIdType, int> >& flippableArrays)
+void FindFlippableArrays(vtkFieldData* fd, std::vector<std::pair<vtkIdType, int>>& flippableArrays)
 {
   // Find all flippable arrays
   for (int iArr = 0; iArr < fd->GetNumberOfArrays(); iArr++)
@@ -62,7 +61,7 @@ static void FindFlippableArrays(
       int nComp = array->GetNumberOfComponents();
       if (nComp == 3 || nComp == 6 || nComp == 9)
       {
-        flippableArrays.push_back(std::make_pair(iArr, nComp));
+        flippableArrays.emplace_back(iArr, nComp);
       }
     }
   }
@@ -71,7 +70,7 @@ static void FindFlippableArrays(
 
 vtkStandardNewMacro(vtkReflectionFilter);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReflectionFilter::vtkReflectionFilter()
 {
   this->Plane = USE_X_MIN;
@@ -80,10 +79,10 @@ vtkReflectionFilter::vtkReflectionFilter()
   this->FlipAllInputArrays = false;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkReflectionFilter::~vtkReflectionFilter() = default;
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReflectionFilter::FlipTuple(double* tuple, int* mirrorDir, int nComp)
 {
   for (int j = 0; j < nComp; j++)
@@ -92,7 +91,7 @@ void vtkReflectionFilter::FlipTuple(double* tuple, int* mirrorDir, int nComp)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReflectionFilter::ComputeBounds(vtkDataObject* input, double bounds[6])
 {
   // get the input and output
@@ -132,7 +131,7 @@ int vtkReflectionFilter::ComputeBounds(vtkDataObject* input, double bounds[6])
   return 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkReflectionFilter::ReflectNon3DCell(
   vtkDataSet* input, vtkUnstructuredGrid* output, vtkIdType cellId, vtkIdType numInputPoints)
 {
@@ -271,9 +270,10 @@ vtkIdType vtkReflectionFilter::ReflectNon3DCell(
       {
         vtkWarningMacro("Cell may be inverted");
       }
-      for (int j = numCellPts - 1; j >= 0; j--)
+      for (int j = 0; j != numCellPts; j++)
       {
-        newCellPts[numCellPts - 1 - j] = cellPts->GetId(j);
+        // Indexing in this way ensures proper reflection of quad triangulation
+        newCellPts[(numCellPts - j) % numCellPts] = cellPts->GetId(j);
       }
     }
   } // end switch
@@ -287,7 +287,7 @@ vtkIdType vtkReflectionFilter::ReflectNon3DCell(
   return output->InsertNextCell(cellType, numCellPts, &newCellPts[0]);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReflectionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -331,7 +331,7 @@ int vtkReflectionFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReflectionFilter::RequestDataInternal(
   vtkDataSet* input, vtkUnstructuredGrid* output, double bounds[6])
 {
@@ -473,7 +473,7 @@ int vtkReflectionFilter::RequestDataInternal(
   vtkMath::TensorFromSymmetricTensor(mirrorSymmetricTensorDir, mirrorTensorDir);
 
   // Find all flippable arrays
-  std::vector<std::pair<vtkIdType, int> > flippableArrays;
+  std::vector<std::pair<vtkIdType, int>> flippableArrays;
   if (this->FlipAllInputArrays)
   {
     FindFlippableArrays(inPD, flippableArrays);
@@ -489,7 +489,7 @@ int vtkReflectionFilter::RequestDataInternal(
       vtkAbstractArray* array = inPD->GetAbstractArray(iArr);
       if (array == vectors || array == normals || array == tensors)
       {
-        flippableArrays.push_back(std::make_pair(iArr, array->GetNumberOfComponents()));
+        flippableArrays.emplace_back(iArr, array->GetNumberOfComponents());
       }
     }
   }
@@ -568,7 +568,7 @@ int vtkReflectionFilter::RequestDataInternal(
       vtkAbstractArray* array = inCD->GetAbstractArray(iArr);
       if (array == vectors || array == normals || array == tensors)
       {
-        flippableArrays.push_back(std::make_pair(iArr, array->GetNumberOfComponents()));
+        flippableArrays.emplace_back(iArr, array->GetNumberOfComponents());
       }
     }
   }
@@ -766,7 +766,7 @@ int vtkReflectionFilter::RequestDataInternal(
       case VTK_QUADRATIC_PYRAMID:
       {
         input->GetCellPoints(i, cellPts);
-        vtkIdType newCellPts[113] = { cellPts->GetId(2), cellPts->GetId(1), cellPts->GetId(0),
+        vtkIdType newCellPts[13] = { cellPts->GetId(2), cellPts->GetId(1), cellPts->GetId(0),
           cellPts->GetId(3), cellPts->GetId(4), cellPts->GetId(6), cellPts->GetId(5),
           cellPts->GetId(8), cellPts->GetId(7), cellPts->GetId(11), cellPts->GetId(10),
           cellPts->GetId(9), cellPts->GetId(12) };
@@ -798,6 +798,24 @@ int vtkReflectionFilter::RequestDataInternal(
           }
         }
         outputCellId = output->InsertNextCell(cellType, 27, newCellPts);
+        break;
+      }
+      case VTK_TRIQUADRATIC_PYRAMID:
+      {
+        input->GetCellPoints(i, cellPts);
+        vtkIdType newCellPts[19] = { cellPts->GetId(2), cellPts->GetId(1), cellPts->GetId(0),
+          cellPts->GetId(3), cellPts->GetId(4), cellPts->GetId(6), cellPts->GetId(5),
+          cellPts->GetId(8), cellPts->GetId(7), cellPts->GetId(11), cellPts->GetId(10),
+          cellPts->GetId(9), cellPts->GetId(12), cellPts->GetId(13), cellPts->GetId(15),
+          cellPts->GetId(14), cellPts->GetId(17), cellPts->GetId(16), cellPts->GetId(18) };
+        if (this->CopyInput)
+        {
+          for (int j = 0; j < 19; j++)
+          {
+            newCellPts[j] += numPts;
+          }
+        }
+        outputCellId = output->InsertNextCell(cellType, 19, newCellPts);
         break;
       }
       case VTK_QUADRATIC_LINEAR_WEDGE:
@@ -1066,7 +1084,7 @@ int vtkReflectionFilter::RequestDataInternal(
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReflectionFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   // Input can be a dataset or a composite of datasets.
@@ -1076,7 +1094,7 @@ int vtkReflectionFilter::FillInputPortInformation(int, vtkInformation* info)
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkReflectionFilter::RequestDataObject(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -1115,7 +1133,7 @@ int vtkReflectionFilter::RequestDataObject(
   return 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkReflectionFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

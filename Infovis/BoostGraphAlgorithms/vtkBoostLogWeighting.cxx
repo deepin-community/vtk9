@@ -21,6 +21,7 @@
 
 #include "vtkBoostLogWeighting.h"
 #include "vtkArrayCoordinates.h"
+#include "vtkArrayData.h"
 #include "vtkCommand.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -48,7 +49,7 @@ vtkBoostLogWeighting::vtkBoostLogWeighting()
 {
 }
 
-vtkBoostLogWeighting::~vtkBoostLogWeighting() {}
+vtkBoostLogWeighting::~vtkBoostLogWeighting() = default;
 
 void vtkBoostLogWeighting::PrintSelf(ostream& os, vtkIndent indent)
 {

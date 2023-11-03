@@ -36,13 +36,13 @@ public:
   vtkTypeMacro(vtkImageCheckerboard, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of divisions along each axis.
    */
   vtkSetVector3Macro(NumberOfDivisions, int);
   vtkGetVectorMacro(NumberOfDivisions, int, 3);
-  //@}
+  ///@}
 
   /**
    * Set the two inputs to this filter
@@ -52,11 +52,11 @@ public:
 
 protected:
   vtkImageCheckerboard();
-  ~vtkImageCheckerboard() override {}
+  ~vtkImageCheckerboard() override = default;
 
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData,
-    int extent[6], int threadId) override;
+    int outExt[6], int threadId) override;
   int NumberOfDivisions[3];
 
 private:

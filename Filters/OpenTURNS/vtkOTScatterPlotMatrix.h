@@ -61,14 +61,14 @@ public:
    */
   void SetDensityMapColor(int plotType, unsigned int densityLineIndex, const vtkColor4ub& color);
 
-  //@{
+  ///@{
   /**
    * Get/Set a custom color transfer function.
    * If none is provided, a default one will be applied based on the range of the density.
    */
   void SetTransferFunction(vtkScalarsToColors* stc);
   vtkScalarsToColors* GetTransferFunction();
-  //@}
+  ///@}
 
 protected:
   vtkOTScatterPlotMatrix();
@@ -88,7 +88,7 @@ private:
 
   class DensityMapSettings;
   std::map<int, DensityMapSettings*> DensityMapsSettings;
-  typedef std::map<std::pair<vtkStdString, vtkStdString>, vtkSmartPointer<vtkOTDensityMap> >
+  typedef std::map<std::pair<vtkStdString, vtkStdString>, vtkSmartPointer<vtkOTDensityMap>>
     DensityMapCacheMap;
   DensityMapCacheMap DensityMapCache;
 

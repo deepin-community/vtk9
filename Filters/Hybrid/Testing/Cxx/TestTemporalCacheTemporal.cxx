@@ -50,7 +50,7 @@ public:
   unsigned int Count;
 };
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int TestTemporalCacheTemporal(int, char*[])
 {
   // we have to use a composite pipeline
@@ -90,7 +90,8 @@ int TestTemporalCacheTemporal(int, char*[])
   vtkSmartPointer<vtkThreshold> contour = vtkSmartPointer<vtkThreshold>::New();
   // contour->SetInputConnection(interp->GetOutputPort());
   contour->SetInputConnection(cache2->GetOutputPort());
-  contour->ThresholdByUpper(0.5);
+  contour->SetThresholdFunction(vtkThreshold::THRESHOLD_UPPER);
+  contour->SetUpperThreshold(0.5);
 
   vtkSmartPointer<vtkCompositeDataGeometryFilter> geom =
     vtkSmartPointer<vtkCompositeDataGeometryFilter>::New();

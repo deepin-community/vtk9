@@ -174,20 +174,17 @@ int vtkTemporalArrayOperatorFilter::RequestUpdateExtent(vtkInformation* vtkNotUs
 }
 
 //------------------------------------------------------------------------------
-int vtkTemporalArrayOperatorFilter::RequestData(vtkInformation* vtkNotUsed(theRequest),
-  vtkInformationVector** inputInfoVector, vtkInformationVector* outputInfoVector)
+int vtkTemporalArrayOperatorFilter::Execute(vtkInformation*,
+  const std::vector<vtkSmartPointer<vtkDataObject>>& inputs, vtkInformationVector* outputVector)
 {
-  vtkMultiBlockDataSet* inputMultiBlock = vtkMultiBlockDataSet::GetData(inputInfoVector[0]);
-
-  int numberTimeSteps = inputMultiBlock->GetNumberOfBlocks();
-  if (numberTimeSteps != 2)
+  if (inputs.size() != 2)
   {
     vtkErrorMacro(<< "The number of time blocks is incorrect.");
     return 0;
   }
 
-  vtkDataObject* data0 = inputMultiBlock->GetBlock(0);
-  vtkDataObject* data1 = inputMultiBlock->GetBlock(1);
+  auto& data0 = inputs[0];
+  auto& data1 = inputs[1];
   if (!data0 || !data1)
   {
     vtkErrorMacro(<< "Unable to retrieve data objects.");
@@ -197,7 +194,7 @@ int vtkTemporalArrayOperatorFilter::RequestData(vtkInformation* vtkNotUsed(theRe
   vtkSmartPointer<vtkDataObject> newOutData;
   newOutData.TakeReference(this->Process(data0, data1));
 
-  vtkInformation* outInfo = outputInfoVector->GetInformationObject(0);
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
   vtkDataObject* outData = vtkDataObject::GetData(outInfo);
   outData->ShallowCopy(newOutData);
 
@@ -269,7 +266,7 @@ vtkDataObject* vtkTemporalArrayOperatorFilter::ProcessDataObject(
     return nullptr;
   }
 
-  if (strcmp(inputArray0->GetName(), inputArray1->GetName()))
+  if (strcmp(inputArray0->GetName(), inputArray1->GetName()) != 0)
   {
     vtkErrorMacro(<< "Array name in each time step are different.");
     return nullptr;

@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_1_0() warning for this class
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkDIYKdTreeUtilities.h"
 
 #include "vtkAppendFilter.h"
@@ -34,6 +38,7 @@
 
 #include <iterator>
 #include <map>
+#include <memory>
 #include <tuple>
 
 // clang-format off
@@ -85,19 +90,19 @@ struct BlockT
 
 }
 
-//----------------------------------------------------------------------------
-vtkDIYKdTreeUtilities::vtkDIYKdTreeUtilities() {}
+//------------------------------------------------------------------------------
+vtkDIYKdTreeUtilities::vtkDIYKdTreeUtilities() = default;
 
-//----------------------------------------------------------------------------
-vtkDIYKdTreeUtilities::~vtkDIYKdTreeUtilities() {}
+//------------------------------------------------------------------------------
+vtkDIYKdTreeUtilities::~vtkDIYKdTreeUtilities() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkDIYKdTreeUtilities::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::vector<vtkBoundingBox> vtkDIYKdTreeUtilities::GenerateCuts(vtkDataObject* dobj,
   int number_of_partitions, bool use_cell_centers, vtkMultiProcessController* controller,
   const double* local_bounds)
@@ -116,14 +121,46 @@ std::vector<vtkBoundingBox> vtkDIYKdTreeUtilities::GenerateCuts(vtkDataObject* d
   {
     std::copy(local_bounds, local_bounds + 6, bds);
   }
-  const auto datasets = vtkDIYUtilities::GetDataSets(dobj);
+  const auto datasets = vtkCompositeDataSet::GetDataSets(dobj);
   const auto pts = vtkDIYUtilities::ExtractPoints(datasets, use_cell_centers);
   return vtkDIYKdTreeUtilities::GenerateCuts(pts, number_of_partitions, controller, bds);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::vector<vtkBoundingBox> vtkDIYKdTreeUtilities::GenerateCuts(
-  const std::vector<vtkSmartPointer<vtkPoints> >& points, int number_of_partitions,
+  const std::vector<vtkDataObject*>& dobjs, int number_of_partitions, bool use_cell_centers,
+  vtkMultiProcessController* controller, const double* local_bounds)
+{
+  std::vector<vtkSmartPointer<vtkPoints>> points;
+
+  vtkBoundingBox bbox;
+  if (local_bounds != nullptr)
+  {
+    bbox.AddBounds(local_bounds);
+  }
+  for (auto dobj : dobjs)
+  {
+    if (local_bounds == nullptr)
+    {
+      bbox.AddBox(vtkDIYUtilities::GetLocalBounds(dobj));
+    }
+    const auto datasets = vtkCompositeDataSet::GetDataSets(dobj);
+    const auto pts = vtkDIYUtilities::ExtractPoints(datasets, use_cell_centers);
+    points.insert(points.end(), pts.begin(), pts.end());
+  }
+
+  double bds[6];
+  vtkMath::UninitializeBounds(bds);
+  if (bbox.IsValid())
+  {
+    bbox.GetBounds(bds);
+  }
+  return vtkDIYKdTreeUtilities::GenerateCuts(points, number_of_partitions, controller, bds);
+}
+
+//------------------------------------------------------------------------------
+std::vector<vtkBoundingBox> vtkDIYKdTreeUtilities::GenerateCuts(
+  const std::vector<vtkSmartPointer<vtkPoints>>& points, int number_of_partitions,
   vtkMultiProcessController* controller, const double* local_bounds /*=nullptr*/)
 {
   if (number_of_partitions == 0)
@@ -248,9 +285,10 @@ std::vector<vtkBoundingBox> vtkDIYKdTreeUtilities::GenerateCuts(
   return cuts;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSmartPointer<vtkPartitionedDataSet> vtkDIYKdTreeUtilities::Exchange(
-  vtkPartitionedDataSet* localParts, vtkMultiProcessController* controller)
+  vtkPartitionedDataSet* localParts, vtkMultiProcessController* controller,
+  std::shared_ptr<diy::Assigner> block_assigner /*= nullptr*/)
 {
   diy::mpi::communicator comm = vtkDIYUtilities::GetCommunicator(controller);
   const int nblocks = static_cast<int>(localParts->GetNumberOfPartitions());
@@ -262,9 +300,17 @@ vtkSmartPointer<vtkPartitionedDataSet> vtkDIYKdTreeUtilities::Exchange(
     assert(sumblocks == nblocks * comm.size());
   }
 #endif
-  diy::ContiguousAssigner block_assigner(comm.size(), nblocks);
+  if (!block_assigner && vtkMath::IsPowerOfTwo(nblocks))
+  {
+    block_assigner = std::make_shared<vtkDIYExplicitAssigner>(
+      vtkDIYKdTreeUtilities::CreateAssigner(comm, nblocks));
+  }
+  else if (!block_assigner)
+  {
+    block_assigner = std::make_shared<diy::ContiguousAssigner>(comm.size(), nblocks);
+  }
 
-  using VectorOfUG = std::vector<vtkSmartPointer<vtkUnstructuredGrid> >;
+  using VectorOfUG = std::vector<vtkSmartPointer<vtkUnstructuredGrid>>;
   using VectorOfVectorOfUG = std::vector<VectorOfUG>;
 
   diy::Master master(
@@ -279,7 +325,7 @@ vtkSmartPointer<vtkPartitionedDataSet> vtkDIYKdTreeUtilities::Exchange(
 
   const int myrank = comm.rank();
   diy::all_to_all(master, assigner,
-    [&block_assigner, &myrank, localParts](VectorOfVectorOfUG* block, const diy::ReduceProxy& rp) {
+    [block_assigner, &myrank, localParts](VectorOfVectorOfUG* block, const diy::ReduceProxy& rp) {
       if (rp.in_link().size() == 0)
       {
         // enqueue blocks to send.
@@ -288,7 +334,7 @@ vtkSmartPointer<vtkPartitionedDataSet> vtkDIYKdTreeUtilities::Exchange(
         {
           if (auto part = vtkUnstructuredGrid::SafeDownCast(localParts->GetPartition(partId)))
           {
-            auto target_rank = block_assigner.rank(partId);
+            auto target_rank = block_assigner->rank(partId);
             if (target_rank == myrank)
             {
               // short-circuit messages to self.
@@ -349,7 +395,7 @@ vtkSmartPointer<vtkPartitionedDataSet> vtkDIYKdTreeUtilities::Exchange(
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkDIYKdTreeUtilities::GenerateGlobalCellIds(vtkPartitionedDataSet* parts,
   vtkMultiProcessController* controller, vtkIdType* mb_offset /*=nullptr*/)
 {
@@ -409,6 +455,12 @@ bool vtkDIYKdTreeUtilities::GenerateGlobalCellIds(vtkPartitionedDataSet* parts,
     (*mb_offset) += total_global_cells;
   }
 
+  if (nblocks == 0)
+  {
+    // no local blocks, no ids to generate.
+    return true;
+  }
+
   // compute exclusive scan to determine the global id offsets for each local partition.
   std::vector<vtkIdType> local_cell_offsets(nblocks, 0);
   local_cell_offsets[0] = global_offset;
@@ -454,7 +506,7 @@ bool vtkDIYKdTreeUtilities::GenerateGlobalCellIds(vtkPartitionedDataSet* parts,
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::vector<int> vtkDIYKdTreeUtilities::ComputeAssignments(int num_blocks, int num_ranks)
 {
   assert(num_blocks == vtkMath::NearestPowerOfTwo(num_blocks));
@@ -490,7 +542,7 @@ std::vector<int> vtkDIYKdTreeUtilities::ComputeAssignments(int num_blocks, int n
   return assignments;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDIYExplicitAssigner vtkDIYKdTreeUtilities::CreateAssigner(
   diy::mpi::communicator& comm, int num_blocks)
 {
@@ -507,4 +559,36 @@ vtkDIYExplicitAssigner vtkDIYKdTreeUtilities::CreateAssigner(
     }
   }
   return vtkDIYExplicitAssigner(comm, local_blocks, true);
+}
+
+//------------------------------------------------------------------------------
+void vtkDIYKdTreeUtilities::ResizeCuts(std::vector<vtkBoundingBox>& cuts, int size)
+{
+  if (size == 0)
+  {
+    cuts.resize(0);
+    return;
+  }
+
+  if (size < 0 || size >= static_cast<int>(cuts.size()))
+  {
+    return;
+  }
+
+  if (!vtkMath::IsPowerOfTwo(static_cast<vtkTypeUInt64>(cuts.size())))
+  {
+    vtkLogF(ERROR, "Argument has non-power of two cuts. This is not supported.");
+    return;
+  }
+
+  auto assignments = vtkDIYKdTreeUtilities::ComputeAssignments(static_cast<int>(cuts.size()), size);
+  assert(assignments.size() == cuts.size());
+
+  std::vector<vtkBoundingBox> new_cuts(size);
+  for (size_t idx = 0; idx < cuts.size(); ++idx)
+  {
+    new_cuts[assignments[idx]].AddBox(cuts[idx]);
+  }
+  cuts.swap(new_cuts);
+  assert(static_cast<int>(cuts.size()) == size);
 }

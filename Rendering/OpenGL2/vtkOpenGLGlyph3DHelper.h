@@ -46,7 +46,7 @@ public:
     std::vector<float>& normalMatrices, std::vector<vtkIdType>& pickIds, vtkMTimeType pointMTime,
     bool culling);
 
-  void SetLODs(std::vector<std::pair<float, float> >& lods);
+  void SetLODs(std::vector<std::pair<float, float>>& lods);
 
   void SetLODColoring(bool val);
 
@@ -72,7 +72,7 @@ protected:
   void GetShaderTemplate(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act) override;
 
-  //@{
+  ///@{
   /**
    * Perform string replacements on the shader templates
    */
@@ -86,7 +86,7 @@ protected:
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act) override;
   void ReplaceShaderPositionVC(
     std::map<vtkShader::Type, vtkShader*> shaders, vtkRenderer* ren, vtkActor* act) override;
-  //@}
+  ///@}
 
   /**
    * Set the shader parameteres related to the actor/mapper
@@ -103,7 +103,7 @@ protected:
   vtkTimeStamp InstanceBuffersBuildTime;
   vtkTimeStamp InstanceBuffersLoadTime;
 
-  std::vector<std::pair<float, float> > LODs;
+  std::vector<std::pair<float, float>> LODs;
   vtkNew<vtkOpenGLInstanceCulling> InstanceCulling;
 
 private:

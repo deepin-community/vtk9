@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkBezierHexahedron.h"
 
 #include "vtkBezierCurve.h"
@@ -32,10 +36,7 @@
 
 vtkStandardNewMacro(vtkBezierHexahedron);
 
-vtkBezierHexahedron::vtkBezierHexahedron()
-  : vtkHigherOrderHexahedron()
-{
-}
+vtkBezierHexahedron::vtkBezierHexahedron() = default;
 
 vtkBezierHexahedron::~vtkBezierHexahedron() = default;
 
@@ -214,10 +215,9 @@ void vtkBezierHexahedron::InterpolateDerivs(const double pcoords[3], double* der
 void vtkBezierHexahedron::SetRationalWeightsFromPointData(
   vtkPointData* point_data, const vtkIdType numPts)
 {
-  if (point_data->SetActiveAttribute(
-        "RationalWeights", vtkDataSetAttributes::AttributeTypes::RATIONALWEIGHTS) != -1)
+  vtkDataArray* v = point_data->GetRationalWeights();
+  if (v)
   {
-    vtkDataArray* v = point_data->GetRationalWeights();
     this->GetRationalWeights()->SetNumberOfTuples(numPts);
     for (vtkIdType i = 0; i < numPts; i++)
     {
@@ -232,15 +232,15 @@ vtkDoubleArray* vtkBezierHexahedron::GetRationalWeights()
 {
   return RationalWeights.Get();
 }
-vtkHigherOrderCurve* vtkBezierHexahedron::getEdgeCell()
+vtkHigherOrderCurve* vtkBezierHexahedron::GetEdgeCell()
 {
   return EdgeCell;
 }
-vtkHigherOrderQuadrilateral* vtkBezierHexahedron::getFaceCell()
+vtkHigherOrderQuadrilateral* vtkBezierHexahedron::GetFaceCell()
 {
   return FaceCell;
 }
-vtkHigherOrderInterpolation* vtkBezierHexahedron::getInterp()
+vtkHigherOrderInterpolation* vtkBezierHexahedron::GetInterpolation()
 {
   return Interp;
 };

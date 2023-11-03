@@ -116,7 +116,7 @@ vtkSplineWidget::vtkSplineWidget()
 
   vtkPolyDataMapper* lineMapper = vtkPolyDataMapper::New();
   lineMapper->SetInputConnection(this->ParametricFunctionSource->GetOutputPort());
-  lineMapper->SetResolveCoincidentTopologyToPolygonOffset();
+  vtkPolyDataMapper::SetResolveCoincidentTopologyToPolygonOffset();
 
   this->LineActor = vtkActor::New();
   this->LineActor->SetMapper(lineMapper);
@@ -357,7 +357,7 @@ void vtkSplineWidget::SetEnabled(int enabling)
   this->Interactor->Render();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget::RegisterPickers()
 {
   vtkPickingManager* pm = this->GetPickingManager();
@@ -369,7 +369,7 @@ void vtkSplineWidget::RegisterPickers()
   pm->AddPicker(this->LinePicker, this);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSplineWidget::ProcessEventsHandler(
   vtkObject* vtkNotUsed(object), unsigned long event, void* clientdata, void* vtkNotUsed(calldata))
 {

@@ -35,10 +35,11 @@ class VTKIMAGINGMATH_EXPORT vtkImageDivergence : public vtkThreadedImageAlgorith
 public:
   static vtkImageDivergence* New();
   vtkTypeMacro(vtkImageDivergence, vtkThreadedImageAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkImageDivergence();
-  ~vtkImageDivergence() override {}
+  ~vtkImageDivergence() override = default;
 
   int RequestUpdateExtent(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
@@ -50,5 +51,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageDivergence.h

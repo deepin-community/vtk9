@@ -34,10 +34,11 @@ class VTKIMAGINGCOLOR_EXPORT vtkImageMapToRGBA : public vtkImageMapToColors
 public:
   static vtkImageMapToRGBA* New();
   vtkTypeMacro(vtkImageMapToRGBA, vtkImageMapToColors);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
-  vtkImageMapToRGBA() {}
-  ~vtkImageMapToRGBA() override {}
+  vtkImageMapToRGBA() = default;
+  ~vtkImageMapToRGBA() override = default;
 
 private:
   vtkImageMapToRGBA(const vtkImageMapToRGBA&) = delete;
@@ -45,5 +46,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageMapToRGBA.h

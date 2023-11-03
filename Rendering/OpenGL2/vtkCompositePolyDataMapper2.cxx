@@ -38,6 +38,7 @@
 #include "vtkOpenGLRenderWindow.h"
 #include "vtkOpenGLRenderer.h"
 #include "vtkOpenGLShaderProperty.h"
+#include "vtkOpenGLState.h"
 #include "vtkOpenGLTexture.h"
 #include "vtkOpenGLVertexBufferObject.h"
 #include "vtkOpenGLVertexBufferObjectGroup.h"
@@ -45,6 +46,8 @@
 #include "vtkPolyData.h"
 #include "vtkProperty.h"
 #include "vtkScalarsToColors.h"
+#include "vtkSelection.h"
+#include "vtkSelectionNode.h"
 #include "vtkShaderProgram.h"
 #include "vtkTextureObject.h"
 #include "vtkTransform.h"
@@ -53,12 +56,20 @@
 #include <algorithm>
 #include <sstream>
 
-#include "vtkCompositePolyDataMapper2Internal.h"
+#include "vtkCompositeMapperHelper2.h"
 
 typedef std::map<vtkPolyData*, vtkCompositeMapperHelperData*>::iterator dataIter;
 typedef std::map<const std::string, vtkCompositeMapperHelper2*>::iterator helpIter;
 
 vtkStandardNewMacro(vtkCompositeMapperHelper2);
+
+void vtkCompositeMapperHelper2::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+  os << indent << "Marked: " << this->Marked << endl;
+  os << indent << "Primary ID Used: " << this->PrimIDUsed << endl;
+  os << indent << "Override Color Used: " << this->OverideColorUsed << endl;
+}
 
 vtkCompositeMapperHelper2::~vtkCompositeMapperHelper2()
 {
@@ -67,7 +78,6 @@ vtkCompositeMapperHelper2::~vtkCompositeMapperHelper2()
     delete it->second;
   }
   this->Data.clear();
-  this->RenderedList.clear();
 }
 
 void vtkCompositeMapperHelper2::SetShaderValues(
@@ -127,14 +137,26 @@ void vtkCompositeMapperHelper2::SetShaderValues(
   }
   else
   {
-    vtkColor3d& aColor = hdata->AmbientColor;
-    float ambientColor[3] = { static_cast<float>(aColor[0]), static_cast<float>(aColor[1]),
-      static_cast<float>(aColor[2]) };
-    vtkColor3d& dColor = hdata->DiffuseColor;
-    float diffuseColor[3] = { static_cast<float>(dColor[0]), static_cast<float>(dColor[1]),
-      static_cast<float>(dColor[2]) };
-    prog->SetUniform3f("ambientColorUniform", ambientColor);
-    prog->SetUniform3f("diffuseColorUniform", diffuseColor);
+    if (this->DrawingSelection)
+    {
+      vtkColor3d& sColor = hdata->SelectionColor;
+      float selectionColor[3] = { static_cast<float>(sColor[0]), static_cast<float>(sColor[1]),
+        static_cast<float>(sColor[2]) };
+      prog->SetUniform3f("ambientColorUniform", selectionColor);
+      prog->SetUniform3f("diffuseColorUniform", selectionColor);
+      prog->SetUniformf("opacityUniform", hdata->SelectionOpacity);
+    }
+    else
+    {
+      vtkColor3d& aColor = hdata->AmbientColor;
+      float ambientColor[3] = { static_cast<float>(aColor[0]), static_cast<float>(aColor[1]),
+        static_cast<float>(aColor[2]) };
+      vtkColor3d& dColor = hdata->DiffuseColor;
+      float diffuseColor[3] = { static_cast<float>(dColor[0]), static_cast<float>(dColor[1]),
+        static_cast<float>(dColor[2]) };
+      prog->SetUniform3f("ambientColorUniform", ambientColor);
+      prog->SetUniform3f("diffuseColorUniform", diffuseColor);
+    }
     if (this->OverideColorUsed)
     {
       prog->SetUniformi("OverridesColor", hdata->OverridesColor);
@@ -145,7 +167,6 @@ void vtkCompositeMapperHelper2::SetShaderValues(
 void vtkCompositeMapperHelper2::UpdateShaders(
   vtkOpenGLHelper& cellBO, vtkRenderer* ren, vtkActor* act)
 {
-#ifndef VTK_LEGACY_REMOVE
   // in cases where LegacyShaderProperty is not nullptr, it means someone has used
   // legacy shader replacement functions, so we make sure the actor uses the same
   // shader property. NOTE: this implies that it is not possible to use both legacy
@@ -155,7 +176,6 @@ void vtkCompositeMapperHelper2::UpdateShaders(
   {
     act->SetShaderProperty(this->Parent->LegacyShaderProperty);
   }
-#endif
 
   Superclass::UpdateShaders(cellBO, ren, act);
   if (cellBO.Program && this->Parent)
@@ -216,7 +236,17 @@ void vtkCompositeMapperHelper2::RemoveUnused()
   }
 }
 
-//-----------------------------------------------------------------------------
+std::vector<vtkPolyData*> vtkCompositeMapperHelper2::GetRenderedList() const
+{
+  std::vector<vtkPolyData*> result;
+  for (const auto& pair : this->Data)
+  {
+    result.push_back(pair.first);
+  }
+  return result;
+}
+
+//------------------------------------------------------------------------------
 // Returns if we can use texture maps for scalar coloring. Note this doesn't say
 // we "will" use scalar coloring. It says, if we do use scalar coloring, we will
 // use a texture.
@@ -276,7 +306,7 @@ int vtkCompositeMapperHelper2::CanUseTextureMapForColoring(vtkDataObject*)
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeMapperHelper2::RenderPiece(vtkRenderer* ren, vtkActor* actor)
 {
   // Make sure that we have been properly initialized.
@@ -285,11 +315,47 @@ void vtkCompositeMapperHelper2::RenderPiece(vtkRenderer* ren, vtkActor* actor)
     return;
   }
 
+  if (ren->GetSelector())
+  {
+    for (auto& it : this->Data)
+    {
+      this->CurrentInput = it.first;
+      this->UpdateMaximumPointCellIds(ren, actor);
+    }
+  }
   this->CurrentInput = this->Data.begin()->first;
 
+  this->UpdateCameraShiftScale(ren, actor);
   this->RenderPieceStart(ren, actor);
   this->RenderPieceDraw(ren, actor);
   this->RenderPieceFinish(ren, actor);
+}
+
+void vtkCompositeMapperHelper2::UpdateCameraShiftScale(vtkRenderer* ren, vtkActor* actor)
+{
+  if (this->PauseShiftScale)
+  {
+    return;
+  }
+
+  // handle camera shift scale
+  if (this->ShiftScaleMethod == vtkOpenGLVertexBufferObject::NEAR_PLANE_SHIFT_SCALE ||
+    this->ShiftScaleMethod == vtkOpenGLVertexBufferObject::FOCAL_POINT_SHIFT_SCALE)
+  {
+    // get ideal shift scale from camera
+    auto posVBO = this->VBOs->GetVBO("vertexMC");
+    if (posVBO)
+    {
+      posVBO->SetCamera(ren->GetActiveCamera());
+      posVBO->SetProp3D(actor);
+      posVBO->UpdateShiftScale(this->CurrentInput->GetPoints()->GetData());
+      // force a rebuild if needed
+      if (posVBO->GetMTime() > posVBO->GetUploadTime())
+      {
+        this->Modified();
+      }
+    }
+  }
 }
 
 void vtkCompositeMapperHelper2::DrawIBO(vtkRenderer* ren, vtkActor* actor, int primType,
@@ -297,11 +363,12 @@ void vtkCompositeMapperHelper2::DrawIBO(vtkRenderer* ren, vtkActor* actor, int p
 {
   if (CellBO.IBO->IndexCount)
   {
+    vtkOpenGLRenderWindow* renWin = static_cast<vtkOpenGLRenderWindow*>(ren->GetRenderWindow());
+    vtkOpenGLState* ostate = renWin->GetState();
+
     if (pointSize > 0)
     {
-#ifndef GL_ES_VERSION_3_0
-      glPointSize(pointSize); // need to use shader value
-#endif
+      ostate->vtkglPointSize(pointSize); // need to use shader value
     }
     // First we do the triangles, update the shader, set uniforms, etc.
     this->UpdateShaders(CellBO, ren, actor);
@@ -316,7 +383,7 @@ void vtkCompositeMapperHelper2::DrawIBO(vtkRenderer* ren, vtkActor* actor, int p
 
     if (!this->HaveWideLines(ren, actor) && mode == GL_LINES)
     {
-      glLineWidth(actor->GetProperty()->GetLineWidth());
+      ostate->vtkglLineWidth(actor->GetProperty()->GetLineWidth());
     }
 
     // if (this->DrawingEdgesOrVetices && !this->DrawingTubes(CellBO, actor))
@@ -333,24 +400,33 @@ void vtkCompositeMapperHelper2::DrawIBO(vtkRenderer* ren, vtkActor* actor, int p
     // }
 
     bool selecting = (this->CurrentSelector ? true : false);
+    bool tpass = actor->IsRenderingTranslucentPolygonalGeometry();
+
     for (dataIter it = this->Data.begin(); it != this->Data.end(); ++it)
     {
       vtkCompositeMapperHelperData* starthdata = it->second;
-      if (starthdata->Visibility &&
-        ((selecting || starthdata->IsOpaque) != actor->IsRenderingTranslucentPolygonalGeometry()) &&
-        ((selecting && starthdata->Pickability) || !selecting) &&
-        starthdata->NextIndex[primType] > starthdata->StartIndex[primType])
+      bool shouldDraw = starthdata->Visibility     // must be visible
+        && (!selecting || starthdata->Pickability) // and pickable when selecting
+        && (((selecting || starthdata->IsOpaque || actor->GetForceOpaque()) &&
+              !tpass) // opaque during opaque or when selecting
+             || ((!starthdata->IsOpaque || actor->GetForceTranslucent()) && tpass &&
+                  !selecting)); // translucent during translucent and never selecting
+      if (shouldDraw && starthdata->NextIndex[primType] > starthdata->StartIndex[primType])
       {
         // compilers think this can exceed the bounds so we also
         // test against primType even though we should not need to
-        if (primType <= PrimitiveTriStrips)
+        if (primType <= vtkOpenGLPolyDataMapper::PrimitiveTriStrips)
         {
           this->SetShaderValues(
             prog, starthdata, starthdata->CellCellMap->GetPrimitiveOffsets()[primType]);
         }
+
+        unsigned int count = this->DrawingSelection
+          ? static_cast<unsigned int>(CellBO.IBO->IndexCount)
+          : starthdata->NextIndex[primType] - starthdata->StartIndex[primType];
+
         glDrawRangeElements(mode, static_cast<GLuint>(starthdata->StartVertex),
-          static_cast<GLuint>(starthdata->NextVertex > 0 ? starthdata->NextVertex - 1 : 0),
-          static_cast<GLsizei>(starthdata->NextIndex[primType] - starthdata->StartIndex[primType]),
+          static_cast<GLuint>(starthdata->NextVertex > 0 ? starthdata->NextVertex - 1 : 0), count,
           GL_UNSIGNED_INT,
           reinterpret_cast<const GLvoid*>(starthdata->StartIndex[primType] * sizeof(GLuint)));
       }
@@ -359,7 +435,7 @@ void vtkCompositeMapperHelper2::DrawIBO(vtkRenderer* ren, vtkActor* actor, int p
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeMapperHelper2::RenderPieceDraw(vtkRenderer* ren, vtkActor* actor)
 {
   int representation = actor->GetProperty()->GetRepresentation();
@@ -378,13 +454,33 @@ void vtkCompositeMapperHelper2::RenderPieceDraw(vtkRenderer* ren, vtkActor* acto
   this->PrimitiveIDOffset = 0;
 
   // draw IBOs
-  for (int i = PrimitiveStart; i < (this->CurrentSelector ? PrimitiveTriStrips + 1 : PrimitiveEnd);
+  for (int i = vtkOpenGLPolyDataMapper::PrimitiveStart;
+       i < (this->CurrentSelector ? vtkOpenGLPolyDataMapper::PrimitiveTriStrips + 1
+                                  : vtkOpenGLPolyDataMapper::PrimitiveEnd);
        i++)
   {
-    this->DrawingEdgesOrVertices = (i > PrimitiveTriStrips ? true : false);
+    this->DrawingVertices = (i > vtkOpenGLPolyDataMapper::PrimitiveTriStrips ? true : false);
+    this->DrawingSelection = false;
     GLenum mode = this->GetOpenGLMode(representation, i);
     this->DrawIBO(ren, actor, i, this->Primitives[i], mode,
       pointPicking ? this->GetPointPickingPrimitiveSize(i) : 0);
+  }
+
+  if (!this->CurrentSelector)
+  {
+    vtkSelection* sel = this->Parent->GetSelection();
+
+    if (sel && sel->GetNumberOfNodes() > 0)
+    {
+      // draw selection IBOs
+      for (int i = vtkOpenGLPolyDataMapper::PrimitiveStart;
+           i <= vtkOpenGLPolyDataMapper::PrimitiveTriStrips; i++)
+      {
+        this->DrawingSelection = true;
+        GLenum mode = this->GetOpenGLMode(this->SelectionType, i);
+        this->DrawIBO(ren, actor, i, this->SelectionPrimitives[i], mode, 5);
+      }
+    }
   }
 
   if (this->CurrentSelector &&
@@ -407,7 +503,6 @@ vtkCompositeMapperHelperData* vtkCompositeMapperHelper2::AddData(
     hdata->Marked = true;
     this->Data.insert(std::make_pair(pd, hdata));
     this->Modified();
-    this->RenderedList.push_back(pd);
     return hdata;
   }
   found->second->FlatIndex = flatIndex;
@@ -415,7 +510,30 @@ vtkCompositeMapperHelperData* vtkCompositeMapperHelper2::AddData(
   return found->second;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+bool vtkCompositeMapperHelper2::GetNeedToRebuildBufferObjects(
+  vtkRenderer* vtkNotUsed(ren), vtkActor* act)
+{
+  // Same as vtkOpenGLPolyDataMapper::GetNeedToRebuildBufferObjects(), but
+  // we need to check all inputs, not just this->CurrentInput
+  this->TempState.Clear();
+  this->TempState.Append(act->GetProperty()->GetMTime(), "actor mtime");
+  for (dataIter iter = this->Data.begin(); iter != this->Data.end(); ++iter)
+  {
+    this->TempState.Append(iter->first ? iter->first->GetMTime() : 0, "input mtime");
+  }
+  this->TempState.Append(act->GetTexture() ? act->GetTexture()->GetMTime() : 0, "texture mtime");
+
+  if (this->VBOBuildState != this->TempState || this->VBOBuildTime < this->GetMTime())
+  {
+    this->VBOBuildState = this->TempState;
+    return true;
+  }
+
+  return false;
+}
+
+//------------------------------------------------------------------------------
 void vtkCompositeMapperHelper2::BuildBufferObjects(vtkRenderer* ren, vtkActor* act)
 {
   // render using the composite data attributes
@@ -433,6 +551,8 @@ void vtkCompositeMapperHelper2::BuildBufferObjects(vtkRenderer* ren, vtkActor* a
     return;
   }
 
+  this->EdgeValues.clear();
+
   vtkBoundingBox bbox;
   double bounds[6];
   this->Data.begin()->second->Data->GetPoints()->GetBounds(bounds);
@@ -445,7 +565,7 @@ void vtkCompositeMapperHelper2::BuildBufferObjects(vtkRenderer* ren, vtkActor* a
     hdata->Data->GetPoints()->GetBounds(bounds);
     bbox.AddBounds(bounds);
 
-    for (int i = 0; i < PrimitiveEnd; i++)
+    for (int i = 0; i < vtkOpenGLPolyDataMapper::PrimitiveEnd; i++)
     {
       hdata->StartIndex[i] = static_cast<unsigned int>(this->IndexArray[i].size());
     }
@@ -456,7 +576,7 @@ void vtkCompositeMapperHelper2::BuildBufferObjects(vtkRenderer* ren, vtkActor* a
     this->AppendOneBufferObject(ren, act, hdata, voffset, newColors, newNorms);
     hdata->StartVertex = static_cast<unsigned int>(voffset);
     hdata->NextVertex = hdata->StartVertex + hdata->Data->GetPoints()->GetNumberOfPoints();
-    for (int i = 0; i < PrimitiveEnd; i++)
+    for (int i = 0; i < vtkOpenGLPolyDataMapper::PrimitiveEnd; i++)
     {
       hdata->NextIndex[i] = static_cast<unsigned int>(this->IndexArray[i].size());
     }
@@ -471,24 +591,44 @@ void vtkCompositeMapperHelper2::BuildBufferObjects(vtkRenderer* ren, vtkActor* a
   this->ColorArrayMap.clear();
 
   vtkOpenGLVertexBufferObject* posVBO = this->VBOs->GetVBO("vertexMC");
-  if (posVBO && this->ShiftScaleMethod == vtkOpenGLVertexBufferObject::AUTO_SHIFT_SCALE)
+  if (posVBO)
   {
-    posVBO->SetCoordShiftAndScaleMethod(vtkOpenGLVertexBufferObject::MANUAL_SHIFT_SCALE);
-    bbox.GetBounds(bounds);
-    std::vector<double> shift;
-    std::vector<double> scale;
-    for (int i = 0; i < 3; i++)
+    if (this->ShiftScaleMethod == vtkOpenGLVertexBufferObject::AUTO_SHIFT_SCALE)
     {
-      shift.push_back(0.5 * (bounds[i * 2] + bounds[i * 2 + 1]));
-      scale.push_back(
-        (bounds[i * 2 + 1] - bounds[i * 2]) ? 1.0 / (bounds[i * 2 + 1] - bounds[i * 2]) : 1.0);
+      posVBO->SetCoordShiftAndScaleMethod(vtkOpenGLVertexBufferObject::MANUAL_SHIFT_SCALE);
+      bbox.GetBounds(bounds);
+      std::vector<double> shift;
+      std::vector<double> scale;
+      for (int i = 0; i < 3; i++)
+      {
+        shift.push_back(0.5 * (bounds[i * 2] + bounds[i * 2 + 1]));
+        scale.push_back(
+          (bounds[i * 2 + 1] - bounds[i * 2]) ? 1.0 / (bounds[i * 2 + 1] - bounds[i * 2]) : 1.0);
+      }
+      posVBO->SetShift(shift);
+      posVBO->SetScale(scale);
     }
-    posVBO->SetShift(shift);
-    posVBO->SetScale(scale);
+    else
+    {
+      posVBO->SetCoordShiftAndScaleMethod(
+        static_cast<vtkOpenGLVertexBufferObject::ShiftScaleMethod>(this->ShiftScaleMethod));
+      posVBO->SetProp3D(act);
+      posVBO->SetCamera(ren->GetActiveCamera());
+    }
+  }
+
+  this->VBOs->BuildAllVBOs(ren);
+
+  // refetch as it may have been deleted
+  posVBO = this->VBOs->GetVBO("vertexMC");
+  if (posVBO)
+  {
     // If the VBO coordinates were shifted and scaled, prepare the inverse transform
     // for application to the model->view matrix:
     if (posVBO->GetCoordShiftAndScaleEnabled())
     {
+      std::vector<double> const& shift = posVBO->GetShift();
+      std::vector<double> const& scale = posVBO->GetScale();
       this->VBOInverseTransform->Identity();
       this->VBOInverseTransform->Translate(shift[0], shift[1], shift[2]);
       this->VBOInverseTransform->Scale(1.0 / scale[0], 1.0 / scale[1], 1.0 / scale[2]);
@@ -496,9 +636,8 @@ void vtkCompositeMapperHelper2::BuildBufferObjects(vtkRenderer* ren, vtkActor* a
     }
   }
 
-  this->VBOs->BuildAllVBOs(ren);
-
-  for (int i = PrimitiveStart; i < PrimitiveEnd; i++)
+  for (int i = vtkOpenGLPolyDataMapper::PrimitiveStart; i < vtkOpenGLPolyDataMapper::PrimitiveEnd;
+       i++)
   {
     this->Primitives[i].IBO->IndexCount = this->IndexArray[i].size();
     if (this->Primitives[i].IBO->IndexCount)
@@ -507,6 +646,20 @@ void vtkCompositeMapperHelper2::BuildBufferObjects(vtkRenderer* ren, vtkActor* a
         this->IndexArray[i], vtkOpenGLBufferObject::ElementArrayBuffer);
       this->IndexArray[i].resize(0);
     }
+  }
+
+  if (!this->EdgeValues.empty())
+  {
+    if (!this->EdgeTexture)
+    {
+      this->EdgeTexture = vtkTextureObject::New();
+      this->EdgeBuffer = vtkOpenGLBufferObject::New();
+      this->EdgeBuffer->SetType(vtkOpenGLBufferObject::TextureBuffer);
+    }
+    this->EdgeTexture->SetContext(static_cast<vtkOpenGLRenderWindow*>(ren->GetVTKWindow()));
+    this->EdgeBuffer->Upload(this->EdgeValues, vtkOpenGLBufferObject::TextureBuffer);
+    this->EdgeTexture->CreateTextureBuffer(
+      static_cast<unsigned int>(this->EdgeValues.size()), 1, VTK_UNSIGNED_CHAR, this->EdgeBuffer);
   }
 
   // allocate as needed
@@ -561,7 +714,17 @@ void vtkCompositeMapperHelper2::BuildBufferObjects(vtkRenderer* ren, vtkActor* a
   this->VBOBuildTime.Modified();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkCompositeMapperHelper2::BuildSelectionIBO(vtkPolyData* vtkNotUsed(poly),
+  std::vector<unsigned int> (&indices)[4], vtkIdType vtkNotUsed(offset))
+{
+  for (auto& helper : this->Data)
+  {
+    this->Superclass::BuildSelectionIBO(helper.second->Data, indices, helper.second->StartVertex);
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkCompositeMapperHelper2::AppendOneBufferObject(vtkRenderer* ren, vtkActor* act,
   vtkCompositeMapperHelperData* hdata, vtkIdType& voffset, std::vector<unsigned char>& newColors,
   std::vector<float>& newNorms)
@@ -682,7 +845,7 @@ void vtkCompositeMapperHelper2::AppendOneBufferObject(vtkRenderer* ren, vtkActor
   if (c)
   {
     int cellFlag = 0; // not used
-    vtkAbstractArray* abstractArray = this->GetAbstractScalars(
+    vtkAbstractArray* abstractArray = vtkCompositeMapperHelper2::GetAbstractScalars(
       poly, this->ScalarMode, this->ArrayAccessMode, this->ArrayId, this->ArrayName, cellFlag);
 
     auto iter = this->ColorArrayMap.find(abstractArray);
@@ -737,6 +900,23 @@ void vtkCompositeMapperHelper2::AppendOneBufferObject(vtkRenderer* ren, vtkActor
   vtkOpenGLIndexBufferObject::AppendPointIndexBuffer(this->IndexArray[0], prims[0], voffset);
 
   vtkDataArray* ef = poly->GetPointData()->GetAttribute(vtkDataSetAttributes::EDGEFLAG);
+  if (ef)
+  {
+    if (ef->GetNumberOfComponents() != 1)
+    {
+      vtkDebugMacro(<< "Currently only 1d edge flags are supported.");
+      ef = nullptr;
+    }
+    if (ef && !ef->IsA("vtkUnsignedCharArray"))
+    {
+      vtkDebugMacro(<< "Currently only unsigned char edge flags are supported.");
+      ef = nullptr;
+    }
+  }
+
+  vtkProperty* prop = act->GetProperty();
+  bool draw_surface_with_edges =
+    (prop->GetEdgeVisibility() && prop->GetRepresentation() == VTK_SURFACE);
 
   if (representation == VTK_POINTS)
   {
@@ -754,19 +934,6 @@ void vtkCompositeMapperHelper2::AppendOneBufferObject(vtkRenderer* ren, vtkActor
     {
       if (ef)
       {
-        if (ef->GetNumberOfComponents() != 1)
-        {
-          vtkDebugMacro(<< "Currently only 1d edge flags are supported.");
-          ef = nullptr;
-        }
-        if (ef && !ef->IsA("vtkUnsignedCharArray"))
-        {
-          vtkDebugMacro(<< "Currently only unsigned char edge flags are supported.");
-          ef = nullptr;
-        }
-      }
-      if (ef)
-      {
         vtkOpenGLIndexBufferObject::AppendEdgeFlagIndexBuffer(
           this->IndexArray[2], prims[2], voffset, ef);
       }
@@ -780,50 +947,28 @@ void vtkCompositeMapperHelper2::AppendOneBufferObject(vtkRenderer* ren, vtkActor
     }
     else // SURFACE
     {
-      vtkOpenGLIndexBufferObject::AppendTriangleIndexBuffer(
-        this->IndexArray[2], prims[2], poly->GetPoints(), voffset);
+      if (draw_surface_with_edges)
+      {
+        // have to insert dummy values for points and lines
+        vtkIdType* offsets = hdata->CellCellMap->GetPrimitiveOffsets();
+        this->EdgeValues.resize(offsets[2], 0);
+        vtkOpenGLIndexBufferObject::AppendTriangleIndexBuffer(
+          this->IndexArray[2], prims[2], poly->GetPoints(), voffset, &this->EdgeValues, ef);
+      }
+      else
+      {
+        vtkOpenGLIndexBufferObject::AppendTriangleIndexBuffer(
+          this->IndexArray[2], prims[2], poly->GetPoints(), voffset, nullptr, nullptr);
+      }
       vtkOpenGLIndexBufferObject::AppendStripIndexBuffer(
         this->IndexArray[3], prims[3], voffset, false);
     }
   }
 
-  // when drawing edges also build the edge IBOs
-  vtkProperty* prop = act->GetProperty();
-  bool draw_surface_with_edges =
-    (prop->GetEdgeVisibility() && prop->GetRepresentation() == VTK_SURFACE);
-  if (draw_surface_with_edges)
-  {
-    if (ef)
-    {
-      if (ef->GetNumberOfComponents() != 1)
-      {
-        vtkDebugMacro(<< "Currently only 1d edge flags are supported.");
-        ef = nullptr;
-      }
-      if (!ef->IsA("vtkUnsignedCharArray"))
-      {
-        vtkDebugMacro(<< "Currently only unsigned char edge flags are supported.");
-        ef = nullptr;
-      }
-    }
-    if (ef)
-    {
-      vtkOpenGLIndexBufferObject::AppendEdgeFlagIndexBuffer(
-        this->IndexArray[4], prims[2], voffset, ef);
-    }
-    else
-    {
-      vtkOpenGLIndexBufferObject::AppendTriangleLineIndexBuffer(
-        this->IndexArray[4], prims[2], voffset);
-    }
-    vtkOpenGLIndexBufferObject::AppendStripIndexBuffer(
-      this->IndexArray[5], prims[3], voffset, false);
-  }
-
   if (prop->GetVertexVisibility())
   {
     vtkOpenGLIndexBufferObject::AppendVertexIndexBuffer(
-      this->IndexArray[PrimitiveVertices], prims, voffset);
+      this->IndexArray[vtkOpenGLPolyDataMapper::PrimitiveVertices], prims, voffset);
   }
 }
 
@@ -870,7 +1015,6 @@ void vtkCompositeMapperHelper2::ProcessSelectorPixelBuffers(
       compval |= compositedata[pos + 1];
       compval = compval << 8;
       compval |= compositedata[pos];
-      compval -= 1;
       if (compval <= maxFlatIndex)
       {
         this->PickPixels[compval].push_back(pos);
@@ -939,7 +1083,8 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
         inval |= rawplowdata[pos + 1];
         inval = inval << 8;
         inval |= rawplowdata[pos];
-        inval -= 1;
+        // as this pass happens after both low and high point passes
+        // the computed value should be higher than StartVertex
         inval -= hdata->StartVertex;
         unsigned int outval = processArray->GetValue(inval) + 1;
         processdata[pos] = outval & 0xff;
@@ -960,6 +1105,7 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
     if (rawplowdata)
     {
       unsigned char* plowdata = sel->GetPixelBuffer(vtkHardwareSelector::POINT_ID_LOW24);
+      bool hasHighPointIds = sel->HasHighPointIds();
 
       for (auto pos : pixeloffsets)
       {
@@ -974,16 +1120,21 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
         inval |= rawplowdata[pos + 1];
         inval = inval << 8;
         inval |= rawplowdata[pos];
-        inval -= 1;
-        inval -= hdata->StartVertex;
-        vtkIdType outval = inval + 1;
-        if (pointArrayId)
+        // this pass happens before the high pass which means the value
+        // could underflow etc when the high data is not around yet and high
+        // data is needed.
+        if (rawphighdata || !hasHighPointIds)
         {
-          outval = pointArrayId->GetValue(inval) + 1;
+          inval -= hdata->StartVertex;
+          vtkIdType outval = inval;
+          if (pointArrayId && static_cast<vtkIdType>(inval) <= pointArrayId->GetMaxId())
+          {
+            outval = pointArrayId->GetValue(inval);
+          }
+          plowdata[pos] = outval & 0xff;
+          plowdata[pos + 1] = (outval & 0xff00) >> 8;
+          plowdata[pos + 2] = (outval & 0xff0000) >> 16;
         }
-        plowdata[pos] = outval & 0xff;
-        plowdata[pos + 1] = (outval & 0xff00) >> 8;
-        plowdata[pos + 2] = (outval & 0xff0000) >> 16;
       }
     }
   }
@@ -1009,12 +1160,12 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
         inval |= rawplowdata[pos + 1];
         inval = inval << 8;
         inval |= rawplowdata[pos];
-        inval -= 1;
+        // always happens after the low pass so we should be safe
         inval -= hdata->StartVertex;
-        vtkIdType outval = inval + 1;
+        vtkIdType outval = inval;
         if (pointArrayId)
         {
-          outval = pointArrayId->GetValue(inval) + 1;
+          outval = pointArrayId->GetValue(inval);
         }
         phighdata[pos] = (outval & 0xff000000) >> 24;
         phighdata[pos + 1] = (outval & 0xff00000000) >> 32;
@@ -1061,10 +1212,12 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
         inval |= rawclowdata[pos + 1];
         inval = inval << 8;
         inval |= rawclowdata[pos];
-        inval -= 1;
+
+        // always gets called after the cell high and low are available
+        // so it is safe
         vtkIdType vtkCellId =
           hdata->CellCellMap->ConvertOpenGLCellIdToVTKCellId(pointPicking, inval);
-        unsigned int outval = compositeArray->GetValue(vtkCellId) + 1;
+        unsigned int outval = compositeArray->GetValue(vtkCellId);
         compositedata[pos] = outval & 0xff;
         compositedata[pos + 1] = (outval & 0xff00) >> 8;
         compositedata[pos + 2] = (outval & 0xff0000) >> 16;
@@ -1078,6 +1231,7 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
       ? vtkArrayDownCast<vtkIdTypeArray>(cd->GetArray(this->CellIdArrayName))
       : nullptr;
     unsigned char* clowdata = sel->GetPixelBuffer(vtkHardwareSelector::CELL_ID_LOW24);
+    bool hasHighCellIds = sel->HasHighCellIds();
 
     if (rawclowdata)
     {
@@ -1096,16 +1250,22 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
         inval |= rawclowdata[pos + 1];
         inval = inval << 8;
         inval |= rawclowdata[pos];
-        inval -= 1;
-        vtkIdType outval = hdata->CellCellMap->ConvertOpenGLCellIdToVTKCellId(pointPicking, inval);
-        if (cellArrayId)
+        // this pass happens before the high pass which means the value
+        // could underflow etc when the high data is not around yet and high
+        // data is needed. This underflow would happen in the ConvertToOpenGLCellId
+        // code when passed too low a number
+        if (rawchighdata || !hasHighCellIds)
         {
-          outval = cellArrayId->GetValue(outval);
+          vtkIdType outval =
+            hdata->CellCellMap->ConvertOpenGLCellIdToVTKCellId(pointPicking, inval);
+          if (cellArrayId && outval <= cellArrayId->GetMaxId())
+          {
+            outval = cellArrayId->GetValue(outval);
+          }
+          clowdata[pos] = outval & 0xff;
+          clowdata[pos + 1] = (outval & 0xff00) >> 8;
+          clowdata[pos + 2] = (outval & 0xff0000) >> 16;
         }
-        outval++;
-        clowdata[pos] = outval & 0xff;
-        clowdata[pos + 1] = (outval & 0xff00) >> 8;
-        clowdata[pos + 2] = (outval & 0xff0000) >> 16;
       }
     }
   }
@@ -1131,13 +1291,12 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
         inval |= rawclowdata[pos + 1];
         inval = inval << 8;
         inval |= rawclowdata[pos];
-        inval -= 1;
+        // always called after low24 so safe
         vtkIdType outval = hdata->CellCellMap->ConvertOpenGLCellIdToVTKCellId(pointPicking, inval);
         if (cellArrayId)
         {
           outval = cellArrayId->GetValue(outval);
         }
-        outval++;
         chighdata[pos] = (outval & 0xff000000) >> 24;
         chighdata[pos + 1] = (outval & 0xff00000000) >> 32;
         chighdata[pos + 2] = (outval & 0xff0000000000) >> 40;
@@ -1150,14 +1309,14 @@ void vtkCompositeMapperHelper2::ProcessCompositePixelBuffers(vtkHardwareSelector
 // Now the main class methods
 
 vtkStandardNewMacro(vtkCompositePolyDataMapper2);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositePolyDataMapper2::vtkCompositePolyDataMapper2()
 {
   this->CurrentFlatIndex = 0;
   this->ColorMissingArraysWithNanColor = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositePolyDataMapper2::~vtkCompositePolyDataMapper2()
 {
   helpIter miter = this->Helpers.begin();
@@ -1168,7 +1327,7 @@ vtkCompositePolyDataMapper2::~vtkCompositePolyDataMapper2()
   this->Helpers.clear();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositePolyDataMapper2::FillInputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
@@ -1177,13 +1336,13 @@ int vtkCompositePolyDataMapper2::FillInputPortInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExecutive* vtkCompositePolyDataMapper2::CreateDefaultExecutive()
 {
   return vtkCompositeDataPipeline::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Looks at each DataSet and finds the union of all the bounds
 void vtkCompositePolyDataMapper2::ComputeBounds()
 {
@@ -1209,7 +1368,7 @@ void vtkCompositePolyDataMapper2::ComputeBounds()
   this->BoundsMTime.Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // simple tests, the mapper is tolerant of being
 // called both on opaque and translucent
 bool vtkCompositePolyDataMapper2::HasOpaqueGeometry()
@@ -1269,7 +1428,7 @@ bool vtkCompositePolyDataMapper2::RecursiveHasTranslucentGeometry(
   {
     vtkScalarsToColors* lut = this->GetLookupTable();
     int cellFlag;
-    vtkDataArray* scalars = this->GetScalars(
+    vtkDataArray* scalars = vtkCompositePolyDataMapper2::GetScalars(
       pd, this->ScalarMode, this->ArrayAccessMode, this->ArrayId, this->ArrayName, cellFlag);
     if (lut->IsOpaque(scalars, this->ColorMode, this->ArrayComponent) == 0)
     {
@@ -1280,7 +1439,7 @@ bool vtkCompositePolyDataMapper2::RecursiveHasTranslucentGeometry(
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // simple tests, the mapper is tolerant of being
 // called both on opaque and translucent
 bool vtkCompositePolyDataMapper2::HasTranslucentPolygonalGeometry()
@@ -1329,14 +1488,13 @@ bool vtkCompositePolyDataMapper2::HasTranslucentPolygonalGeometry()
   return this->HasTranslucentGeometry;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::SetBlockVisibility(unsigned int index, bool visible)
 {
   if (this->CompositeAttributes)
   {
-    unsigned int start_index = 0;
-    auto dataObj = vtkCompositeDataDisplayAttributes::DataObjectFromIndex(
-      index, this->GetInputDataObject(0, 0), start_index);
+    auto dataObj =
+      vtkCompositeDataDisplayAttributes::DataObjectFromIndex(index, this->GetInputDataObject(0, 0));
     if (dataObj)
     {
       this->CompositeAttributes->SetBlockVisibility(dataObj, visible);
@@ -1345,14 +1503,13 @@ void vtkCompositePolyDataMapper2::SetBlockVisibility(unsigned int index, bool vi
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositePolyDataMapper2::GetBlockVisibility(unsigned int index)
 {
   if (this->CompositeAttributes)
   {
-    unsigned int start_index = 0;
-    auto dataObj = vtkCompositeDataDisplayAttributes::DataObjectFromIndex(
-      index, this->GetInputDataObject(0, 0), start_index);
+    auto dataObj =
+      vtkCompositeDataDisplayAttributes::DataObjectFromIndex(index, this->GetInputDataObject(0, 0));
     if (dataObj)
     {
       return this->CompositeAttributes->GetBlockVisibility(dataObj);
@@ -1362,14 +1519,13 @@ bool vtkCompositePolyDataMapper2::GetBlockVisibility(unsigned int index)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::RemoveBlockVisibility(unsigned int index)
 {
   if (this->CompositeAttributes)
   {
-    unsigned int start_index = 0;
-    auto dataObj = vtkCompositeDataDisplayAttributes::DataObjectFromIndex(
-      index, this->GetInputDataObject(0, 0), start_index);
+    auto dataObj =
+      vtkCompositeDataDisplayAttributes::DataObjectFromIndex(index, this->GetInputDataObject(0, 0));
     if (dataObj)
     {
       this->CompositeAttributes->RemoveBlockVisibility(dataObj);
@@ -1378,7 +1534,7 @@ void vtkCompositePolyDataMapper2::RemoveBlockVisibility(unsigned int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::RemoveBlockVisibilities()
 {
   if (this->CompositeAttributes)
@@ -1388,21 +1544,13 @@ void vtkCompositePolyDataMapper2::RemoveBlockVisibilities()
   }
 }
 
-#ifndef VTK_LEGACY_REMOVE
-void vtkCompositePolyDataMapper2::RemoveBlockVisibilites()
-{
-  this->RemoveBlockVisibilities();
-}
-#endif
-
-//----------------------------------------------------------------------------
-void vtkCompositePolyDataMapper2::SetBlockColor(unsigned int index, double color[3])
+//------------------------------------------------------------------------------
+void vtkCompositePolyDataMapper2::SetBlockColor(unsigned int index, const double color[3])
 {
   if (this->CompositeAttributes)
   {
-    unsigned int start_index = 0;
-    auto dataObj = vtkCompositeDataDisplayAttributes::DataObjectFromIndex(
-      index, this->GetInputDataObject(0, 0), start_index);
+    auto dataObj =
+      vtkCompositeDataDisplayAttributes::DataObjectFromIndex(index, this->GetInputDataObject(0, 0));
 
     if (dataObj)
     {
@@ -1412,7 +1560,7 @@ void vtkCompositePolyDataMapper2::SetBlockColor(unsigned int index, double color
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkCompositePolyDataMapper2::GetBlockColor(unsigned int index)
 {
   static double white[3] = { 1.0, 1.0, 1.0 };
@@ -1435,7 +1583,7 @@ double* vtkCompositePolyDataMapper2::GetBlockColor(unsigned int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::RemoveBlockColor(unsigned int index)
 {
   if (this->CompositeAttributes)
@@ -1451,7 +1599,7 @@ void vtkCompositePolyDataMapper2::RemoveBlockColor(unsigned int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::RemoveBlockColors()
 {
   if (this->CompositeAttributes)
@@ -1461,7 +1609,7 @@ void vtkCompositePolyDataMapper2::RemoveBlockColors()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::SetBlockOpacity(unsigned int index, double opacity)
 {
   if (this->CompositeAttributes)
@@ -1477,7 +1625,7 @@ void vtkCompositePolyDataMapper2::SetBlockOpacity(unsigned int index, double opa
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkCompositePolyDataMapper2::GetBlockOpacity(unsigned int index)
 {
   if (this->CompositeAttributes)
@@ -1493,7 +1641,7 @@ double vtkCompositePolyDataMapper2::GetBlockOpacity(unsigned int index)
   return 1.;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::RemoveBlockOpacity(unsigned int index)
 {
   if (this->CompositeAttributes)
@@ -1509,7 +1657,7 @@ void vtkCompositePolyDataMapper2::RemoveBlockOpacity(unsigned int index)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::RemoveBlockOpacities()
 {
   if (this->CompositeAttributes)
@@ -1519,7 +1667,7 @@ void vtkCompositePolyDataMapper2::RemoveBlockOpacities()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::SetCompositeDataDisplayAttributes(
   vtkCompositeDataDisplayAttributes* attributes)
 {
@@ -1530,13 +1678,13 @@ void vtkCompositePolyDataMapper2::SetCompositeDataDisplayAttributes(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataDisplayAttributes* vtkCompositePolyDataMapper2::GetCompositeDataDisplayAttributes()
 {
   return this->CompositeAttributes;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1553,9 +1701,40 @@ void vtkCompositePolyDataMapper2::CopyMapperValuesToHelper(vtkCompositeMapperHel
   helper->SetSeamlessU(this->SeamlessU);
   helper->SetSeamlessV(this->SeamlessV);
   helper->SetStatic(1);
+  helper->SetSelection(this->GetSelection());
+  helper->SetVBOShiftScaleMethod(this->GetVBOShiftScaleMethod());
 }
 
-//-----------------------------------------------------------------------------
+void vtkCompositePolyDataMapper2::SetVBOShiftScaleMethod(int m)
+{
+  if (this->ShiftScaleMethod == m)
+  {
+    return;
+  }
+
+  this->Superclass::SetVBOShiftScaleMethod(m);
+
+  for (helpIter hiter = this->Helpers.begin(); hiter != this->Helpers.end(); ++hiter)
+  {
+    hiter->second->SetVBOShiftScaleMethod(m);
+  }
+}
+
+void vtkCompositePolyDataMapper2::SetPauseShiftScale(bool pauseShiftScale)
+{
+  if (pauseShiftScale == this->PauseShiftScale)
+  {
+    return;
+  }
+
+  this->Superclass::SetPauseShiftScale(pauseShiftScale);
+  for (helpIter hiter = this->Helpers.begin(); hiter != this->Helpers.end(); ++hiter)
+  {
+    hiter->second->SetPauseShiftScale(pauseShiftScale);
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::ReleaseGraphicsResources(vtkWindow* win)
 {
   helpIter miter = this->Helpers.begin();
@@ -1573,7 +1752,7 @@ void vtkCompositePolyDataMapper2::ReleaseGraphicsResources(vtkWindow* win)
   this->Superclass::ReleaseGraphicsResources(win);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Method initiates the mapping process. Generally sent by the actor
 // as each frame is rendered.
@@ -1742,6 +1921,8 @@ void vtkCompositePolyDataMapper2::Render(vtkRenderer* ren, vtkActor* actor)
       lut->Build();
     }
 
+    double* selColor = prop->GetSelectionColor();
+
     // Push base-values on the state stack.
     this->BlockState.Visibility.push(true);
     this->BlockState.Pickability.push(true);
@@ -1749,6 +1930,8 @@ void vtkCompositePolyDataMapper2::Render(vtkRenderer* ren, vtkActor* actor)
     this->BlockState.AmbientColor.push(vtkColor3d(prop->GetAmbientColor()));
     this->BlockState.DiffuseColor.push(vtkColor3d(prop->GetDiffuseColor()));
     this->BlockState.SpecularColor.push(vtkColor3d(prop->GetSpecularColor()));
+    this->BlockState.SelectionColor.push(vtkColor3d(selColor));
+    this->BlockState.SelectionOpacity.push(selColor[3]);
 
     unsigned int flat_index = 0;
     this->BuildRenderValues(ren, actor, this->GetInputDataObject(0, 0), flat_index);
@@ -1759,6 +1942,8 @@ void vtkCompositePolyDataMapper2::Render(vtkRenderer* ren, vtkActor* actor)
     this->BlockState.AmbientColor.pop();
     this->BlockState.DiffuseColor.pop();
     this->BlockState.SpecularColor.pop();
+    this->BlockState.SelectionColor.pop();
+    this->BlockState.SelectionOpacity.pop();
   }
 
   this->InitializeHelpersBeforeRendering(ren, actor);
@@ -1782,7 +1967,7 @@ vtkCompositeMapperHelper2* vtkCompositePolyDataMapper2::CreateHelper()
   return vtkCompositeMapperHelper2::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::BuildRenderValues(
   vtkRenderer* renderer, vtkActor* actor, vtkDataObject* dobj, unsigned int& flat_index)
 {
@@ -1851,6 +2036,8 @@ void vtkCompositePolyDataMapper2::BuildRenderValues(
       helperData->Pickability = this->BlockState.Pickability.top();
       helperData->AmbientColor = this->BlockState.AmbientColor.top();
       helperData->DiffuseColor = this->BlockState.DiffuseColor.top();
+      helperData->SelectionColor = this->BlockState.SelectionColor.top();
+      helperData->SelectionOpacity = this->BlockState.SelectionOpacity.top();
       helperData->OverridesColor = (this->BlockState.AmbientColor.size() > 1);
       helperData->IsOpaque = (helperData->Opacity >= 1.0) ? textureOpaque : false;
       // if we think it is opaque check the scalars
@@ -1858,7 +2045,7 @@ void vtkCompositePolyDataMapper2::BuildRenderValues(
       {
         vtkScalarsToColors* lut = this->GetLookupTable();
         int cellFlag;
-        vtkDataArray* scalars = this->GetScalars(
+        vtkDataArray* scalars = vtkCompositePolyDataMapper2::GetScalars(
           pd, this->ScalarMode, this->ArrayAccessMode, this->ArrayId, this->ArrayName, cellFlag);
         if (lut->IsOpaque(scalars, this->ColorMode, this->ArrayComponent) == 0)
         {
@@ -1887,7 +2074,7 @@ void vtkCompositePolyDataMapper2::BuildRenderValues(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::SetInputArrayToProcess(int idx, vtkInformation* inInfo)
 {
   this->Superclass::SetInputArrayToProcess(idx, inInfo);
@@ -1899,7 +2086,7 @@ void vtkCompositePolyDataMapper2::SetInputArrayToProcess(int idx, vtkInformation
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::SetInputArrayToProcess(
   int idx, int port, int connection, int fieldAssociation, int attributeType)
 {
@@ -1912,7 +2099,7 @@ void vtkCompositePolyDataMapper2::SetInputArrayToProcess(
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::SetInputArrayToProcess(
   int idx, int port, int connection, int fieldAssociation, const char* name)
 {
@@ -1925,6 +2112,7 @@ void vtkCompositePolyDataMapper2::SetInputArrayToProcess(
   }
 }
 
+//-----------------------------------------------------------------------------
 void vtkCompositePolyDataMapper2::ProcessSelectorPixelBuffers(
   vtkHardwareSelector* sel, std::vector<unsigned int>& pixeloffsets, vtkProp* prop)
 {
@@ -1933,4 +2121,14 @@ void vtkCompositePolyDataMapper2::ProcessSelectorPixelBuffers(
   {
     helper.second->ProcessSelectorPixelBuffers(sel, pixeloffsets, prop);
   }
+}
+
+//-----------------------------------------------------------------------------
+vtkMTimeType vtkCompositePolyDataMapper2::GetMTime()
+{
+  if (this->CompositeAttributes)
+  {
+    return std::max(this->Superclass::GetMTime(), this->CompositeAttributes->GetMTime());
+  }
+  return this->Superclass::GetMTime();
 }

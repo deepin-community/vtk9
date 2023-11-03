@@ -45,6 +45,9 @@ Changes by Tobias Hänel, Sep. 2018
 
 Changes by Ruben de Bruin, Aug. 2019
  Fixes to the keyPressEvent function
+
+Changes by Chen Jintao, Aug. 2021
+ Support for PySide6
 """
 
 # Check whether a specific PyQt implementation was chosen
@@ -55,7 +58,9 @@ except ImportError:
     pass
 
 # Check whether a specific QVTKRenderWindowInteractor base
-# class was chosen, can be set to "QGLWidget"
+# class was chosen, can be set to "QGLWidget" in
+# PyQt implementation version lower than Pyside6,
+# or "QOpenGLWidget" in Pyside6
 QVTKRWIBase = "QWidget"
 try:
     import vtkmodules.qt
@@ -69,29 +74,56 @@ from vtkmodules.vtkRenderingUI import vtkGenericRenderWindowInteractor
 if PyQtImpl is None:
     # Autodetect the PyQt implementation to use
     try:
-        import PyQt5
-        PyQtImpl = "PyQt5"
+        import PySide6
+        PyQtImpl = "PySide6"
     except ImportError:
         try:
-            import PySide2
-            PyQtImpl = "PySide2"
+            import PyQt5
+            PyQtImpl = "PyQt5"
         except ImportError:
             try:
-                import PyQt4
-                PyQtImpl = "PyQt4"
+                import PySide2
+                PyQtImpl = "PySide2"
             except ImportError:
                 try:
-                    import PySide
-                    PyQtImpl = "PySide"
+                    import PyQt4
+                    PyQtImpl = "PyQt4"
                 except ImportError:
-                    raise ImportError("Cannot load either PyQt or PySide")
+                    try:
+                        import PySide
+                        PyQtImpl = "PySide"
+                    except ImportError:
+                        raise ImportError("Cannot load either PyQt or PySide")
 
-if PyQtImpl == "PyQt5":
+# Check the compatibility of PyQtImpl and QVTKRWIBase
+if QVTKRWIBase != "QWidget":
+    if PyQtImpl in ["PySide6"] and QVTKRWIBase == "QOpenGLWidget":
+        pass  # compatible
+    elif PyQtImpl in ["PyQt5", "PySide2","PyQt4", "PySide"] and QVTKRWIBase == "QGLWidget":
+        pass  # compatible
+    else:
+        raise ImportError("Cannot load " + QVTKRWIBase + " from " + PyQtImpl)
+
+if PyQtImpl == "PySide6":
+    if QVTKRWIBase == "QOpenGLWidget":
+        from PySide6.QtOpenGLWidgets import QOpenGLWidget
+    from PySide6.QtWidgets import QWidget
+    from PySide6.QtWidgets import QSizePolicy
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QMainWindow
+    from PySide6.QtGui import QCursor
+    from PySide6.QtCore import Qt
+    from PySide6.QtCore import QTimer
+    from PySide6.QtCore import QObject
+    from PySide6.QtCore import QSize
+    from PySide6.QtCore import QEvent
+elif PyQtImpl == "PyQt5":
     if QVTKRWIBase == "QGLWidget":
         from PyQt5.QtOpenGL import QGLWidget
     from PyQt5.QtWidgets import QWidget
     from PyQt5.QtWidgets import QSizePolicy
     from PyQt5.QtWidgets import QApplication
+    from PyQt5.QtWidgets import QMainWindow
     from PyQt5.QtGui import QCursor
     from PyQt5.QtCore import Qt
     from PyQt5.QtCore import QTimer
@@ -104,6 +136,7 @@ elif PyQtImpl == "PySide2":
     from PySide2.QtWidgets import QWidget
     from PySide2.QtWidgets import QSizePolicy
     from PySide2.QtWidgets import QApplication
+    from PySide2.QtWidgets import QMainWindow
     from PySide2.QtGui import QCursor
     from PySide2.QtCore import Qt
     from PySide2.QtCore import QTimer
@@ -116,6 +149,7 @@ elif PyQtImpl == "PyQt4":
     from PyQt4.QtGui import QWidget
     from PyQt4.QtGui import QSizePolicy
     from PyQt4.QtGui import QApplication
+    from PyQt4.QtGui import QMainWindow
     from PyQt4.QtCore import Qt
     from PyQt4.QtCore import QTimer
     from PyQt4.QtCore import QObject
@@ -127,6 +161,7 @@ elif PyQtImpl == "PySide":
     from PySide.QtGui import QWidget
     from PySide.QtGui import QSizePolicy
     from PySide.QtGui import QApplication
+    from PySide.QtGui import QMainWindow
     from PySide.QtCore import Qt
     from PySide.QtCore import QTimer
     from PySide.QtCore import QObject
@@ -140,6 +175,8 @@ if QVTKRWIBase == "QWidget":
     QVTKRWIBaseClass = QWidget
 elif QVTKRWIBase == "QGLWidget":
     QVTKRWIBaseClass = QGLWidget
+elif QVTKRWIBase == "QOpenGLWidget":
+    QVTKRWIBaseClass = QOpenGLWidget
 else:
     raise ImportError("Unknown base class for QVTKRenderWindowInteractor " + QVTKRWIBase)
 
@@ -260,6 +297,8 @@ class QVTKRenderWindowInteractor(QVTKRWIBaseClass):
             QWidget.__init__(self, parent, wflags | Qt.MSWindowsOwnDC)
         elif QVTKRWIBase == "QGLWidget":
             QGLWidget.__init__(self, parent)
+        elif QVTKRWIBase == "QOpenGLWidget":
+            QOpenGLWidget.__init__(self, parent)
 
         if rw: # user-supplied render window
             self._RenderWindow = rw
@@ -318,12 +357,11 @@ class QVTKRenderWindowInteractor(QVTKRWIBaseClass):
         self._Iren.GetRenderWindow().AddObserver('CursorChangedEvent',
                                                  self.CursorChangedEvent)
 
-        #Create a hidden child widget and connect its destroyed signal to its
-        #parent ``Finalize`` slot. The hidden children will be destroyed before
-        #its parent thus allowing cleanup of VTK elements.
-        self._hidden = QWidget(self)
-        self._hidden.hide()
-        self._hidden.destroyed.connect(self.Finalize)
+        # If we've a parent, it does not close the child when closed.
+        # Connect the parent's destroyed signal to this widget's close
+        # slot for proper cleanup of VTK objects.
+        if self.parent():
+            self.parent().destroyed.connect(self.close, Qt.DirectConnection)
 
     def __getattr__(self, attr):
         """Makes the object behave like a vtkGenericRenderWindowInteractor"""
@@ -435,7 +473,7 @@ class QVTKRenderWindowInteractor(QVTKRWIBaseClass):
 
     @staticmethod
     def _getPixelRatio():
-        if PyQtImpl in ["PyQt5", "PySide2"]:
+        if PyQtImpl in ["PyQt5", "PySide2", "PySide6"]:
             # Source: https://stackoverflow.com/a/40053864/3388962
             pos = QCursor.pos()
             for screen in QApplication.screens():
@@ -555,10 +593,11 @@ def QVTKRenderWidgetConeExample():
     # every QT app needs an app
     app = QApplication(['QVTKRenderWindowInteractor'])
 
+    window = QMainWindow()
+
     # create the widget
-    widget = QVTKRenderWindowInteractor()
-    widget.Initialize()
-    widget.Start()
+    widget = QVTKRenderWindowInteractor(window)
+    window.setCentralWidget(widget)
     # if you don't want the 'q' key to exit comment this.
     widget.AddObserver("ExitEvent", lambda o, e, a=app: a.quit())
 
@@ -577,9 +616,19 @@ def QVTKRenderWidgetConeExample():
     ren.AddActor(coneActor)
 
     # show the widget
-    widget.show()
+    window.show()
+
+    widget.Initialize()
+    widget.Start()
+
     # start event processing
-    app.exec_()
+    # Source: https://doc.qt.io/qtforpython/porting_from2.html
+    # 'exec_' is deprecated and will be removed in the future.
+    # Use 'exec' instead.
+    try:
+        app.exec()
+    except AttributeError:
+        app.exec_()
 
 
 _keysyms_for_ascii = (

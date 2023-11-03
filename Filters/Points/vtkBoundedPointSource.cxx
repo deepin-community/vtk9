@@ -26,7 +26,7 @@
 
 vtkStandardNewMacro(vtkBoundedPointSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBoundedPointSource::vtkBoundedPointSource()
 {
   this->NumberOfPoints = 100;
@@ -45,7 +45,7 @@ vtkBoundedPointSource::vtkBoundedPointSource()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoundedPointSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -78,12 +78,11 @@ int vtkBoundedPointSource::RequestData(vtkInformation* vtkNotUsed(request),
   double zmin = (this->Bounds[4] < this->Bounds[5] ? this->Bounds[4] : this->Bounds[5]);
   double zmax = (this->Bounds[4] < this->Bounds[5] ? this->Bounds[5] : this->Bounds[4]);
 
-  vtkMath* math = vtkMath::New();
   for (ptId = 0; ptId < this->NumberOfPoints; ptId++)
   {
-    x[0] = math->Random(xmin, xmax);
-    x[1] = math->Random(ymin, ymax);
-    x[2] = math->Random(zmin, zmax);
+    x[0] = vtkMath::Random(xmin, xmax);
+    x[1] = vtkMath::Random(ymin, ymax);
+    x[2] = vtkMath::Random(zmin, zmax);
     newPoints->SetPoint(ptId, x);
   }
   output->SetPoints(newPoints);
@@ -102,7 +101,7 @@ int vtkBoundedPointSource::RequestData(vtkInformation* vtkNotUsed(request),
       (this->ScalarRange[0] < this->ScalarRange[1] ? this->ScalarRange[1] : this->ScalarRange[0]);
     for (ptId = 0; ptId < this->NumberOfPoints; ptId++)
     {
-      *s++ = math->Random(sMin, sMax);
+      *s++ = vtkMath::Random(sMin, sMax);
     }
     output->GetPointData()->SetScalars(scalars);
     scalars->Delete();
@@ -122,11 +121,10 @@ int vtkBoundedPointSource::RequestData(vtkInformation* vtkNotUsed(request),
     newVerts->Delete();
   }
 
-  math->Delete();
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBoundedPointSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

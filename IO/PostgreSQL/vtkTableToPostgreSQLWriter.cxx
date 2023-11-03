@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkTableToPostgreSQLWriter.h
+  Module:    vtkTableToPostgreSQLWriter.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -23,19 +23,19 @@
 
 #include "vtkTableToPostgreSQLWriter.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkTableToPostgreSQLWriter);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTableToPostgreSQLWriter::vtkTableToPostgreSQLWriter()
 {
-  this->Database = 0;
+  this->Database = nullptr;
 }
 
-//----------------------------------------------------------------------------
-vtkTableToPostgreSQLWriter::~vtkTableToPostgreSQLWriter() {}
+//------------------------------------------------------------------------------
+vtkTableToPostgreSQLWriter::~vtkTableToPostgreSQLWriter() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTableToPostgreSQLWriter::WriteData()
 {
   // Make sure we have all the information we need to create a PostgreSQL table
@@ -49,7 +49,7 @@ void vtkTableToPostgreSQLWriter::WriteData()
     vtkErrorMacro(<< "Wrong type of database for this writer");
     return;
   }
-  if (this->TableName == "")
+  if (this->TableName.empty())
   {
     vtkErrorMacro(<< "No table name specified!");
     return;
@@ -138,29 +138,28 @@ void vtkTableToPostgreSQLWriter::WriteData()
 
   // cleanup and return
   query->Delete();
-  return;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkTableToPostgreSQLWriter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkTable");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTable* vtkTableToPostgreSQLWriter::GetInput()
 {
   return vtkTable::SafeDownCast(this->Superclass::GetInput());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTable* vtkTableToPostgreSQLWriter::GetInput(int port)
 {
   return vtkTable::SafeDownCast(this->Superclass::GetInput(port));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkTableToPostgreSQLWriter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

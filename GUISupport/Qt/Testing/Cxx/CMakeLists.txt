@@ -13,6 +13,7 @@ vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
   TestQVTKOpenGLStereoWidget,TestQtWidget.cxx
   TestQVTKOpenGLStereoWidgetWithDisabledInteractor,TestQtWithDisabledInteractor.cxx
   TestQVTKOpenGLStereoWidgetWithMSAA,TestQtWithMSAA.cxx
+  TestQVTKOpenGLStereoWidgetWithChartHistogram2D,TestQtWithChartHistogram2D.cxx
   )
 
 vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
@@ -23,6 +24,7 @@ vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
   TestQVTKOpenGLNativeWidget,TestQtWidget.cxx
   TestQVTKOpenGLNativeWidgetWithDisabledInteractor,TestQtWithDisabledInteractor.cxx
   TestQVTKOpenGLNativeWidgetWithMSAA,TestQtWithMSAA.cxx
+  TestQVTKOpenGLNativeWidgetWithChartHistogram2D,TestQtWithChartHistogram2D.cxx
   )
 
 vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
@@ -32,6 +34,7 @@ vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
   TestQVTKOpenGLWindow,TestQtWidget.cxx
   TestQVTKOpenGLWindowWithDisabledInteractor,TestQtWithDisabledInteractor.cxx
   TestQVTKOpenGLWindowWithMSAA,TestQtWithMSAA.cxx
+  TestQVTKOpenGLWindowWithChartHistogram2D,TestQtWithChartHistogram2D.cxx
   )
 
 vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
@@ -42,9 +45,9 @@ vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
   TestQVTKRenderWidget,TestQtWidget.cxx
   TestQVTKRenderWidgetWithDisabledInteractor,TestQtWithDisabledInteractor.cxx
   TestQVTKRenderWidgetWithMSAA,TestQtWithMSAA.cxx
+  TestQVTKRenderWidgetWithChartHistogram2D,TestQtWithChartHistogram2D.cxx
   )
 
-if (NOT VTK_LEGACY_REMOVE)
 vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
   -w QVTKOpenGLWidget
   TestQVTKOpenGLWidgetQWidgetWidget,TestQWidgetWidget.cxx,NO_VALID
@@ -53,10 +56,10 @@ vtk_add_test_cxx(vtkGUISupportQtCxxTests tests
   TestQVTKOpenGLWidget,TestQtWidget.cxx
   TestQVTKOpenGLWidgetWithDisabledInteractor,TestQtWithDisabledInteractor.cxx
   TestQVTKOpenGLWidgetWithMSAA,TestQtWithMSAA.cxx
+  TestQVTKOpenGLWidgetWithChartHistogram2D,TestQtWithChartHistogram2D.cxx
   )
-endif()
 
-find_package(Qt5 COMPONENTS Widgets REQUIRED)
+find_package("Qt${vtk_qt_major_version}" COMPONENTS Widgets REQUIRED)
 
 vtk_test_cxx_executable(vtkGUISupportQtCxxTests tests
   QTestApp.cxx
@@ -64,7 +67,7 @@ vtk_test_cxx_executable(vtkGUISupportQtCxxTests tests
 
 target_link_libraries(vtkGUISupportQtCxxTests
   PRIVATE
-    Qt5::Widgets)
+    "Qt${vtk_qt_major_version}::Widgets")
 
 set_tests_properties(VTK::GUISupportQtCxx-TestQVTKOpenGLStereoWidgetPicking
  PROPERTIES RUN_SERIAL ON)
@@ -74,12 +77,8 @@ set_tests_properties(VTK::GUISupportQtCxx-TestQVTKOpenGLWindowPicking
  PROPERTIES RUN_SERIAL ON)
 set_tests_properties(VTK::GUISupportQtCxx-TestQVTKRenderWidgetPicking
  PROPERTIES RUN_SERIAL ON)
-
-if (NOT VTK_LEGACY_REMOVE)
-  set_tests_properties(VTK::GUISupportQtCxx-TestQVTKOpenGLWidgetPicking
-   PROPERTIES RUN_SERIAL ON)
-endif()
-
+set_tests_properties(VTK::GUISupportQtCxx-TestQVTKOpenGLWidgetPicking
+ PROPERTIES RUN_SERIAL ON)
 
 # since these tests grab from on-screen buffer, they must be run serially.
 set_tests_properties(VTK::GUISupportQtCxx-TestQVTKOpenGLStereoWidgetWithDisabledInteractor
@@ -90,8 +89,5 @@ set_tests_properties(VTK::GUISupportQtCxx-TestQVTKOpenGLWindowWithDisabledIntera
  PROPERTIES RUN_SERIAL ON)
 set_tests_properties(VTK::GUISupportQtCxx-TestQVTKRenderWidgetWithDisabledInteractor
  PROPERTIES RUN_SERIAL ON)
-
-if (NOT VTK_LEGACY_REMOVE)
-  set_tests_properties(VTK::GUISupportQtCxx-TestQVTKOpenGLWidgetWithDisabledInteractor
-   PROPERTIES RUN_SERIAL ON)
-endif()
+set_tests_properties(VTK::GUISupportQtCxx-TestQVTKOpenGLWidgetWithDisabledInteractor
+ PROPERTIES RUN_SERIAL ON)

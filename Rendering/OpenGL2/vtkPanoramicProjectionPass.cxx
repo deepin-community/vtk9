@@ -39,7 +39,7 @@
 
 vtkStandardNewMacro(vtkPanoramicProjectionPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -60,7 +60,7 @@ void vtkPanoramicProjectionPass::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Angle: " << this->Angle << "\n";
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::Render(const vtkRenderState* s)
 {
   vtkOpenGLClearErrorMacro();
@@ -113,7 +113,7 @@ void vtkPanoramicProjectionPass::Render(const vtkRenderState* s)
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::InitOpenGLResources(vtkOpenGLRenderWindow* renWin)
 {
   if (this->CubeMapTexture && this->CubeMapTexture->GetMTime() < this->MTime)
@@ -164,7 +164,7 @@ void vtkPanoramicProjectionPass::InitOpenGLResources(vtkOpenGLRenderWindow* renW
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::Project(vtkOpenGLRenderWindow* renWin)
 {
   if (this->QuadHelper && this->MTime > this->QuadHelper->ShaderChangeValue)
@@ -259,7 +259,7 @@ void vtkPanoramicProjectionPass::Project(vtkOpenGLRenderWindow* renWin)
   this->CubeMapTexture->Deactivate();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::RenderOnFace(const vtkRenderState* s, int faceIndex)
 {
   // We can cull the back face is angle is inferior to 2 * (pi - atan(sqrt(2))) radians
@@ -284,6 +284,8 @@ void vtkPanoramicProjectionPass::RenderOnFace(const vtkRenderState* s, int faceI
   newCamera->SetViewUp(oldCamera->GetViewUp());
   newCamera->SetViewAngle(90.0);
   newCamera->OrthogonalizeViewUp();
+  newCamera->UseExplicitAspectRatioOn();
+  newCamera->SetExplicitAspectRatio(1.0);
 
   if (r->GetRenderWindow()->GetStereoRender())
   {
@@ -330,17 +332,9 @@ void vtkPanoramicProjectionPass::RenderOnFace(const vtkRenderState* s, int faceI
       break;
   }
 
-  double range[2];
-  oldCamera->GetClippingRange(range);
-  newCamera->SetClippingRange(range);
-  vtkNew<vtkPerspectiveTransform> perspectiveTransform;
+  newCamera->OrthogonalizeViewUp();
 
-  // the fov is 90 degree in each direction, the frustum can be simplified
-  // xmin and ymin are -near and xmax and ymax are +near
-  perspectiveTransform->Frustum(-range[0], range[0], -range[0], range[0], range[0], range[1]);
-
-  newCamera->UseExplicitProjectionTransformMatrixOn();
-  newCamera->SetExplicitProjectionTransformMatrix(perspectiveTransform->GetMatrix());
+  r->ResetCameraClippingRange();
 
   s2.SetFrameBuffer(this->FrameBufferObject);
 
@@ -364,7 +358,7 @@ void vtkPanoramicProjectionPass::RenderOnFace(const vtkRenderState* s, int faceI
   r->SetActiveCamera(oldCamera);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPanoramicProjectionPass::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->Superclass::ReleaseGraphicsResources(w);

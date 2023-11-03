@@ -89,19 +89,19 @@ public:
    */
   int SplitInitialize(vtkCommunicator* oldcomm, int color, int key);
 
-  //@{
+  ///@{
   /**
    * Performs the actual communication.  You will usually use the convenience
    * Send functions defined in the superclass. Return values are 1 for success
    * and 0 otherwise.
    */
-  virtual int SendVoidArray(
+  int SendVoidArray(
     const void* data, vtkIdType length, int type, int remoteProcessId, int tag) override;
-  virtual int ReceiveVoidArray(
+  int ReceiveVoidArray(
     void* data, vtkIdType length, int type, int remoteProcessId, int tag) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This method sends data to another process (non-blocking).
    * Tag eliminates ambiguity when multiple sends or receives
@@ -121,9 +121,9 @@ public:
 #ifdef VTK_USE_64BIT_IDS
   int NoBlockSend(const vtkIdType* data, int length, int remoteProcessId, int tag, Request& req);
 #endif
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This method receives data from a corresponding send (non-blocking).
    * The last argument,
@@ -140,39 +140,39 @@ public:
 #ifdef VTK_USE_64BIT_IDS
   int NoBlockReceive(vtkIdType* data, int length, int remoteProcessId, int tag, Request& req);
 #endif
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * More efficient implementations of collective operations that use
    * the equivalent MPI commands. Return values are 1 for success
    * and 0 otherwise.
    */
-  virtual void Barrier() override;
-  virtual int BroadcastVoidArray(void* data, vtkIdType length, int type, int srcProcessId) override;
-  virtual int GatherVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
+  void Barrier() override;
+  int BroadcastVoidArray(void* data, vtkIdType length, int type, int srcProcessId) override;
+  int GatherVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
     int destProcessId) override;
-  virtual int GatherVVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType sendLength,
+  int GatherVVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType sendLength,
     vtkIdType* recvLengths, vtkIdType* offsets, int type, int destProcessId) override;
-  virtual int ScatterVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
+  int ScatterVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
     int srcProcessId) override;
-  virtual int ScatterVVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType* sendLengths,
+  int ScatterVVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType* sendLengths,
     vtkIdType* offsets, vtkIdType recvLength, int type, int srcProcessId) override;
-  virtual int AllGatherVoidArray(
+  int AllGatherVoidArray(
     const void* sendBuffer, void* recvBuffer, vtkIdType length, int type) override;
-  virtual int AllGatherVVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType sendLength,
+  int AllGatherVVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType sendLength,
     vtkIdType* recvLengths, vtkIdType* offsets, int type) override;
-  virtual int ReduceVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
+  int ReduceVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
     int operation, int destProcessId) override;
-  virtual int ReduceVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
+  int ReduceVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
     Operation* operation, int destProcessId) override;
-  virtual int AllReduceVoidArray(
+  int AllReduceVoidArray(
     const void* sendBuffer, void* recvBuffer, vtkIdType length, int type, int operation) override;
-  virtual int AllReduceVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length,
-    int type, Operation* operation) override;
-  //@}
+  int AllReduceVoidArray(const void* sendBuffer, void* recvBuffer, vtkIdType length, int type,
+    Operation* operation) override;
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Nonblocking test for a message.  Inputs are: source -- the source rank
    * or ANY_SOURCE; tag -- the tag value.  Outputs are:
@@ -188,7 +188,7 @@ public:
   int Iprobe(int source, int tag, int* flag, int* actualSource, const char* type, int* size);
   int Iprobe(int source, int tag, int* flag, int* actualSource, float* type, int* size);
   int Iprobe(int source, int tag, int* flag, int* actualSource, double* type, int* size);
-  //@}
+  ///@}
 
   /**
    * Given the request objects of a set of non-blocking operations
@@ -242,7 +242,7 @@ public:
   static char* Allocate(size_t size);
   static void Free(char* ptr);
 
-  //@{
+  ///@{
   /**
    * When set to 1, all MPI_Send calls are replaced by MPI_Ssend calls.
    * Default is 0.
@@ -250,7 +250,7 @@ public:
   vtkSetClampMacro(UseSsend, int, 0, 1);
   vtkGetMacro(UseSsend, int);
   vtkBooleanMacro(UseSsend, int);
-  //@}
+  ///@}
 
   /**
    * Copies all the attributes of source, deleting previously
@@ -269,7 +269,7 @@ protected:
   // not be called if the current communicator does not include this process
   int InitializeNumberOfProcesses();
 
-  //@{
+  ///@{
   /**
    * KeepHandle is normally off. This means that the MPI
    * communicator handle will be freed at the destruction
@@ -282,7 +282,7 @@ protected:
    */
   vtkSetMacro(KeepHandle, int);
   vtkBooleanMacro(KeepHandle, int);
-  //@}
+  ///@}
 
   static vtkMPICommunicator* WorldCommunicator;
 

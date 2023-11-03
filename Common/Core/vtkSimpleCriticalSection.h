@@ -37,7 +37,9 @@
 #define vtkSimpleCriticalSection_h
 
 #include "vtkCommonCoreModule.h" // For export macro
+#include "vtkDeprecation.h"      // For VTK_DEPRECATED_IN_9_1_0
 #include "vtkSystemIncludes.h"
+#include "vtkThreads.h" // for VTK_USE_PTHREADS and VTK_USE_WIN32_THREADS
 
 #if defined(VTK_USE_PTHREADS)
 #include <pthread.h> // Needed for pthreads implementation of mutex
@@ -56,7 +58,8 @@ typedef int vtkCritSecType;
 #endif
 
 // Critical Section object that is not a vtkObject.
-class VTKCOMMONCORE_EXPORT vtkSimpleCriticalSection
+class VTK_DEPRECATED_IN_9_1_0(
+  "Use std::mutex instead.") VTKCOMMONCORE_EXPORT vtkSimpleCriticalSection
 {
 public:
   // Default cstor

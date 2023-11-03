@@ -18,6 +18,9 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkLabelPlacer.h"
 
 #include "vtkCamera.h"
@@ -95,7 +98,7 @@ public:
     void Reset() { this->Labels.clear(); }
     void Insert(const LabelRect& rect) { this->Labels.push_back(rect); }
   };
-  std::vector<std::vector<ScreenTile> > Tiles;
+  std::vector<std::vector<ScreenTile>> Tiles;
   float ScreenOrigin[2];
   float TileSize[2];
   int NumTiles[2];
@@ -775,7 +778,7 @@ int vtkLabelPlacer::RequestData(vtkInformation* vtkNotUsed(request),
       OutputCoordinates coordSys = static_cast<OutputCoordinates>(this->OutputCoordinateSystem);
       if (labelType == 0)
       { // label is text
-        if (this->Buckets->DumpPlaced)
+        if (vtkLabelPlacer::Internal::DumpPlaced)
         {
           if (this->UseUnicodeStrings)
           {
@@ -813,7 +816,7 @@ int vtkLabelPlacer::RequestData(vtkInformation* vtkNotUsed(request),
       }
       else
       { // label is an icon
-        if (this->Buckets->DumpPlaced)
+        if (vtkLabelPlacer::Internal::DumpPlaced)
         {
           vtkDebugMacro(<< ll[0] << " -- " << ur[0] << ", " << ll[1] << " -- " << ur[1] << ": Icon "
                         << iconIndexArr->GetValue(inIter->GetLabelId()));

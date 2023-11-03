@@ -37,25 +37,25 @@ public:
   vtkTypeMacro(vtkMaskPolyData, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Turn on every nth entity (cell).
    */
   vtkSetClampMacro(OnRatio, int, 1, VTK_INT_MAX);
   vtkGetMacro(OnRatio, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Start with this entity (cell).
    */
   vtkSetClampMacro(Offset, vtkIdType, 0, VTK_ID_MAX);
   vtkGetMacro(Offset, vtkIdType);
-  //@}
+  ///@}
 
 protected:
   vtkMaskPolyData();
-  ~vtkMaskPolyData() override {}
+  ~vtkMaskPolyData() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int OnRatio;      // every OnRatio entity is on; all others are off.

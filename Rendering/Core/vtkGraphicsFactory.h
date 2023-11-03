@@ -43,26 +43,26 @@ public:
    */
   static const char* GetRenderLibrary();
 
-  //@{
+  ///@{
   /**
    * This option enables the creation of Mesa classes
    * instead of the OpenGL classes when using mangled Mesa.
    */
   static void SetUseMesaClasses(int use);
   static int GetUseMesaClasses();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This option enables the off-screen only mode. In this mode no X calls will
    * be made even when interactor is used.
    */
   static void SetOffScreenOnlyMode(int use);
   static int GetOffScreenOnlyMode();
-  //@}
+  ///@}
 
 protected:
-  vtkGraphicsFactory() {}
+  vtkGraphicsFactory() = default;
 
   static int UseMesaClasses;
   static int OffScreenOnlyMode;

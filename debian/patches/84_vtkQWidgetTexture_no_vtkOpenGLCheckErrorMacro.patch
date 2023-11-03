@@ -1,0 +1,24 @@
+Description: HACK: vtkQWidgetTexture.cxx: Don't use vtkOpenGLCheckErrorMacro
+ Fixes building for Qt with OpenGL ES.
+Author: Adrian Bunk <bunk@debian.org>
+
+--- vtk9.orig/GUISupport/Qt/vtkQWidgetTexture.cxx
++++ vtk9/GUISupport/Qt/vtkQWidgetTexture.cxx
+@@ -18,7 +18,7 @@
+ #include "vtkOpenGLResourceFreeCallback.h"
+ #include "vtkOpenGLState.h"
+ 
+-#include "vtkOpenGLError.h"
++//#include "vtkOpenGLError.h"
+ 
+ #include <QGraphicsProxyWidget>
+ #include <QGraphicsScene>
+@@ -98,7 +98,7 @@
+       }
+ 
+       this->Create2DFromRaw(width, height, 4, VTK_UNSIGNED_CHAR, this->ImageBuffer);
+-      vtkOpenGLCheckErrorMacro("failed after QWidgeTexture repaint and draw");
++      //vtkOpenGLCheckErrorMacro("failed after QWidgeTexture repaint and draw");
+     }
+   };
+ }

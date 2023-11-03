@@ -32,10 +32,11 @@ class VTKFILTERSCORE_EXPORT vtkStructuredGridOutlineFilter : public vtkPolyDataA
 public:
   static vtkStructuredGridOutlineFilter* New();
   vtkTypeMacro(vtkStructuredGridOutlineFilter, vtkPolyDataAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
-  vtkStructuredGridOutlineFilter() {}
-  ~vtkStructuredGridOutlineFilter() override {}
+  vtkStructuredGridOutlineFilter() = default;
+  ~vtkStructuredGridOutlineFilter() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;
@@ -46,4 +47,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkStructuredGridOutlineFilter.h

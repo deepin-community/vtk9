@@ -78,13 +78,15 @@
 #ifndef vtkPUnstructuredGridGhostCellsGenerator_h
 #define vtkPUnstructuredGridGhostCellsGenerator_h
 
+#include "vtkDeprecation.h"                   // For VTK_DEPRECATED_IN_9_1_0
 #include "vtkFiltersParallelGeometryModule.h" // For export macro
 #include "vtkUnstructuredGridGhostCellsGenerator.h"
 #include <vector> // For passing data between methods
 
 class vtkMultiProcessController;
 
-class VTKFILTERSPARALLELGEOMETRY_EXPORT vtkPUnstructuredGridGhostCellsGenerator
+class VTK_DEPRECATED_IN_9_1_0("Use vtkGhostCellsGenerator instead")
+  VTKFILTERSPARALLELGEOMETRY_EXPORT vtkPUnstructuredGridGhostCellsGenerator
   : public vtkUnstructuredGridGhostCellsGenerator
 {
   vtkTypeMacro(vtkPUnstructuredGridGhostCellsGenerator, vtkUnstructuredGridGhostCellsGenerator);
@@ -94,13 +96,13 @@ public:
 
   static vtkPUnstructuredGridGhostCellsGenerator* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the MPI multi process controller object.
    */
   void SetController(vtkMultiProcessController* c);
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  //@}
+  ///@}
 
 protected:
   vtkPUnstructuredGridGhostCellsGenerator();
@@ -137,3 +139,5 @@ private:
 };
 
 #endif
+
+// VTK-HeaderTest-Exclude: vtkPUnstructuredGridGhostCellsGenerator.h

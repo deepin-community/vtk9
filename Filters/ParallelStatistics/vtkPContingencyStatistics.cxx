@@ -18,8 +18,6 @@
   the U.S. Government retains certain rights in this software.
   -------------------------------------------------------------------------*/
 
-#include "vtkToolkits.h"
-
 #include "vtkPContingencyStatistics.h"
 
 #include "vtkCommunicator.h"
@@ -46,27 +44,27 @@
 
 vtkStandardNewMacro(vtkPContingencyStatistics);
 vtkCxxSetObjectMacro(vtkPContingencyStatistics, Controller, vtkMultiProcessController);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPContingencyStatistics::vtkPContingencyStatistics()
 {
-  this->Controller = 0;
+  this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPContingencyStatistics::~vtkPContingencyStatistics()
 {
-  this->SetController(0);
+  this->SetController(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPContingencyStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void StringVectorToStringBuffer(
   const std::vector<vtkStdString>& strings, vtkStdString& buffer)
 {
@@ -79,7 +77,7 @@ static void StringVectorToStringBuffer(
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static bool StringArrayToStringBuffer(
   vtkTable* contingencyTab, vtkStdString& xyPacked, std::vector<vtkIdType>& kcValues)
 {
@@ -115,7 +113,7 @@ static bool StringArrayToStringBuffer(
   return false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void StringBufferToStringVector(
   const vtkStdString& buffer, std::vector<vtkStdString>& strings)
 {
@@ -129,7 +127,7 @@ static void StringBufferToStringVector(
     {
       if (!*finish)
       {
-        strings.push_back(vtkStdString(start));
+        strings.emplace_back(start);
         start = finish;
         break;
       }
@@ -137,7 +135,7 @@ static void StringBufferToStringVector(
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPContingencyStatistics::Learn(
   vtkTable* inData, vtkTable* inParameters, vtkMultiBlockDataSet* outMeta)
 {
@@ -279,8 +277,8 @@ void vtkPContingencyStatistics::Learn(
   }
 
   // Allocate receive buffers on reducer process, based on the global sizes obtained above
-  char* xyPacked_g = 0;
-  vtkIdType* kcValues_g = 0;
+  char* xyPacked_g = nullptr;
+  vtkIdType* kcValues_g = nullptr;
   if (myRank == rProc)
   {
     xyPacked_g = new char[xySizeTotal];
@@ -402,7 +400,7 @@ void vtkPContingencyStatistics::Learn(
 #endif // DEBUG_PARALLEL_CONTINGENCY_STATISTICS
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPContingencyStatistics::Reduce(vtkIdType& xySizeTotal, char* xyPacked_g,
   vtkStdString& xyPacked_l, vtkIdType& kcSizeTotal, vtkIdType* kcValues_g,
   std::vector<vtkIdType>& kcValues_l)
@@ -464,7 +462,7 @@ bool vtkPContingencyStatistics::Reduce(vtkIdType& xySizeTotal, char* xyPacked_g,
   return false;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPContingencyStatistics::Broadcast(vtkIdType xySizeTotal, vtkStdString& xyPacked,
   std::vector<vtkStdString>& xyValues, vtkIdType kcSizeTotal, std::vector<vtkIdType>& kcValues,
   vtkIdType rProc)

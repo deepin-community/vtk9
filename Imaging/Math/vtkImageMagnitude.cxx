@@ -27,7 +27,13 @@
 
 vtkStandardNewMacro(vtkImageMagnitude);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageMagnitude::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 vtkImageMagnitude::vtkImageMagnitude()
 {
   this->SetNumberOfInputPorts(1);
@@ -41,7 +47,7 @@ int vtkImageMagnitude::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This execute method handles boundaries.
 // it handles boundaries. Pixels are just replicated to get values
 // out of extent.
@@ -80,7 +86,7 @@ void vtkImageMagnitudeExecute(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method contains a switch statement that calls the correct
 // templated function for the input data type.  The output data
 // must match input type.  This method does handle boundary conditions.

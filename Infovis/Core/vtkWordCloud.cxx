@@ -51,6 +51,7 @@
 #endif
 // stl
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -90,8 +91,8 @@ struct ArchimedesValue
   double x, y;
 };
 void AddReplacementPairsToStopList(vtkWordCloud*, vtkWordCloud::StopWordsContainer&);
-bool AddWordToFinal(vtkWordCloud*, const std::string, const int, std::mt19937_64&,
-  double orientation, std::vector<ExtentOffset>&, vtkImageBlend*, std::string&);
+bool AddWordToFinal(vtkWordCloud*, std::string, int, std::mt19937_64&, double orientation,
+  std::vector<ExtentOffset>&, vtkImageBlend*, std::string&);
 
 void ArchimedesSpiral(std::vector<ExtentOffset>&, vtkWordCloud::SizesContainer&);
 void ReplaceMaskColorWithBackgroundColor(vtkImageData*, vtkWordCloud*);
@@ -101,27 +102,20 @@ void ExtractWordsFromString(std::string& str, std::vector<std::string>& words);
 void ShowColorSeriesNames(ostream& os);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWordCloud::vtkWordCloud()
   : BackgroundColorName("MidnightBlue")
   , BWMask(false)
   , ColorDistribution({ { .6, 1.0 } })
-  , ColorSchemeName("")
   , DPI(200)
-  , FileName("")
-  , FontFileName("")
   , FontMultiplier(6)
   , Gap(2)
   , MaskColorName("black")
-  , MaskFileName("")
   , MaxFontSize(48)
   , MinFontSize(12)
   , MinFrequency(1)
   , OrientationDistribution({ { -20, 20 } })
   , Sizes({ { 640, 480 } })
-  , StopListFileName("")
-  , Title("")
-  , WordColorName("")
 {
   this->SetNumberOfInputPorts(0);
 
@@ -140,7 +134,7 @@ vtkWordCloud::vtkWordCloud()
   this->WholeExtent[5] = 0;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWordCloud::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -157,7 +151,7 @@ int vtkWordCloud::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -167,7 +161,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   vtkImageData* output = vtkImageData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   // Check some parameters before we start
-  if (this->FileName.size() == 0)
+  if (this->FileName.empty())
   {
     vtkErrorMacro(<< "No FileName is set. Use SetFileName to set a file.");
     return 0;
@@ -177,17 +171,17 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
     vtkErrorMacro(<< "FileName " << this->FileName << " does not exist");
     return 0;
   }
-  if (this->FontFileName.size() > 0 && !vtksys::SystemTools::FileExists(this->FontFileName, true))
+  if (!this->FontFileName.empty() && !vtksys::SystemTools::FileExists(this->FontFileName, true))
   {
     vtkErrorMacro(<< "FontFileName " << this->FontFileName << " does not exist");
     return 0;
   }
-  if (this->MaskFileName.size() > 0 && !vtksys::SystemTools::FileExists(this->MaskFileName, true))
+  if (!this->MaskFileName.empty() && !vtksys::SystemTools::FileExists(this->MaskFileName, true))
   {
     vtkErrorMacro(<< "MaskFileName " << this->MaskFileName << " does not exist");
     return 0;
   }
-  if (this->StopListFileName.size() > 0 &&
+  if (!this->StopListFileName.empty() &&
     !vtksys::SystemTools::FileExists(this->StopListFileName, true))
   {
     vtkErrorMacro(<< "StopListFileName " << this->StopListFileName << " does not exist");
@@ -205,7 +199,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   this->SkippedWords.resize(0);
 
   // Generate a path for placement of words
-  std::vector< ::ExtentOffset> offset;
+  std::vector<::ExtentOffset> offset;
   ::ArchimedesSpiral(offset, this->Sizes);
 
   // Sort the word by frequency
@@ -218,7 +212,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   auto maskImage = vtkSmartPointer<vtkImageData>::New();
 
   // If a mask file is not defined, create a rectangular
-  if (this->MaskFileName == "")
+  if (this->MaskFileName.empty())
   {
     auto defaultMask = vtkSmartPointer<vtkImageCanvasSource2D>::New();
     defaultMask->SetScalarTypeToUnsignedChar();
@@ -292,7 +286,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
     std::vector<double> orientations;
     // If discrete orientations are present use them, otherwise
     // generate random orientations
-    if (this->Orientations.size() != 0)
+    if (!this->Orientations.empty())
     {
       orientations = this->Orientations;
     }
@@ -307,7 +301,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
     {
       added =
         ::AddWordToFinal(this, element.first, element.second, mt, o, offset, final, errorMessage);
-      if (errorMessage.size() != 0)
+      if (!errorMessage.empty())
       {
         vtkErrorMacro(<< errorMessage);
         return 0;
@@ -348,7 +342,7 @@ int vtkWordCloud::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWordCloud::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -385,7 +379,7 @@ void vtkWordCloud::PrintSelf(ostream& os, vtkIndent indent)
   os << std::endl;
   os << "  Sizes: " << this->GetSizes()[0] << " " << this->GetSizes()[1] << std::endl;
   os << "  StopWords: ";
-  for (auto s : this->GetStopWords())
+  for (const auto& s : this->GetStopWords())
   {
     os << s << " ";
   }
@@ -406,7 +400,7 @@ std::multiset<std::pair<std::string, int>, Comparator> FindWordsSortedByFrequenc
 
   // If a StopListFileName is defined, use it, otherwise use the
   // built-in StopList.
-  if (wordCloud->GetStopListFileName().size() > 0)
+  if (!wordCloud->GetStopListFileName().empty())
   {
     CreateStopListFromFile(wordCloud->GetStopListFileName(), stopList);
   }
@@ -416,7 +410,7 @@ std::multiset<std::pair<std::string, int>, Comparator> FindWordsSortedByFrequenc
   }
 
   // Add user stop words
-  for (auto stop : wordCloud->GetStopWords())
+  for (const auto& stop : wordCloud->GetStopWords())
   {
     stopList.insert(stop);
   }
@@ -510,15 +504,15 @@ void AddReplacementPairsToStopList(
     ::ExtractWordsFromString(to, words);
 
     // Add each replacement to the stop list
-    for (auto w : words)
+    for (const auto& w : words)
     {
       stopList.insert(w);
     }
   }
 }
 
-bool AddWordToFinal(vtkWordCloud* wordCloud, const std::string word, const int frequency,
-  std::mt19937_64& mt, double orientation, std::vector<ExtentOffset>& offset, vtkImageBlend* final,
+bool AddWordToFinal(vtkWordCloud* wordCloud, std::string word, int frequency, std::mt19937_64& mt,
+  double orientation, std::vector<ExtentOffset>& offset, vtkImageBlend* final,
   std::string& errorMessage)
 {
   // Skip words below MinFrequency
@@ -544,7 +538,7 @@ bool AddWordToFinal(vtkWordCloud* wordCloud, const std::string word, const int f
     colorScheme->SetColorSchemeByName(wordCloud->GetColorSchemeName());
     vtkColor3ub color =
       colorScheme->GetColorRepeating(static_cast<int>(wordCloud->GetKeptWords().size()));
-    if (color.Compare(colors->GetColor3ub("black"), 1) && wordCloud->GetKeptWords().size() == 0)
+    if (color.Compare(colors->GetColor3ub("black"), 1) && wordCloud->GetKeptWords().empty())
     {
       std::ostringstream validNames;
       ShowColorSeriesNames(validNames);
@@ -692,7 +686,7 @@ void ArchimedesSpiral(std::vector<ExtentOffset>& offset, vtkWordCloud::SizesCont
     double angle = deltaAngle * i;
     x = e * angle * std::cos(angle);
     y = e * angle * std::sin(angle);
-    archimedes.push_back(ArchimedesValue(x, y));
+    archimedes.emplace_back(x, y);
     maxX = std::max(maxX, x);
     minX = std::min(minX, x);
     maxY = std::max(maxY, y);
@@ -704,7 +698,7 @@ void ArchimedesSpiral(std::vector<ExtentOffset>& offset, vtkWordCloud::SizesCont
   {
     if (ar.x * scaleX + centerX - 50 < 0 || ar.y * scaleX + centerY < 0)
       continue;
-    offset.push_back(ExtentOffset(ar.x * scaleX + centerX - 50, ar.y * scaleX + centerY));
+    offset.emplace_back(ar.x * scaleX + centerX - 50, ar.y * scaleX + centerY);
   }
 }
 void ReplaceMaskColorWithBackgroundColor(vtkImageData* finalImage, vtkWordCloud* wordCloud)
@@ -772,7 +766,7 @@ void CreateStopListFromFile(std::string fileName, vtkWordCloud::StopWordsContain
   // Extract words
   std::vector<std::string> words;
   ::ExtractWordsFromString(s, words);
-  for (auto w : words)
+  for (const auto& w : words)
   {
     stopList.insert(w);
   }
@@ -788,7 +782,6 @@ void ExtractWordsFromString(std::string& str, std::vector<std::string>& words)
   {
     words.push_back((*i).str());
   }
-  return;
 #else
   vtksys::RegularExpression re("([0-9A-Za-z]+)");
   size_t next = 0;
@@ -797,7 +790,6 @@ void ExtractWordsFromString(std::string& str, std::vector<std::string>& words)
     words.push_back(str.substr(next + re.start(), re.end() - re.start()));
     next += re.end();
   }
-  return;
 #endif
 }
 

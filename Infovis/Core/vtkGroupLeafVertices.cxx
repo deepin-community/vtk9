@@ -18,6 +18,9 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkGroupLeafVertices.h"
 
 #include "vtkIdList.h"
@@ -45,7 +48,7 @@ vtkStandardNewMacro(vtkGroupLeafVertices);
 // Forward function reference (definition at bottom :)
 static int splitString(const vtkStdString& input, std::vector<vtkStdString>& results);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkGroupLeafVerticesCompare
 {
 public:
@@ -60,14 +63,14 @@ public:
   }
 };
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T>
 vtkVariant vtkGroupLeafVerticesGetValue(T* arr, vtkIdType index)
 {
   return vtkVariant(arr[index]);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static vtkVariant vtkGroupLeafVerticesGetVariant(vtkAbstractArray* arr, vtkIdType i)
 {
   vtkVariant val;
@@ -230,8 +233,8 @@ int vtkGroupLeafVertices::RequestData(
   // Copy everything into the new tree, adding group nodes.
   // Make a map of (parent id, group-by string) -> group vertex id.
   std::map<std::pair<vtkIdType, vtkVariant>, vtkIdType, vtkGroupLeafVerticesCompare> group_vertices;
-  std::vector<std::pair<vtkIdType, vtkIdType> > vertStack;
-  vertStack.push_back(std::make_pair(input->GetRoot(), builder->AddVertex()));
+  std::vector<std::pair<vtkIdType, vtkIdType>> vertStack;
+  vertStack.emplace_back(input->GetRoot(), builder->AddVertex());
   vtkSmartPointer<vtkOutEdgeIterator> it = vtkSmartPointer<vtkOutEdgeIterator>::New();
 
   while (!vertStack.empty())
@@ -260,7 +263,7 @@ int vtkGroupLeafVertices::RequestData(
         // and recurse.
         vtkEdgeType e = builder->AddEdge(v, child);
         builderEdgeData->CopyData(inputEdgeData, tree_e.Id, e.Id);
-        vertStack.push_back(std::make_pair(tree_child, child));
+        vertStack.emplace_back(tree_child, child);
       }
       else
       {
@@ -360,7 +363,7 @@ int vtkGroupLeafVertices::RequestData(
         }
         vtkEdgeType e = builder->AddEdge(group_vertex, child);
         builderEdgeData->CopyData(inputEdgeData, tree_e.Id, e.Id);
-        vertStack.push_back(std::make_pair(tree_child, child));
+        vertStack.emplace_back(tree_child, child);
       }
     }
   }
@@ -375,7 +378,7 @@ int vtkGroupLeafVertices::RequestData(
   return 1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static int splitString(const vtkStdString& input, std::vector<vtkStdString>& results)
 {
@@ -453,7 +456,7 @@ static int splitString(const vtkStdString& input, std::vector<vtkStdString>& res
         // which case it's normal text and we won't even get here.
         if (!currentField.empty())
         {
-          results.push_back(currentField);
+          results.emplace_back(currentField);
         }
         currentField = vtkStdString();
       }
@@ -467,6 +470,6 @@ static int splitString(const vtkStdString& input, std::vector<vtkStdString>& res
     }
   }
 
-  results.push_back(currentField);
+  results.emplace_back(currentField);
   return static_cast<int>(results.size());
 }

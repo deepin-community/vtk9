@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_1_0() warning for this class
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkPResampleWithDataSet.h"
 
 #include "vtkArrayDispatch.h"
@@ -49,7 +53,7 @@
 #include <string>
 #include <vector>
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Algorithm of this filter:
 // 1) Compute the bounds of all the blocks of Source.
 // 2) Do an all_gather so that all the nodes know all the bounds.
@@ -66,13 +70,13 @@
 //    and since different Source blocks can have different arrays (Partial Arrays),
 //    it is possible that the points of an output block will have different arrays.
 //    Remove arrays from a block that are not valid for all its points.
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkPResampleWithDataSet);
 
 vtkCxxSetObjectMacro(vtkPResampleWithDataSet, Controller, vtkMultiProcessController);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPResampleWithDataSet::vtkPResampleWithDataSet()
   : Controller(nullptr)
   , UseBalancedPartitionForPointsLookup(false)
@@ -80,13 +84,13 @@ vtkPResampleWithDataSet::vtkPResampleWithDataSet()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPResampleWithDataSet::~vtkPResampleWithDataSet()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPResampleWithDataSet::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -98,7 +102,7 @@ void vtkPResampleWithDataSet::PrintSelf(ostream& os, vtkIndent indent)
      << (this->UseBalancedPartitionForPointsLookup ? "Balanced" : "Regular") << endl;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPResampleWithDataSet::RequestUpdateExtent(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -122,7 +126,7 @@ int vtkPResampleWithDataSet::RequestUpdateExtent(
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct Point
 {
   double Position[3];
@@ -130,11 +134,11 @@ struct Point
   int BlockId;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class Partition
 {
 public:
-  virtual ~Partition() {}
+  virtual ~Partition() = default;
   virtual void CreatePartition(const std::vector<vtkDataSet*>& blocks) = 0;
   virtual void FindPointsInBounds(const double bounds[6], std::vector<Point>& points) const = 0;
 };
@@ -487,7 +491,7 @@ private:
   double Bounds[6];
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Iterate over each dataset in a composite dataset and execute func
 template <typename Functor>
 void ForEachDataSetBlock(vtkDataObject* data, const Functor& func)
@@ -542,7 +546,7 @@ struct FlattenCompositeDataset
   std::vector<vtkDataSet*>* Blocks;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void CopyDataSetStructure(vtkDataObject* input, vtkDataObject* output)
 {
   if (input->IsA("vtkDataSet"))
@@ -574,7 +578,7 @@ void CopyDataSetStructure(vtkDataObject* input, vtkDataObject* output)
 // Find all the neighbors that this rank will need to send to and recv from.
 // Based on the intersection of this rank's input bounds with remote's source
 // bounds.
-void FindNeighbors(diy::mpi::communicator comm, std::vector<std::vector<double> >& sourceBounds,
+void FindNeighbors(diy::mpi::communicator comm, std::vector<std::vector<double>>& sourceBounds,
   std::vector<vtkDataSet*>& inputBlocks, std::vector<int>& neighbors)
 {
   for (int gid = 0; gid < comm.size(); ++gid)
@@ -609,7 +613,7 @@ void FindNeighbors(diy::mpi::communicator comm, std::vector<std::vector<double> 
     }
   }
 
-  std::vector<std::vector<int> > allNbrs;
+  std::vector<std::vector<int>> allNbrs;
   diy::mpi::all_gather(comm, neighbors, allNbrs);
   for (int gid = 0; gid < comm.size(); ++gid)
   {
@@ -627,10 +631,10 @@ void FindNeighbors(diy::mpi::communicator comm, std::vector<std::vector<double> 
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct DiyBlock
 {
-  std::vector<std::vector<double> > SourceBlocksBounds;
+  std::vector<std::vector<double>> SourceBlocksBounds;
   std::vector<vtkDataSet*> InputBlocks;
   std::vector<vtkDataSet*> OutputBlocks;
   Partition* PointsLookup;
@@ -987,7 +991,7 @@ void ReceiveResampledPoints(
   DiyBlock* block, const diy::Master::ProxyWithLink& cp, const char* maskArrayName)
 {
   int numBlocks = static_cast<int>(block->InputBlocks.size());
-  std::vector<std::map<std::string, int> > arrayReceiveCounts(numBlocks);
+  std::vector<std::map<std::string, int>> arrayReceiveCounts(numBlocks);
 
   diy::Master::IncomingQueues& in = *cp.incoming();
   for (diy::Master::IncomingQueues::iterator i = in.begin(); i != in.end(); ++i)
@@ -1067,7 +1071,7 @@ void ReceiveResampledPoints(
 
 } // anonymous namespace
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPResampleWithDataSet::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -1170,7 +1174,7 @@ int vtkPResampleWithDataSet::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace diy
 {
 

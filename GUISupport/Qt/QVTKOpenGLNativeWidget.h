@@ -107,6 +107,7 @@
 #include <QScopedPointer> // for QScopedPointer.
 
 #include "QVTKInteractor.h"        // needed for QVTKInteractor
+#include "vtkDeprecation.h"        // For VTK_DEPRECATED_IN_9_0_0
 #include "vtkGUISupportQtModule.h" // for export macro
 #include "vtkNew.h"                // needed for vtkNew
 #include "vtkSmartPointer.h"       // needed for vtkSmartPointer
@@ -127,7 +128,7 @@ public:
     Qt::WindowFlags f = Qt::WindowFlags());
   ~QVTKOpenGLNativeWidget() override;
 
-  //@{
+  ///@{
   /**
    * Set a render window to use. It a render window was already set, it will be
    * finalized and all of its OpenGL resource released. If the \c win is
@@ -136,7 +137,7 @@ public:
    */
   void setRenderWindow(vtkGenericOpenGLRenderWindow* win);
   void setRenderWindow(vtkRenderWindow* win);
-  //@}
+  ///@}
 
   /**
    * Returns the render window that is being shown in this widget.
@@ -153,7 +154,7 @@ public:
    */
   static QSurfaceFormat defaultFormat(bool stereo_capable = false);
 
-  //@{
+  ///@{
   /**
    * Enable or disable support for HiDPI displays. When enabled, this enabled
    * DPI scaling i.e. `vtkWindow::SetDPI` will be called with a DPI value scaled
@@ -162,61 +163,87 @@ public:
    */
   void setEnableHiDPI(bool enable);
   bool enableHiDPI() const { return this->EnableHiDPI; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get unscaled DPI value. Defaults to 72, which is also the default value
    * in vtkWindow.
    */
   void setUnscaledDPI(int);
   int unscaledDPI() const { return this->UnscaledDPI; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get a custom device pixel ratio to use to map Qt sizes to VTK (or
+   * OpenGL) sizes. Thus, when the QWidget is resized, it called
+   * `vtkRenderWindow::SetSize` on the internal vtkRenderWindow after
+   * multiplying the QWidget's size by this scale factor.
+   *
+   * By default, this is set to 0. Which means that `devicePixelRatio` obtained
+   * from Qt will be used. Set this to a number greater than 0 to override this
+   * behaviour and use the custom scale factor instead.
+   *
+   * `effectiveDevicePixelRatio` can be used to obtain the device-pixel-ratio
+   * that will be used given the value for customDevicePixelRatio.
+   */
+  void setCustomDevicePixelRatio(double cdpr);
+  double customDevicePixelRatio() const { return this->CustomDevicePixelRatio; }
+  double effectiveDevicePixelRatio() const;
+  ///@}
+
+  ///@{
   /**
    * Set/get the default cursor to use for this widget.
    */
   void setDefaultCursor(const QCursor& cursor);
   const QCursor& defaultCursor() const { return this->DefaultCursor; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * @deprecated in VTK 9.0
    */
-  VTK_LEGACY(void SetRenderWindow(vtkGenericOpenGLRenderWindow* win));
-  VTK_LEGACY(void SetRenderWindow(vtkRenderWindow* win));
-  //@}
+  VTK_DEPRECATED_IN_9_0_0("Use QVTKOpenGLNativeWidget::setRenderWindow")
+  void SetRenderWindow(vtkGenericOpenGLRenderWindow* win);
+  VTK_DEPRECATED_IN_9_0_0("Use QVTKOpenGLNativeWidget::setRenderWindow")
+  void SetRenderWindow(vtkRenderWindow* win);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods have be deprecated to fix naming style. Since
    * QVTKOpenGLNativeWidget is QObject subclass, we follow Qt naming conventions
    * rather than VTK's.
    */
-  VTK_LEGACY(vtkRenderWindow* GetRenderWindow());
-  VTK_LEGACY(QVTKInteractor* GetInteractor());
-  //@}
+  VTK_DEPRECATED_IN_9_0_0("Use QVTKOpenGLNativeWidget::renderWindow")
+  vtkRenderWindow* GetRenderWindow();
+  VTK_DEPRECATED_IN_9_0_0("Removed in 9.0.0 (internal)")
+  QVTKInteractor* GetInteractor();
+  ///@}
 
   /**
    * @deprecated in VTK 9.0
    * QVTKInteractorAdapter is an internal helper. Hence the API was removed.
    */
-  VTK_LEGACY(QVTKInteractorAdapter* GetInteractorAdapter());
+  VTK_DEPRECATED_IN_9_0_0("Removed in 9.0.0 (internal)")
+  QVTKInteractorAdapter* GetInteractorAdapter();
 
   /**
    * @deprecated in VTK 9.0. Simply use `QWidget::setCursor` API to change
    * cursor.
    */
-  VTK_LEGACY(void setQVTKCursor(const QCursor& cursor));
+  VTK_DEPRECATED_IN_9_0_0("Use QWidget::setCursor")
+  void setQVTKCursor(const QCursor& cursor);
 
   /**
    * @deprecated in VTK 9.0. Use `setDefaultCursor` instead.
    */
-  VTK_LEGACY(void setDefaultQVTKCursor(const QCursor& cursor));
+  VTK_DEPRECATED_IN_9_0_0("Use QWidget::setDefaultCursor")
+  void setDefaultQVTKCursor(const QCursor& cursor);
 
-protected slots:
+protected Q_SLOTS:
   /**
    * Called as a response to `QOpenGLContext::aboutToBeDestroyed`. This may be
    * called anytime during the widget lifecycle. We need to release any OpenGL
@@ -240,6 +267,7 @@ private:
 
   bool EnableHiDPI;
   int UnscaledDPI;
+  double CustomDevicePixelRatio;
   QCursor DefaultCursor;
 };
 

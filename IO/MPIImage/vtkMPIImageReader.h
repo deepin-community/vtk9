@@ -59,16 +59,16 @@ class VTKIOMPIIMAGE_EXPORT vtkMPIImageReader : public vtkImageReader
 public:
   vtkTypeMacro(vtkMPIImageReader, vtkImageReader);
   static vtkMPIImageReader* New();
-  virtual void PrintSelf(ostream& os, vtkIndent indent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/set the multi process controller to use for coordinated reads.  By
    * default, set to the global controller.
    */
   vtkGetObjectMacro(Controller, vtkMultiProcessController);
   virtual void SetController(vtkMultiProcessController*);
-  //@}
+  ///@}
 
 protected:
   vtkMPIImageReader();
@@ -116,16 +116,16 @@ protected:
    */
   virtual void TransformData(vtkImageData* data);
 
-  //@{
+  ///@{
   /**
    * A group of processes that are reading the same file (as determined by
    * PartitionController.
    */
   void SetGroupedController(vtkMultiProcessController*);
   vtkMultiProcessController* GroupedController;
-  //@}
+  ///@}
 
-  virtual void ExecuteDataWithInformation(vtkDataObject* data, vtkInformation* outInfo) override;
+  void ExecuteDataWithInformation(vtkDataObject* data, vtkInformation* outInfo) override;
 
 private:
   vtkMPIImageReader(const vtkMPIImageReader&) = delete;

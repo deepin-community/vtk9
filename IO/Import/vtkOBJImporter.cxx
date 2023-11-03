@@ -40,13 +40,13 @@
 vtkStandardNewMacro(vtkOBJImporter);
 vtkStandardNewMacro(vtkOBJPolyDataProcessor);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOBJImporter::vtkOBJImporter()
 {
   this->Impl = vtkSmartPointer<vtkOBJPolyDataProcessor>::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOBJImporter::~vtkOBJImporter() = default;
 
 int CanReadFile(vtkObject* that, const std::string& fname)
@@ -74,13 +74,13 @@ int vtkOBJImporter::ImportBegin()
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOBJImporter::ImportEnd()
 {
   vtkDebugMacro("Done with " << this->GetClassName() << "::" << __FUNCTION__);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOBJImporter::ReadData()
 {
   this->Impl->Update();
@@ -90,7 +90,7 @@ void vtkOBJImporter::ReadData()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOBJImporter::PrintSelf(std::ostream& os, vtkIndent indent)
 {
   vtkImporter::PrintSelf(os, indent);
@@ -126,7 +126,7 @@ const char* vtkOBJImporter::GetTexturePath() const
   return this->Impl->GetTexturePath().data();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkOBJImporter::GetOutputsDescription()
 {
   std::stringstream ss;
@@ -137,7 +137,7 @@ std::string vtkOBJImporter::GetOutputsDescription()
   return ss.str();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkOBJImporter::GetOutputDescription(int idx)
 {
   vtkOBJImportedMaterial* mtl = this->Impl->GetMaterial(idx);
@@ -169,6 +169,7 @@ struct vtkOBJImportedPolyDataWithMaterial
   { // initialize some structures to store the file contents in
     points = vtkSmartPointer<vtkPoints>::New();
     tcoords = vtkSmartPointer<vtkFloatArray>::New();
+    colors = vtkSmartPointer<vtkFloatArray>::New();
     normals = vtkSmartPointer<vtkFloatArray>::New();
     polys = vtkSmartPointer<vtkCellArray>::New();
     tcoord_polys = vtkSmartPointer<vtkCellArray>::New();
@@ -177,6 +178,7 @@ struct vtkOBJImportedPolyDataWithMaterial
     normal_polys = vtkSmartPointer<vtkCellArray>::New();
     tcoords->SetNumberOfComponents(2);
     normals->SetNumberOfComponents(3);
+    colors->SetNumberOfComponents(3);
 
     materialName = "";
     mtlProperties = nullptr;
@@ -191,6 +193,7 @@ struct vtkOBJImportedPolyDataWithMaterial
 
   // these are unique per entity
   vtkSmartPointer<vtkFloatArray> tcoords;
+  vtkSmartPointer<vtkFloatArray> colors;
   vtkSmartPointer<vtkCellArray> polys;
   vtkSmartPointer<vtkCellArray> tcoord_polys;
   vtkSmartPointer<vtkCellArray> pointElems;
@@ -202,14 +205,14 @@ struct vtkOBJImportedPolyDataWithMaterial
   vtkOBJImportedMaterial* mtlProperties;
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOBJPolyDataProcessor::vtkOBJPolyDataProcessor()
 {
   // Instantiate object with nullptr filename, and no materials yet loaded.
   this->FileName = "";
   this->MTLFileName = "";
   this->DefaultMTLFileName = true;
-  this->TexturePath = ".";
+  this->TexturePath = "./";
   this->VertexScale = 1.0;
   this->SuccessParsingFiles = 1;
   this->SetNumberOfInputPorts(0);
@@ -219,7 +222,7 @@ vtkOBJPolyDataProcessor::vtkOBJPolyDataProcessor()
   this->SetNumberOfOutputPorts(static_cast<int>(poly_list.size()));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOBJPolyDataProcessor::~vtkOBJPolyDataProcessor()
 {
   // clear any old mtls
@@ -234,13 +237,13 @@ vtkOBJPolyDataProcessor::~vtkOBJPolyDataProcessor()
     poly_list[k] = nullptr;
   }
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOBJPolyDataProcessor::GetNumberOfOutputs()
 {
   return static_cast<int>(poly_list.size());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOBJImportedMaterial* vtkOBJPolyDataProcessor::GetMaterial(int k)
 {
   if (k >= static_cast<int>(poly_list.size()))
@@ -251,13 +254,17 @@ vtkOBJImportedMaterial* vtkOBJPolyDataProcessor::GetMaterial(int k)
   return rpdmm->mtlProperties;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkOBJPolyDataProcessor::GetTextureFilename(int idx)
 {
   vtkOBJImportedMaterial* mtl = this->GetMaterial(idx);
 
   if (mtl && !mtl->texture_filename.empty())
   {
+    if (vtksys::SystemTools::FileExists(mtl->texture_filename))
+    {
+      return mtl->texture_filename;
+    }
     std::vector<std::string> path_and_filename(2);
     path_and_filename[0] = this->TexturePath;
     path_and_filename[1] = mtl->texture_filename;
@@ -280,9 +287,9 @@ To find a full specification, search the net for "OBJ format", eg.:
 
 We support the following types:
 
-v <x> <y> <z>
+v <x> <y> <z> <r> <g> <b>
 
-    vertex
+    vertex position and optionally a vertex color
 
 vn <x> <y> <z>
 
@@ -327,7 +334,7 @@ p <v_a> <v_b> ...
 
 \*---------------------------------------------------------------------------*/
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -366,21 +373,26 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
   if (this->DefaultMTLFileName)
   {
     mtlname = this->FileName + ".mtl";
-  }
-  FILE* defMTL = vtksys::SystemTools::Fopen(mtlname, "r");
-  if (defMTL == nullptr)
-  {
-    if (!this->DefaultMTLFileName)
+    if (vtksys::SystemTools::FileExists(mtlname))
     {
-      vtkErrorMacro(<< "The MTL file " << mtlname << " could not be found");
-      fclose(in);
-      return 0;
+      this->MTLFileName = mtlname;
+    }
+    else
+    {
+      mtlname = vtksys::SystemTools::GetFilenamePath(this->FileName) + "/" +
+        vtksys::SystemTools::GetFilenameWithoutLastExtension(this->FileName) + ".mtl";
+      if (vtksys::SystemTools::FileExists(mtlname))
+      {
+        this->MTLFileName = mtlname;
+      }
     }
   }
   else
   {
-    this->MTLFileName = mtlname;
-    fclose(defMTL);
+    if (!vtksys::SystemTools::FileExists(this->MTLFileName))
+    {
+      vtkErrorMacro(<< "The MTL file " << this->MTLFileName << " could not be found");
+    }
   }
 
   int mtlParseResult;
@@ -397,7 +409,7 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
   vtkSmartPointer<vtkFloatArray> shared_normals = vtkSmartPointer<vtkFloatArray>::New();
   shared_normals->SetNumberOfComponents(3);
 
-  std::map<std::string, std::vector<vtkOBJImportedPolyDataWithMaterial*> > mtlName_to_Actors;
+  std::map<std::string, std::vector<vtkOBJImportedPolyDataWithMaterial*>> mtlName_to_Actors;
 
   {
     // always have at least one output
@@ -418,6 +430,7 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
   vtkPoints* points = poly_list.back()->points;
   vtkFloatArray* tcoords = poly_list.back()->tcoords;
   vtkFloatArray* normals = poly_list.back()->normals;
+  vtkFloatArray* colors = poly_list.back()->colors;
   vtkCellArray* polys = poly_list.back()->polys;
   vtkCellArray* tcoord_polys = poly_list.back()->tcoord_polys;
   vtkCellArray* pointElems = poly_list.back()->pointElems;
@@ -430,6 +443,7 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
   bool hasTCoords = false;                 // has vt x y z
   bool hasPolysWithTextureIndices = false; // has f i/t/n or f i/t
   bool hasNormals = false;                 // has f i/t/n or f i//n
+  bool hasColors = false;                  // has v x y z r g b
   bool tcoords_same_as_verts = true;
   bool normals_same_as_verts = true;
   bool everything_ok = true; // (use of this flag avoids early return and associated memory leak)
@@ -442,6 +456,7 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
     const int MAX_LINE = 100000;
     char rawLine[MAX_LINE];
     float xyz[3];
+    float col[3];
 
     int lineNr = 0;
     while (everything_ok && fgets(rawLine, MAX_LINE, in) != nullptr)
@@ -482,8 +497,11 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
       static long lastVertexIndex = 0;
       if (strcmp(cmd, "v") == 0)
       {
-        // this is a vertex definition, expect three floats, separated by whitespace:
-        if (sscanf(pLine, "%f %f %f", xyz, xyz + 1, xyz + 2) == 3)
+        // this is a vertex definition, expect three floats (six if vertex color), separated by
+        // whitespace:
+        int nbRead =
+          sscanf(pLine, "%f %f %f %f %f %f", xyz, xyz + 1, xyz + 2, col, col + 1, col + 2);
+        if (nbRead >= 3)
         {
           if (use_scale)
           {
@@ -493,6 +511,12 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
           }
           points->InsertNextPoint(xyz);
           lastVertexIndex++;
+
+          if (nbRead == 6)
+          {
+            hasColors = true;
+            colors->InsertNextTypedTuple(col);
+          }
         }
         else
         {
@@ -509,7 +533,7 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
         // this is a tcoord, expect two floats, separated by whitespace:
         if (sscanf(pLine, "%f %f", xyz, xyz + 1) == 2)
         {
-          tcoords->InsertNextTuple(xyz);
+          tcoords->InsertNextTypedTuple(xyz);
         }
         else
         {
@@ -522,7 +546,7 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
         // this is a normal, expect three floats, separated by whitespace:
         if (sscanf(pLine, "%f %f %f", xyz, xyz + 1, xyz + 2) == 3)
         {
-          normals->InsertNextTuple(xyz);
+          normals->InsertNextTypedTuple(xyz);
           hasNormals = true;
         }
         else
@@ -907,6 +931,13 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
       vtkDebugMacro("generating output polydata ....  \n"
         << "tcoords same as verts!? " << tcoords_same_as_verts << " ... hasTCoords?" << hasTCoords
         << " ... numPolysWithTCoords = " << numPolysWithTCoords);
+
+      // assign the points color as point data
+      if (hasColors)
+      {
+        output->GetPointData()->SetScalars(colors);
+      }
+
       // if there are no tcoords or normals or they match exactly
       // then we can just copy the data into the output (easy!)
       if ((!hasTCoords || tcoords_same_as_verts) && (!hasNormals || normals_same_as_verts))
@@ -967,6 +998,9 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
 
         vtkNew<vtkIdList> tmpCell;
 
+        vtkIdType n_tcoords_tuples = tcoords->GetNumberOfTuples();
+        vtkIdType n_normals_tuples = normals->GetNumberOfTuples();
+
         for (int i = 0; i < polys->GetNumberOfCells(); ++i)
         {
           polys->GetNextCell(n_pts, pts);
@@ -993,12 +1027,22 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
               // copy the tcoord for this point across (if there is one)
               if (n_tcoord_pts > 0 && hasPolysWithTextureIndices)
               {
-                new_tcoords->InsertNextTuple(tcoords->GetTuple(tcoord_pts[j]));
+                float uv[2] = { 0.f, 0.f };
+                if (tcoord_pts[j] < n_tcoords_tuples)
+                {
+                  tcoords->GetTypedTuple(tcoord_pts[j], uv);
+                }
+                new_tcoords->InsertNextTuple(uv);
               }
               // copy the normal for this point across (if there is one)
               if (n_normal_pts > 0)
               {
-                new_normals->InsertNextTuple(normals->GetTuple(normal_pts[j]));
+                float n[3] = { 0.f, 0.f, 1.f };
+                if (normal_pts[j] < n_normals_tuples)
+                {
+                  normals->GetTypedTuple(normal_pts[j], n);
+                }
+                new_normals->InsertNextTuple(n);
               }
               // copy the vertex into the new structure and update
               // the vertex index in the polys structure (pts is a pointer into it)
@@ -1046,7 +1090,7 @@ int vtkOBJPolyDataProcessor::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOBJPolyDataProcessor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -1058,7 +1102,7 @@ void vtkOBJPolyDataProcessor::PrintSelf(ostream& os, vtkIndent indent)
      << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyData* vtkOBJPolyDataProcessor::GetOutput(int idx)
 {
   if (idx < (int)outVector_of_vtkPolyData.size())

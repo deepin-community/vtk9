@@ -36,15 +36,15 @@ public:
   vtkTypeMacro(vtkImageGradient, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Determines how the input is interpreted (set of 2d slices ...)
    */
   vtkSetClampMacro(Dimensionality, int, 2, 3);
   vtkGetMacro(Dimensionality, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get/Set whether to handle boundaries.  If enabled, boundary
    * pixels are treated as duplicated so that central differencing
@@ -54,11 +54,11 @@ public:
   vtkSetMacro(HandleBoundaries, vtkTypeBool);
   vtkGetMacro(HandleBoundaries, vtkTypeBool);
   vtkBooleanMacro(HandleBoundaries, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageGradient();
-  ~vtkImageGradient() override {}
+  ~vtkImageGradient() override = default;
 
   vtkTypeBool HandleBoundaries;
   int Dimensionality;

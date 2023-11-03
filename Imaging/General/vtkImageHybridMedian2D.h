@@ -35,10 +35,11 @@ class VTKIMAGINGGENERAL_EXPORT vtkImageHybridMedian2D : public vtkImageSpatialAl
 public:
   static vtkImageHybridMedian2D* New();
   vtkTypeMacro(vtkImageHybridMedian2D, vtkImageSpatialAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkImageHybridMedian2D();
-  ~vtkImageHybridMedian2D() override {}
+  ~vtkImageHybridMedian2D() override = default;
 
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData,
@@ -50,4 +51,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkImageHybridMedian2D.h

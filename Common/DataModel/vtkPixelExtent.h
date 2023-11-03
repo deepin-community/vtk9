@@ -87,14 +87,14 @@ public:
 
   const unsigned int* GetDataU() const { return reinterpret_cast<const unsigned int*>(this->Data); }
 
-  //@{
+  ///@{
   /**
    * Get the start/end index.
    */
   void GetStartIndex(int first[2]) const;
   void GetStartIndex(int first[2], const int origin[2]) const;
   void GetEndIndex(int last[2]) const;
-  //@}
+  ///@}
 
   /**
    * Return true if empty.
@@ -106,13 +106,13 @@ public:
    */
   bool operator==(const vtkPixelExtent& other) const;
 
-  //@{
+  ///@{
   /**
    * Return non-zero if this extent contains the other.
    */
   int Contains(const vtkPixelExtent& other) const;
   int Contains(int i, int j) const;
-  //@}
+  ///@}
 
   /**
    * Return non-zero if the extent is disjoint from the other
@@ -140,7 +140,7 @@ public:
    */
   void operator|=(const vtkPixelExtent& other);
 
-  //@{
+  ///@{
   /**
    * Expand the extents by n.
    */
@@ -148,15 +148,15 @@ public:
   void Grow(int q, int n);
   void GrowLow(int q, int n);
   void GrowHigh(int q, int n);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Shrink the extent by n.
    */
   void Shrink(int n);
   void Shrink(int q, int n);
-  //@}
+  ///@}
 
   /**
    * Shifts by low corner of this, moving to the origin.
@@ -186,13 +186,13 @@ public:
    */
   vtkPixelExtent Split(int dir);
 
-  //@{
+  ///@{
   /**
    * In-place conversion from cell based to node based extent, and vise-versa.
    */
   void CellToNode();
   void NodeToCell();
-  //@}
+  ///@}
 
   /**
    * Get the number in each direction.
@@ -240,13 +240,13 @@ public:
    */
   static vtkPixelExtent CellToNode(const vtkPixelExtent& inputExt);
 
-  //@{
+  ///@{
   /**
    * Shift by the given amount while respecting mode.
    */
   static void Shift(int* ij, int n);
   static void Shift(int* ij, int* n);
-  //@}
+  ///@}
 
   /**
    * Split ext at i,j, resulting extents (up to 4) are appended
@@ -262,7 +262,7 @@ public:
    * of A and C is C.
    */
   static void Subtract(
-    const vtkPixelExtent& A, const vtkPixelExtent& B, std::deque<vtkPixelExtent>& newExts);
+    const vtkPixelExtent& A, const vtkPixelExtent& B, std::deque<vtkPixelExtent>& C);
 
   /**
    * Merge compatible extents in the list. Extents are compatible
@@ -424,9 +424,9 @@ inline bool vtkPixelExtent::operator==(const vtkPixelExtent& other) const
   if ((this->Data[0] == other.Data[0]) && (this->Data[1] == other.Data[1]) &&
     (this->Data[2] == other.Data[2]) && (this->Data[3] == other.Data[3]))
   {
-    return 1;
+    return true;
   }
-  return 0;
+  return false;
 }
 
 //-----------------------------------------------------------------------------

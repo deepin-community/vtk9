@@ -33,7 +33,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <string>
 
 namespace
 { // this namespace contains the supporting mapped grid definition used in the test
@@ -49,7 +48,7 @@ public:
 
   void SetMappedUnstructuredGrid(vtkMappedUnstructuredGrid<I, ThisType>* grid);
 
-  void PrintSelf(std::ostream& os, vtkIndent id) override;
+  void PrintSelf(std::ostream& os, vtkIndent indent) override;
 
   bool IsDoneWithTraversal() override;
   vtkIdType GetCellId() override;
@@ -157,7 +156,7 @@ public:
     _grid = ug;
   }
 
-  void PrintSelf(std::ostream& os, vtkIndent id) override;
+  void PrintSelf(std::ostream& os, vtkIndent indent) override;
 
   // API for vtkMappedUnstructuredGrid implementation
   virtual int GetCellType(vtkIdType cellId);
@@ -271,10 +270,10 @@ void MappedGridImpl::ReplaceCell(
 }
 
 class MappedGrid
-  : public vtkMappedUnstructuredGrid<MappedGridImpl, MappedCellIterator<MappedGridImpl> >
+  : public vtkMappedUnstructuredGrid<MappedGridImpl, MappedCellIterator<MappedGridImpl>>
 {
 public:
-  typedef vtkMappedUnstructuredGrid<MappedGridImpl, MappedCellIterator<MappedGridImpl> > _myBase;
+  typedef vtkMappedUnstructuredGrid<MappedGridImpl, MappedCellIterator<MappedGridImpl>> _myBase;
 
   int GetDataObjectType() override { return VTK_UNSTRUCTURED_GRID_BASE; }
 
@@ -305,8 +304,6 @@ private:
 vtkStandardNewMacro(MappedGrid);
 
 } // end anonymous namespace
-
-using namespace std;
 
 int TestMappedGridDeepCopy(int vtkNotUsed(argc), char*[] vtkNotUsed(argv))
 {

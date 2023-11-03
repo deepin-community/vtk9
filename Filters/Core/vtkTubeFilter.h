@@ -21,8 +21,9 @@
  * the rotation of the line normals. (If no normals are present, they are
  * computed automatically.) The radius of the tube can be set to vary with
  * scalar or vector value. If the radius varies with scalar value the radius
- * is linearly adjusted. If the radius varies with vector value, a mass
- * flux preserving variation is used. The number of sides for the tube also
+ * is linearly adjusted. If the radius varies by vector, a mass flux preserving
+ * variation is used. If the radius varies by vector norm, the radius is
+ * linearly adjusted to its norm. The number of sides for the tube also
  * can be specified. You can also specify which of the sides are visible. This
  * is useful for generating interesting striping effects. Other options
  * include the ability to cap the tube and generate texture coordinates.
@@ -45,7 +46,7 @@
  * criteria, then that line is not tubed.
  *
  * @sa
- * vtkRibbonFilter vtkStreamTracer
+ * vtkRibbonFilter vtkStreamTracer vtkTubeBender
  *
  * @par Thanks:
  * Michael Finch for absolute scalar radius
@@ -61,6 +62,7 @@
 #define VTK_VARY_RADIUS_BY_SCALAR 1
 #define VTK_VARY_RADIUS_BY_VECTOR 2
 #define VTK_VARY_RADIUS_BY_ABSOLUTE_SCALAR 3
+#define VTK_VARY_RADIUS_BY_VECTOR_NORM 4
 
 #define VTK_TCOORDS_OFF 0
 #define VTK_TCOORDS_FROM_NORMALIZED_LENGTH 1
@@ -86,56 +88,60 @@ public:
    */
   static vtkTubeFilter* New();
 
-  //@{
+  ///@{
   /**
    * Set the minimum tube radius (minimum because the tube radius may vary).
    */
   vtkSetClampMacro(Radius, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(Radius, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the variation of tube radius with scalar value.
    */
-  vtkSetClampMacro(VaryRadius, int, VTK_VARY_RADIUS_OFF, VTK_VARY_RADIUS_BY_ABSOLUTE_SCALAR);
+  vtkSetClampMacro(VaryRadius, int, VTK_VARY_RADIUS_OFF, VTK_VARY_RADIUS_BY_VECTOR_NORM);
   vtkGetMacro(VaryRadius, int);
   void SetVaryRadiusToVaryRadiusOff() { this->SetVaryRadius(VTK_VARY_RADIUS_OFF); }
   void SetVaryRadiusToVaryRadiusByScalar() { this->SetVaryRadius(VTK_VARY_RADIUS_BY_SCALAR); }
   void SetVaryRadiusToVaryRadiusByVector() { this->SetVaryRadius(VTK_VARY_RADIUS_BY_VECTOR); }
+  void SetVaryRadiusToVaryRadiusByVectorNorm()
+  {
+    this->SetVaryRadius(VTK_VARY_RADIUS_BY_VECTOR_NORM);
+  }
   void SetVaryRadiusToVaryRadiusByAbsoluteScalar()
   {
     this->SetVaryRadius(VTK_VARY_RADIUS_BY_ABSOLUTE_SCALAR);
   }
   const char* GetVaryRadiusAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the number of sides for the tube. At a minimum, number of sides is 3.
    */
   vtkSetClampMacro(NumberOfSides, int, 3, VTK_INT_MAX);
   vtkGetMacro(NumberOfSides, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the maximum tube radius in terms of a multiple of the minimum radius.
    */
   vtkSetMacro(RadiusFactor, double);
   vtkGetMacro(RadiusFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the default normal to use if no normals are supplied, and the
    * DefaultNormalOn is set.
    */
   vtkSetVector3Macro(DefaultNormal, double);
   vtkGetVectorMacro(DefaultNormal, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set a boolean to control whether to use default normals.
    * DefaultNormalOn is set.
@@ -143,9 +149,9 @@ public:
   vtkSetMacro(UseDefaultNormal, vtkTypeBool);
   vtkGetMacro(UseDefaultNormal, vtkTypeBool);
   vtkBooleanMacro(UseDefaultNormal, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set a boolean to control whether tube sides should share vertices.
    * This creates independent strips, with constant normals so the
@@ -154,18 +160,18 @@ public:
   vtkSetMacro(SidesShareVertices, vtkTypeBool);
   vtkGetMacro(SidesShareVertices, vtkTypeBool);
   vtkBooleanMacro(SidesShareVertices, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off whether to cap the ends with polygons. Initial value is off.
    */
   vtkSetMacro(Capping, vtkTypeBool);
   vtkGetMacro(Capping, vtkTypeBool);
   vtkBooleanMacro(Capping, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the striping of the tubes. If OnRatio is greater than 1,
    * then every nth tube side is turned on, beginning with the Offset
@@ -173,9 +179,9 @@ public:
    */
   vtkSetClampMacro(OnRatio, int, 1, VTK_INT_MAX);
   vtkGetMacro(OnRatio, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the striping of the tubes. The offset sets the
    * first tube side that is visible. Offset is generally used with
@@ -183,9 +189,9 @@ public:
    */
   vtkSetClampMacro(Offset, int, 0, VTK_INT_MAX);
   vtkGetMacro(Offset, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control whether and how texture coordinates are produced. This is
    * useful for striping the tube with length textures, etc. If you
@@ -202,9 +208,9 @@ public:
   void SetGenerateTCoordsToUseLength() { this->SetGenerateTCoords(VTK_TCOORDS_FROM_LENGTH); }
   void SetGenerateTCoordsToUseScalars() { this->SetGenerateTCoords(VTK_TCOORDS_FROM_SCALARS); }
   const char* GetGenerateTCoordsAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the conversion of units during the texture coordinates
    * calculation. The TextureLength indicates what length (whether
@@ -213,9 +219,9 @@ public:
    */
   vtkSetClampMacro(TextureLength, double, 0.000001, VTK_INT_MAX);
   vtkGetMacro(TextureLength, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output types. See the documentation
    * for the vtkAlgorithm::DesiredOutputPrecision enum for an explanation of
@@ -223,11 +229,11 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkTubeFilter();
-  ~vtkTubeFilter() override {}
+  ~vtkTubeFilter() override = default;
 
   // Usual data generation method
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
@@ -249,7 +255,7 @@ protected:
   // Helper methods
   int GeneratePoints(vtkIdType offset, vtkIdType npts, const vtkIdType* pts, vtkPoints* inPts,
     vtkPoints* newPts, vtkPointData* pd, vtkPointData* outPD, vtkFloatArray* newNormals,
-    vtkDataArray* inScalars, double range[2], vtkDataArray* inVectors, double maxNorm,
+    vtkDataArray* inScalars, double range[2], vtkDataArray* inVectors, double maxSpeed,
     vtkDataArray* inNormals);
   void GenerateStrips(vtkIdType offset, vtkIdType npts, const vtkIdType* pts, vtkIdType inCellId,
     vtkCellData* cd, vtkCellData* outCD, vtkCellArray* newStrips);

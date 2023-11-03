@@ -44,22 +44,22 @@ public:
    */
   virtual void SetInputData(vtkDataObject* dobj);
 
-  //@{
+  ///@{
   /**
    * Set or get the file name of the xdmf file.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * We never write out ghost cells.  This variable is here to satisfy
    * the behavior of ParaView on invoking a parallel writer.
    */
   void SetGhostLevel(int) {}
   int GetGhostLevel() { return 0; }
-  //@}
+  ///@}
 
   /**
    * Write data to output. Method executes subclasses WriteData() method, as
@@ -68,16 +68,16 @@ public:
    */
   virtual int Write();
 
-  //@{
+  ///@{
   /**
    * Topology Geometry and Attribute arrays smaller than this are written in line into the XML.
    * Default is 100.
    */
   vtkSetMacro(LightDataLimit, unsigned int);
   vtkGetMacro(LightDataLimit, unsigned int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Controls whether writer automatically writes all input time steps, or
    * just the timestep that is currently on the input.
@@ -86,7 +86,7 @@ public:
   vtkSetMacro(WriteAllTimeSteps, bool);
   vtkGetMacro(WriteAllTimeSteps, bool);
   vtkBooleanMacro(WriteAllTimeSteps, bool);
-  //@}
+  ///@}
 
 protected:
   vtkXdmf3Writer();
@@ -108,7 +108,7 @@ protected:
   vtkDoubleArray* TimeValues;
   vtkDataObject* OriginalInput;
   void WriteDataInternal(vtkInformation* request);
-  int CheckParametersInternal(int NumberOfProcesses, int MyRank);
+  int CheckParametersInternal(int numberOfProcesses, int myRank);
   virtual int CheckParameters();
   // If writing in parallel multiple time steps exchange after each time step
   // if we should continue the execution. Pass local continueExecution as a

@@ -19,7 +19,6 @@
 #include "vtkObjectFactory.h"
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkToolkits.h"
 
 #include <vector>
 
@@ -54,7 +53,7 @@ void vtkOpenSlideReader::ExecuteInformation()
   this->SetDataScalarTypeToUnsignedChar();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This function reads a data from a file.  The datas extent/axes
 // are assumed to be the same as the file extent/order.
 void vtkOpenSlideReader::ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo)
@@ -116,7 +115,7 @@ void vtkOpenSlideReader::ExecuteDataWithInformation(vtkDataObject* output, vtkIn
   // openslide_close(this->openslide_handle);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkOpenSlideReader::CanReadFile(const char* fname)
 {
   // 1 - I think I can read the file but I cannot prove it
@@ -151,7 +150,7 @@ vtkOpenSlideReader::~vtkOpenSlideReader()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenSlideReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

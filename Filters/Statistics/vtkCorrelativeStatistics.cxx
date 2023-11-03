@@ -18,8 +18,6 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#include "vtkToolkits.h"
-
 #include "vtkCorrelativeStatistics.h"
 #include "vtkStatisticsAlgorithmPrivate.h"
 
@@ -42,7 +40,7 @@
 
 vtkObjectFactoryNewMacro(vtkCorrelativeStatistics);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCorrelativeStatistics::vtkCorrelativeStatistics()
 {
   this->AssessNames->SetNumberOfValues(3);
@@ -51,16 +49,16 @@ vtkCorrelativeStatistics::vtkCorrelativeStatistics()
   this->AssessNames->SetValue(2, "Residual X/Y");
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCorrelativeStatistics::~vtkCorrelativeStatistics() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::Aggregate(
   vtkDataObjectCollection* inMetaColl, vtkMultiBlockDataSet* outMeta)
 {
@@ -202,7 +200,7 @@ void vtkCorrelativeStatistics::Aggregate(
   aggregatedTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::Learn(
   vtkTable* inData, vtkTable* vtkNotUsed(inParameters), vtkMultiBlockDataSet* outMeta)
 {
@@ -261,7 +259,7 @@ void vtkCorrelativeStatistics::Learn(
 
   // Loop over requests
   vtkIdType nRow = inData->GetNumberOfRows();
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one pair of column of interest (if there are others, they are
@@ -337,7 +335,7 @@ void vtkCorrelativeStatistics::Learn(
   primaryTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
 {
   if (!inMeta || inMeta->GetNumberOfBlocks() < 1)
@@ -459,7 +457,7 @@ void vtkCorrelativeStatistics::Derive(vtkMultiBlockDataSet* inMeta)
   derivedTab->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDoubleArray* vtkCorrelativeStatistics::CalculatePValues(vtkDoubleArray* statCol)
 {
   vtkDoubleArray* testCol = vtkDoubleArray::New();
@@ -475,7 +473,7 @@ vtkDoubleArray* vtkCorrelativeStatistics::CalculatePValues(vtkDoubleArray* statC
   return testCol;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::Test(
   vtkTable* inData, vtkMultiBlockDataSet* inMeta, vtkTable* outMeta)
 {
@@ -543,7 +541,7 @@ void vtkCorrelativeStatistics::Test(
 
   // Loop over requests
   vtkIdType nRowData = inData->GetNumberOfRows();
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Each request contains only one pair of column of interest (if there are others, they are
@@ -750,7 +748,7 @@ void vtkCorrelativeStatistics::Test(
   statCol->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class BivariateRegressionDeviationsFunctor : public vtkStatisticsAlgorithm::AssessFunctor
 {
 public:
@@ -813,7 +811,7 @@ public:
   }
 };
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCorrelativeStatistics::SelectAssessFunctor(
   vtkTable* outData, vtkDataObject* inMetaDO, vtkStringArray* rowNames, AssessFunctor*& dfunc)
 {

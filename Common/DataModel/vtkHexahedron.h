@@ -45,24 +45,25 @@ public:
   vtkTypeMacro(vtkHexahedron, vtkCell3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * See vtkCell3D API for description of these methods.
    */
   void GetEdgePoints(vtkIdType edgeId, const vtkIdType*& pts) override;
   // @deprecated Replaced by GetEdgePoints(vtkIdType, const vtkIdType*&) as of VTK 9.0
-  VTK_LEGACY(virtual void GetEdgePoints(int edgeId, int*& pts) override);
+  VTK_DEPRECATED_IN_9_0_0("Replaced by vtkHexahedron::GetEdgePoints(vtkIdType, const vtkIdType*&)")
+  void GetEdgePoints(int edgeId, int*& pts) override;
   vtkIdType GetFacePoints(vtkIdType faceId, const vtkIdType*& pts) override;
   // @deprecated Replaced by GetFacePoints(vtkIdType, const vtkIdType*&) as of VTK 9.0
-  VTK_LEGACY(virtual void GetFacePoints(int faceId, int*& pts) override);
+  VTK_DEPRECATED_IN_9_0_0("Replaced by vtkHexahedron::GetFacePoints(vtkIdType, const vtkIdType*&)")
+  void GetFacePoints(int faceId, int*& pts) override;
   void GetEdgeToAdjacentFaces(vtkIdType edgeId, const vtkIdType*& pts) override;
   vtkIdType GetFaceToAdjacentFaces(vtkIdType faceId, const vtkIdType*& faceIds) override;
   vtkIdType GetPointToIncidentEdges(vtkIdType pointId, const vtkIdType*& edgeIds) override;
   vtkIdType GetPointToIncidentFaces(vtkIdType pointId, const vtkIdType*& faceIds) override;
   vtkIdType GetPointToOneRingPoints(vtkIdType pointId, const vtkIdType*& pts) override;
   bool GetCentroid(double centroid[3]) const override;
-  bool IsInsideOut() override;
-  //@}
+  ///@}
 
   /**
    * static constexpr handle on the number of points.
@@ -92,7 +93,7 @@ public:
    */
   static constexpr vtkIdType MaximumValence = 3;
 
-  //@{
+  ///@{
   /**
    * See the vtkCell API for descriptions of these methods.
    */
@@ -105,7 +106,7 @@ public:
   void Contour(double value, vtkDataArray* cellScalars, vtkIncrementalPointLocator* locator,
     vtkCellArray* verts, vtkCellArray* lines, vtkCellArray* polys, vtkPointData* inPd,
     vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId, vtkCellData* outCd) override;
-  //@}
+  ///@}
 
   int EvaluatePosition(const double x[3], double closestPoint[3], int& subId, double pcoords[3],
     double& dist2, double weights[]) override;
@@ -128,7 +129,7 @@ public:
 
   static void InterpolationFunctions(const double pcoords[3], double weights[8]);
   static void InterpolationDerivs(const double pcoords[3], double derivs[24]);
-  //@{
+  ///@{
   /**
    * Compute the interpolation functions/derivatives
    * (aka shape functions/derivatives)
@@ -141,9 +142,9 @@ public:
   {
     vtkHexahedron::InterpolationDerivs(pcoords, derivs);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Return the ids of the vertices defining edge/face (`edgeId`/`faceId').
    * Ids are related to the cell, not to the dataset.
@@ -154,7 +155,7 @@ public:
    */
   static const vtkIdType* GetEdgeArray(vtkIdType edgeId) VTK_SIZEHINT(2);
   static const vtkIdType* GetFaceArray(vtkIdType faceId) VTK_SIZEHINT(4);
-  //@}
+  ///@}
 
   /**
    * Static method version of GetEdgeToAdjacentFaces.

@@ -70,29 +70,29 @@ public:
    */
   double Evaluate(double t) override;
 
-  //@{
+  ///@{
   /**
    * Set the bias for all points. Default is 0.
    */
   vtkSetMacro(DefaultBias, double);
   vtkGetMacro(DefaultBias, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the tension for all points. Default is 0.
    */
   vtkSetMacro(DefaultTension, double);
   vtkGetMacro(DefaultTension, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the continuity for all points. Default is 0.
    */
   vtkSetMacro(DefaultContinuity, double);
   vtkGetMacro(DefaultContinuity, double);
-  //@}
+  ///@}
 
   /**
    * Deep copy of cardinal spline data.
@@ -101,9 +101,9 @@ public:
 
 protected:
   vtkKochanekSpline();
-  ~vtkKochanekSpline() override {}
+  ~vtkKochanekSpline() override = default;
 
-  void Fit1D(int n, double* x, double* y, double tension, double bias, double continuity,
+  void Fit1D(int size, double* x, double* y, double tension, double bias, double continuity,
     double coefficients[][4], int leftConstraint, double leftValue, int rightConstraint,
     double rightValue);
 

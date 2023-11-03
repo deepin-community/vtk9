@@ -21,7 +21,7 @@
 //============================================================================
 vtkStandardNewMacro(vtkWin32HardwareWindow);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWin32HardwareWindow::vtkWin32HardwareWindow()
   : ApplicationInstance(0)
   , ParentId(0)
@@ -29,10 +29,10 @@ vtkWin32HardwareWindow::vtkWin32HardwareWindow()
 {
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWin32HardwareWindow::~vtkWin32HardwareWindow() {}
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32HardwareWindow::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -78,7 +78,7 @@ void* vtkWin32HardwareWindow::GetGenericParentId()
   return this->ParentId;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 void AdjustWindowRectForBorders(
@@ -117,12 +117,8 @@ void vtkWin32HardwareWindow::Create()
   }
 
   // has the class been registered ?
-  WNDCLASS wndClass;
-#ifdef UNICODE
-  if (!GetClassInfo(this->ApplicationInstance, L"vtkOpenGL", &wndClass))
-#else
-  if (!GetClassInfo(this->ApplicationInstance, "vtkOpenGL", &wndClass))
-#endif
+  WNDCLASSA wndClass;
+  if (!GetClassInfoA(this->ApplicationInstance, "vtkOpenGL", &wndClass))
   {
     wndClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS;
     wndClass.lpfnWndProc = DefWindowProc;
@@ -132,37 +128,27 @@ void vtkWin32HardwareWindow::Create()
     wndClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wndClass.lpszMenuName = nullptr;
-#ifdef UNICODE
-    wndClass.lpszClassName = L"vtkOpenGL";
-#else
     wndClass.lpszClassName = "vtkOpenGL";
-#endif
     // vtk doesn't use the first extra vtkLONG's worth of bytes,
     // but app writers may want them, so we provide them. VTK
     // does use the second vtkLONG's worth of bytes of extra space.
     wndClass.cbWndExtra = 2 * sizeof(vtkLONG);
-    RegisterClass(&wndClass);
+    RegisterClassA(&wndClass);
   }
 
   if (!this->WindowId)
   {
-    int x = ((this->Position[0] >= 0) ? this->Position[0] : 5);
-    int y = ((this->Position[1] >= 0) ? this->Position[1] : 5);
+    int x = this->Position[0];
+    int y = this->Position[1];
     int height = ((this->Size[1] > 0) ? this->Size[1] : 300);
     int width = ((this->Size[0] > 0) ? this->Size[0] : 300);
 
     /* create window */
     if (this->ParentId)
     {
-#ifdef UNICODE
       this->WindowId =
-        CreateWindow(L"vtkVulkan", wname, WS_CHILD | WS_CLIPCHILDREN /*| WS_CLIPSIBLINGS*/, x, y,
-          width, height, this->ParentId, nullptr, this->ApplicationInstance, nullptr);
-#else
-      this->WindowId =
-        CreateWindow("vtkVulkan", "VTK - Vulkan", WS_CHILD | WS_CLIPCHILDREN /*| WS_CLIPSIBLINGS*/,
+        CreateWindowA("vtkVulkan", "VTK - Vulkan", WS_CHILD | WS_CLIPCHILDREN /*| WS_CLIPSIBLINGS*/,
           x, y, width, height, this->ParentId, nullptr, this->ApplicationInstance, nullptr);
-#endif
     }
     else
     {
@@ -177,17 +163,9 @@ void vtkWin32HardwareWindow::Create()
       }
       RECT r;
       AdjustWindowRectForBorders(0, style, x, y, width, height, r);
-#ifdef UNICODE
-      this->WindowId = CreateWindow(L"vtkOpenGL", wname, style, x, y, r.right - r.left,
+      this->WindowId = CreateWindowA("vtkOpenGL", "VTK - Vulkan", style, x, y, r.right - r.left,
         r.bottom - r.top, nullptr, nullptr, this->ApplicationInstance, nullptr);
-#else
-      this->WindowId = CreateWindow("vtkOpenGL", "VTK - Vulkan", style, x, y, r.right - r.left,
-        r.bottom - r.top, nullptr, nullptr, this->ApplicationInstance, nullptr);
-#endif
     }
-#ifdef UNICODE
-    delete[] wname;
-#endif
 
     if (!this->WindowId)
     {
@@ -210,4 +188,59 @@ void vtkWin32HardwareWindow::Destroy()
 {
   ::DestroyWindow(this->WindowId); // windows api
   this->WindowId = 0;
+}
+
+// ----------------------------------------------------------------------------
+void vtkWin32HardwareWindow::SetSize(int x, int y)
+{
+  static bool resizing = false;
+  if ((this->Size[0] != x) || (this->Size[1] != y))
+  {
+    this->Superclass::SetSize(x, y);
+
+    if (!this->UseOffScreenBuffers)
+    {
+      if (!resizing)
+      {
+        resizing = true;
+
+        if (this->ParentId)
+        {
+          SetWindowExtEx(GetDC(this->WindowId), x, y, nullptr);
+          SetViewportExtEx(GetDC(this->WindowId), x, y, nullptr);
+          SetWindowPos(this->WindowId, HWND_TOP, 0, 0, x, y, SWP_NOMOVE | SWP_NOZORDER);
+        }
+        else
+        {
+          RECT r;
+          AdjustWindowRectForBorders(this->WindowId, 0, 0, 0, x, y, r);
+          SetWindowPos(this->WindowId, HWND_TOP, 0, 0, r.right - r.left, r.bottom - r.top,
+            SWP_NOMOVE | SWP_NOZORDER);
+        }
+        resizing = false;
+      }
+    }
+  }
+}
+
+void vtkWin32HardwareWindow::SetPosition(int x, int y)
+{
+  static bool resizing = false;
+
+  if ((this->Position[0] != x) || (this->Position[1] != y))
+  {
+    this->Modified();
+    this->Position[0] = x;
+    this->Position[1] = y;
+    if (this->Mapped)
+    {
+      if (!resizing)
+      {
+        resizing = true;
+
+        SetWindowPos(this->WindowId, HWND_TOP, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+        resizing = false;
+      }
+    }
+  }
 }

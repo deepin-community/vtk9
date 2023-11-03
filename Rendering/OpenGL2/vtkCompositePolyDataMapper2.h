@@ -45,7 +45,7 @@ public:
   vtkTypeMacro(vtkCompositePolyDataMapper2, vtkOpenGLPolyDataMapper);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Some introspection on the type of data the mapper will render
    * used by props to determine if they should invoke the mapper
@@ -53,17 +53,17 @@ public:
    */
   bool HasOpaqueGeometry() override;
   bool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the composite data set attributes.
    */
   void SetCompositeDataDisplayAttributes(vtkCompositeDataDisplayAttributes* attributes);
   vtkCompositeDataDisplayAttributes* GetCompositeDataDisplayAttributes();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the visibility for a block given its flat index.
    */
@@ -71,15 +71,13 @@ public:
   bool GetBlockVisibility(unsigned int index);
   void RemoveBlockVisibility(unsigned int index);
   void RemoveBlockVisibilities();
-  // This method is deprecated and will be removed in VTK 8.2. It is misspelled.
-  VTK_LEGACY(void RemoveBlockVisibilites());
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the color for a block given its flat index.
    */
-  void SetBlockColor(unsigned int index, double color[3]);
+  void SetBlockColor(unsigned int index, const double color[3]);
   void SetBlockColor(unsigned int index, double r, double g, double b)
   {
     double color[3] = { r, g, b };
@@ -88,9 +86,9 @@ public:
   double* GetBlockColor(unsigned int index);
   void RemoveBlockColor(unsigned int index);
   void RemoveBlockColors();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the opacity for a block given its flat index.
    */
@@ -98,7 +96,7 @@ public:
   double GetBlockOpacity(unsigned int index);
   void RemoveBlockOpacity(unsigned int index);
   void RemoveBlockOpacities();
-  //@}
+  ///@}
 
   /**
    * If the current 'color by' array is missing on some datasets, color these
@@ -123,7 +121,18 @@ public:
    */
   void Render(vtkRenderer* ren, vtkActor* act) override;
 
-  //@{
+  /**\brief A convenience method for enabling/disabling
+   *   the VBO's shift+scale transform.
+   */
+  void SetVBOShiftScaleMethod(int m) override;
+
+  /**\brief Pause updates of shift-scale parameters based on camera position.
+   *
+   * This override passes the information to all instances in \a Helpers .
+   */
+  void SetPauseShiftScale(bool pauseShiftScale) override;
+
+  ///@{
   /**
    * Call SetInputArrayToProcess on helpers.
    */
@@ -133,7 +142,7 @@ public:
   void SetInputArrayToProcess(
     int idx, int port, int connection, int fieldAssociation, int fieldAttributeType) override;
   void SetInputArrayToProcess(int idx, vtkInformation* info) override;
-  //@}
+  ///@}
 
   /**
    * Accessor to the ordered list of PolyData that we end last drew.
@@ -146,6 +155,11 @@ public:
    */
   void ProcessSelectorPixelBuffers(
     vtkHardwareSelector* sel, std::vector<unsigned int>& pixeloffsets, vtkProp* prop) override;
+
+  /**
+   * Overridden to include vtkCompositeDataDisplayAttributes' mtime.
+   */
+  vtkMTimeType GetMTime() override;
 
 protected:
   vtkCompositePolyDataMapper2();
@@ -202,6 +216,8 @@ protected:
     std::stack<vtkColor3d> AmbientColor;
     std::stack<vtkColor3d> DiffuseColor;
     std::stack<vtkColor3d> SpecularColor;
+    std::stack<vtkColor3d> SelectionColor;
+    std::stack<float> SelectionOpacity;
   };
 
   bool RecursiveHasTranslucentGeometry(vtkDataObject* dobj, unsigned int& flat_index);

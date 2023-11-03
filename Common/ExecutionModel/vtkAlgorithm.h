@@ -33,6 +33,7 @@
 #define vtkAlgorithm_h
 
 #include "vtkCommonExecutionModelModule.h" // For export macro
+#include "vtkDeprecation.h"                // For VTK_DEPRECATED_IN_9_0_0
 #include "vtkObject.h"
 
 class vtkAbstractArray;
@@ -169,13 +170,13 @@ public:
    */
   vtkInformation* GetOutputPortInformation(int port);
 
-  //@{
+  ///@{
   /**
    * Set/Get the information object associated with this algorithm.
    */
   vtkGetObjectMacro(Information, vtkInformation);
   virtual void SetInformation(vtkInformation*);
-  //@}
+  ///@}
 
   /**
    * Get the number of input ports used by the algorithm.
@@ -187,15 +188,15 @@ public:
    */
   int GetNumberOfOutputPorts();
 
-  //@{
+  ///@{
   /**
    * Participate in garbage collection.
    */
   void Register(vtkObjectBase* o) override;
   void UnRegister(vtkObjectBase* o) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the AbortExecute flag for the process object. Process objects
    * may handle premature termination of execution in different ways.
@@ -203,20 +204,21 @@ public:
   vtkSetMacro(AbortExecute, vtkTypeBool);
   vtkGetMacro(AbortExecute, vtkTypeBool);
   vtkBooleanMacro(AbortExecute, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the execution progress of a process object.
    */
   vtkGetMacro(Progress, double);
-  //@}
+  ///@}
 
   /**
    * `SetProgress` is deprecated. Subclasses should use `UpdateProgress` to
    * report progress updates.
    */
-  VTK_LEGACY(void SetProgress(double));
+  VTK_DEPRECATED_IN_9_0_0("Use vtkAlgorithm::UpdateProgress")
+  void SetProgress(double);
 
   /**
    * Update the progress of the process object. If a ProgressMethod exists,
@@ -225,7 +227,7 @@ public:
    */
   void UpdateProgress(double amount);
 
-  //@{
+  ///@{
   /**
    * Specify the shift and scale values to use to apply to the progress amount
    * when `UpdateProgress` is called. By default shift is set to 0, and scale is
@@ -241,9 +243,9 @@ public:
   void SetProgressShiftScale(double shift, double scale);
   vtkGetMacro(ProgressShift, double);
   vtkGetMacro(ProgressScale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the current text message associated with the progress state.
    * This may be used by a calling process/GUI.
@@ -253,15 +255,15 @@ public:
    */
   void SetProgressText(const char* ptext);
   vtkGetStringMacro(ProgressText);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The error code contains a possible error that occurred while
    * reading or writing the file.
    */
   vtkGetMacro(ErrorCode, unsigned long);
-  //@}
+  ///@}
 
   // left public for performance since it is used in inner loops
   vtkTypeBool AbortExecute;
@@ -320,7 +322,7 @@ public:
    */
   static vtkInformationIntegerKey* CAN_HANDLE_PIECE_REQUEST();
 
-  //@{
+  ///@{
   /**
    * Set the input data arrays that this algorithm will
    * process. Specifically the idx array that this algorithm will process
@@ -334,7 +336,7 @@ public:
   virtual void SetInputArrayToProcess(
     int idx, int port, int connection, int fieldAssociation, int fieldAttributeType);
   virtual void SetInputArrayToProcess(int idx, vtkInformation* info);
-  //@}
+  ///@}
 
   /**
    * String based versions of SetInputArrayToProcess(). Because
@@ -386,7 +388,7 @@ public:
    */
   vtkDataObject* GetInputDataObject(int port, int connection);
 
-  //@{
+  ///@{
   /**
    * Set the connection for the given input port index.  Each input
    * port of a filter has a specific purpose.  A port may have zero or
@@ -402,9 +404,9 @@ public:
    */
   virtual void SetInputConnection(int port, vtkAlgorithmOutput* input);
   virtual void SetInputConnection(vtkAlgorithmOutput* input);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Add a connection to the given input port index.  See
    * SetInputConnection() for details on input connections.  This
@@ -416,7 +418,7 @@ public:
    */
   virtual void AddInputConnection(int port, vtkAlgorithmOutput* input);
   virtual void AddInputConnection(vtkAlgorithmOutput* input);
-  //@}
+  ///@}
 
   /**
    * Remove a connection from the given input port index.  See
@@ -533,13 +535,13 @@ public:
    */
   vtkInformation* GetOutputInformation(int port);
 
-  //@{
+  ///@{
   /**
    * Bring this algorithm's outputs up-to-date.
    */
   virtual void Update(int port);
   virtual void Update();
-  //@}
+  ///@}
 
   /**
    * This method enables the passing of data requests to the algorithm
@@ -629,7 +631,7 @@ public:
   // pipeline
   //======================================================================
 
-  //@{
+  ///@{
   /**
    * Turn release data flag on or off for all output ports.
    */
@@ -637,11 +639,11 @@ public:
   virtual int GetReleaseDataFlag();
   void ReleaseDataFlagOn();
   void ReleaseDataFlagOff();
-  //@}
+  ///@}
 
   //========================================================================
 
-  //@{
+  ///@{
   /**
    * This detects when the UpdateExtent will generate no data
    * This condition is satisfied when the UpdateExtent has
@@ -650,7 +652,7 @@ public:
    */
   int UpdateExtentIsEmpty(vtkInformation* pinfo, vtkDataObject* output);
   int UpdateExtentIsEmpty(vtkInformation* pinfo, int extentType);
-  //@}
+  ///@}
 
   /**
    * If the DefaultExecutivePrototype is set, a copy of it is created
@@ -658,7 +660,7 @@ public:
    */
   static void SetDefaultExecutivePrototype(vtkExecutive* proto);
 
-  //@{
+  ///@{
   /**
    * These functions return the update extent for output ports that
    * use 3D extents. Where port is not specified, it is assumed to
@@ -673,9 +675,9 @@ public:
   void GetUpdateExtent(int port, int& x0, int& x1, int& y0, int& y1, int& z0, int& z1);
   void GetUpdateExtent(int extent[6]) { this->GetUpdateExtent(0, extent); }
   void GetUpdateExtent(int port, int extent[6]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These functions return the update extent for output ports that
    * use piece extents. Where port is not specified, it is assumed to
@@ -687,9 +689,9 @@ public:
   int GetUpdateNumberOfPieces(int port);
   int GetUpdateGhostLevel() { return this->GetUpdateGhostLevel(0); }
   int GetUpdateGhostLevel(int port);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If an ProgressObserver is set, the algorithm will report
    * progress through it rather than directly. This means that
@@ -701,7 +703,7 @@ public:
    */
   void SetProgressObserver(vtkProgressObserver*);
   vtkGetObjectMacro(ProgressObserver, vtkProgressObserver);
-  //@}
+  ///@}
 
 protected:
   vtkAlgorithm();
@@ -748,7 +750,7 @@ protected:
    */
   int GetInputArrayAssociation(int idx, vtkInformationVector** inputVector);
 
-  //@{
+  ///@{
   /**
    * Filters that have multiple connections on one port can use
    * this signature. This will override the connection id that the
@@ -759,9 +761,9 @@ protected:
    */
   int GetInputArrayAssociation(int idx, int connection, vtkInformationVector** inputVector);
   int GetInputArrayAssociation(int idx, vtkDataObject* input);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the actual data array for the input array specified by idx, this is
    * only reasonable during the REQUEST_DATA pass
@@ -769,9 +771,9 @@ protected:
   vtkDataArray* GetInputArrayToProcess(int idx, vtkInformationVector** inputVector);
   vtkDataArray* GetInputArrayToProcess(
     int idx, vtkInformationVector** inputVector, int& association);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Filters that have multiple connections on one port can use
    * this signature. This will override the connection id that the
@@ -785,9 +787,9 @@ protected:
     int idx, int connection, vtkInformationVector** inputVector, int& association);
   vtkDataArray* GetInputArrayToProcess(int idx, vtkDataObject* input);
   vtkDataArray* GetInputArrayToProcess(int idx, vtkDataObject* input, int& association);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the actual data array for the input array specified by idx, this is
    * only reasonable during the REQUEST_DATA pass
@@ -795,9 +797,9 @@ protected:
   vtkAbstractArray* GetInputAbstractArrayToProcess(int idx, vtkInformationVector** inputVector);
   vtkAbstractArray* GetInputAbstractArrayToProcess(
     int idx, vtkInformationVector** inputVector, int& association);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Filters that have multiple connections on one port can use
    * this signature. This will override the connection id that the
@@ -812,7 +814,7 @@ protected:
     int idx, int connection, vtkInformationVector** inputVector, int& association);
   vtkAbstractArray* GetInputAbstractArrayToProcess(int idx, vtkDataObject* input);
   vtkAbstractArray* GetInputAbstractArrayToProcess(int idx, vtkDataObject* input, int& association);
-  //@}
+  ///@}
 
   /**
    * This method takes in an index (as specified in SetInputArrayToProcess)
@@ -831,14 +833,14 @@ protected:
    */
   virtual vtkExecutive* CreateDefaultExecutive();
 
-  //@{
+  ///@{
   /**
    * The error code contains a possible error that occurred while
    * reading or writing the file.
    */
   vtkSetMacro(ErrorCode, unsigned long);
   unsigned long ErrorCode;
-  //@}
+  ///@}
 
   // Progress/Update handling
   double Progress;

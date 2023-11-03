@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_1_0() warning for this class
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkAdaptiveResampleToImage.h"
 
 #include "vtkCellData.h"
@@ -103,9 +107,9 @@ vtkSmartPointer<vtkIdList> get_ids(vtkDataSetAttributes* source, unsigned char g
   return ids->GetNumberOfIds() > 0 ? ids.GetPointer() : nullptr;
 }
 
-bool merge(vtkImageData* target, std::vector<vtkSmartPointer<vtkImageData> >& sources)
+bool merge(vtkImageData* target, std::vector<vtkSmartPointer<vtkImageData>>& sources)
 {
-  if (sources.size() == 0)
+  if (sources.empty())
   {
     return false;
   }
@@ -164,7 +168,7 @@ bool merge(vtkImageData* target, std::vector<vtkSmartPointer<vtkImageData> >& so
 
 vtkStandardNewMacro(vtkAdaptiveResampleToImage);
 vtkCxxSetObjectMacro(vtkAdaptiveResampleToImage, Controller, vtkMultiProcessController);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAdaptiveResampleToImage::vtkAdaptiveResampleToImage()
   : Controller(nullptr)
   , NumberOfImages(0)
@@ -173,13 +177,13 @@ vtkAdaptiveResampleToImage::vtkAdaptiveResampleToImage()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAdaptiveResampleToImage::~vtkAdaptiveResampleToImage()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAdaptiveResampleToImage::FillOutputPortInformation(
   int vtkNotUsed(port), vtkInformation* info)
 {
@@ -187,7 +191,7 @@ int vtkAdaptiveResampleToImage::FillOutputPortInformation(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAdaptiveResampleToImage::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -221,13 +225,13 @@ int vtkAdaptiveResampleToImage::RequestData(
     /*dim*/ 1, diy::interval(0, assigner.nblocks() - 1), assigner.nblocks());
   decomposer.decompose(comm.rank(), assigner, master);
 
-  std::vector<std::vector<vtkSmartPointer<vtkImageData> > > resamples(boxes.size());
+  std::vector<std::vector<vtkSmartPointer<vtkImageData>>> resamples(boxes.size());
   vtkLogStartScope(TRACE, "local resample");
 
   const auto localBounds = vtkDIYUtilities::GetLocalBounds(inputDO);
   std::transform(boxes.begin(), boxes.end(), resamples.begin(),
     [&inputDO, &localBounds, this](const vtkBoundingBox& bbox) {
-      std::vector<vtkSmartPointer<vtkImageData> > retval;
+      std::vector<vtkSmartPointer<vtkImageData>> retval;
       vtkSmartPointer<vtkImageData> img =
         localBounds.Intersects(bbox) ? impl::resample(bbox, inputDO, this) : nullptr;
       if (img)
@@ -249,7 +253,7 @@ int vtkAdaptiveResampleToImage::RequestData(
         // resample input to image.
         const auto target = out_link.target(cc);
         auto& image_vector = resamples[target.gid];
-        if (image_vector.size() > 0 && target.proc != comm.rank())
+        if (!image_vector.empty() && target.proc != comm.rank())
         {
           // send non-empty data to non-local block only.
           assert(image_vector.size() == 1);
@@ -267,7 +271,7 @@ int vtkAdaptiveResampleToImage::RequestData(
       for (int cc = 0, max = in_link.size(); cc < max; ++cc)
       {
         const auto source = in_link.target(cc);
-        if (rp.incoming(source.gid).size() == 0)
+        if (rp.incoming(source.gid).empty())
         {
           continue;
         }
@@ -306,7 +310,7 @@ int vtkAdaptiveResampleToImage::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAdaptiveResampleToImage::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

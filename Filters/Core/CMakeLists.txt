@@ -1,4 +1,5 @@
 set(classes
+  vtk3DLinearGridCrinkleExtractor
   vtk3DLinearGridPlaneCutter
   vtkAppendArcLength
   vtkAppendCompositeDataLeaves
@@ -10,8 +11,9 @@ set(classes
   vtkAssignAttribute
   vtkAttributeDataToFieldDataFilter
   vtkBinCellDataFilter
-  vtkCellDataToPointData
+  vtkBinnedDecimation
   vtkCellCenters
+  vtkCellDataToPointData
   vtkCenterOfMass
   vtkCleanPolyData
   vtkClipPolyData
@@ -22,7 +24,8 @@ set(classes
   vtkContourFilter
   vtkContourGrid
   vtkContourHelper
-  vtk3DLinearGridCrinkleExtractor
+  vtkConvertToMultiBlockDataSet
+  vtkConvertToPartitionedDataSetCollection
   vtkCutter
   vtkDataObjectGenerator
   vtkDataObjectToDataSetFilter
@@ -48,8 +51,8 @@ set(classes
   vtkHedgeHog
   vtkHull
   vtkIdFilter
-  vtkImageDataToExplicitStructuredGrid
   vtkImageAppend
+  vtkImageDataToExplicitStructuredGrid
   vtkImplicitPolyDataDistance
   vtkImplicitProjectOnPlaneDistance
   vtkMarchingCubes
@@ -63,10 +66,13 @@ set(classes
   vtkMergeFilter
   vtkMoleculeAppend
   vtkMultiObjectMassProperties
+  vtkPassThrough
   vtkPlaneCutter
   vtkPointDataToCellData
   vtkPolyDataConnectivityFilter
+  vtkPolyDataEdgeConnectivityFilter
   vtkPolyDataNormals
+  vtkPolyDataPlaneClipper
   vtkPolyDataTangents
   vtkProbeFilter
   vtkQuadricClustering
@@ -74,6 +80,7 @@ set(classes
   vtkRearrangeFields
   vtkRectilinearSynchronizedTemplates
   vtkRemoveDuplicatePolys
+  vtkRemoveUnusedPoints
   vtkResampleToImage
   vtkResampleWithDataSet
   vtkReverseSense
@@ -95,6 +102,7 @@ set(classes
   vtkTransposeTable
   vtkTriangleFilter
   vtkTriangleMeshPointNormals
+  vtkTubeBender
   vtkTubeFilter
   vtkUnstructuredGridQuadricDecimation
   vtkUnstructuredGridToExplicitStructuredGrid

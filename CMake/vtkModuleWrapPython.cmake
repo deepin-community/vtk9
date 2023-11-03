@@ -6,7 +6,7 @@
 @file vtkModuleWrapPython.cmake
 @brief APIs for wrapping modules for Python
 
-@section Limitations
+@section python-wrapping-limitations Limitations
 
 Known limitations include:
 
@@ -39,12 +39,15 @@ Windows and `${CMAKE_INSTALL_LIBDIR}/python<VERSION>/site-packages` otherwise.
 `<MAJOR_VERSION>` must be one of `2` or `3`. If not specified, it defaults to
 the value of `${VTK_PYTHON_VERSION}`.
 #]==]
+
+cmake_policy(PUSH)
+cmake_policy(SET CMP0053 NEW)
+
 function (vtk_module_python_default_destination var)
-  cmake_parse_arguments(_vtk_module_python
+  cmake_parse_arguments(PARSE_ARGV 1 _vtk_module_python
     ""
     "MAJOR_VERSION"
-    ""
-    ${ARGN})
+    "")
 
   if (_vtk_module_python_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -118,8 +121,18 @@ function (_vtk_module_wrap_python_sources module sources classes)
   _vtk_module_get_module_property("${module}"
     PROPERTY  "private_depends"
     VARIABLE  _vtk_python_private_depends)
-  list(APPEND _vtk_python_hierarchy_depends ${_vtk_python_private_depends})
-  
+  list(APPEND _vtk_python_hierarchy_depends
+    ${_vtk_python_private_depends})
+  _vtk_module_get_module_property("${module}"
+    PROPERTY  "optional_depends"
+    VARIABLE  _vtk_python_optional_depends)
+  foreach (_vtk_python_optional_depend IN LISTS _vtk_python_optional_depends)
+    if (TARGET "${_vtk_python_optional_depend}")
+      list(APPEND _vtk_python_hierarchy_depends
+        "${_vtk_python_optional_depend}")
+    endif ()
+  endforeach ()
+
   set(_vtk_python_command_depends)
   foreach (_vtk_python_hierarchy_depend IN LISTS _vtk_python_hierarchy_depends)
     _vtk_module_get_module_property("${_vtk_python_hierarchy_depend}"
@@ -420,6 +433,13 @@ extern PyObject* PyInit_${_vtk_python_library_name}();
     target_link_libraries("${name}"
       PUBLIC
         VTK::Python)
+
+    if (_vtk_python_UTILITY_TARGET)
+      target_link_libraries("${name}"
+        PRIVATE
+          "${_vtk_python_UTILITY_TARGET}")
+    endif ()
+
     set_property(TARGET "${name}"
       PROPERTY
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${_vtk_python_STATIC_MODULE_DESTINATION}")
@@ -427,16 +447,15 @@ extern PyObject* PyInit_${_vtk_python_library_name}();
     add_library("${name}" MODULE
       ${_vtk_python_library_sources})
     if (WIN32 AND NOT CYGWIN)
-      # XXX(python-debug): This is disabled out because there's no reliable way
-      # to tell whether we're using a debug build of Python or not. Since using
-      # a debug Python build is so rare, just assume we're always using a
-      # non-debug build of Python itself.
+      # This is enabled explicitly by the USE_DEBUG_SUFFIX argument because
+      # there's no reliable way to detect whether we're using a debug build of
+      # Python or not.
       #
       # The proper fix is to dig around and ask the backing `PythonN::Python`
       # target used by `VTK::Python` for its properties to find out, per
       # configuration, whether it is a debug build. If it is, add the postfix
       # (regardless of VTK's build type). Otherwise, no postfix.
-      if (FALSE)
+      if (_vtk_python_USE_DEBUG_SUFFIX)
         set_property(TARGET "${name}"
           APPEND_STRING
           PROPERTY
@@ -461,6 +480,13 @@ extern PyObject* PyInit_${_vtk_python_library_name}();
             "LIBRARY_OUTPUT_DIRECTORY_${_vtk_python_config_upper}" "${CMAKE_BINARY_DIR}/${_vtk_python_MODULE_DESTINATION}/${_vtk_python_package_path}")
       endforeach ()
     endif ()
+
+    if (_vtk_python_UTILITY_TARGET)
+      target_link_libraries("${name}"
+        PRIVATE
+          "${_vtk_python_UTILITY_TARGET}")
+    endif ()
+
     set_target_properties("${name}"
       PROPERTIES
         PREFIX ""
@@ -485,14 +511,19 @@ extern PyObject* PyInit_${_vtk_python_library_name}();
 
   set(_vtk_python_export)
   if (_vtk_python_INSTALL_EXPORT)
-    set(_vtk_python_export
+    list(APPEND _vtk_python_export
       EXPORT "${_vtk_python_INSTALL_EXPORT}")
+  endif ()
+
+  set(_vtk_python_wrap_component "${_vtk_python_COMPONENT}")
+  if (_vtk_python_TARGET_SPECIFIC_COMPONENTS)
+    string(PREPEND _vtk_python_wrap_component "${name}-")
   endif ()
 
   install(
     TARGETS             "${name}"
     ${_vtk_python_export}
-    COMPONENT           "${_vtk_python_COMPONENT}"
+    COMPONENT           "${_vtk_python_wrap_component}"
     RUNTIME DESTINATION "${_vtk_python_MODULE_DESTINATION}/${_vtk_python_package_path}"
     LIBRARY DESTINATION "${_vtk_python_MODULE_DESTINATION}/${_vtk_python_package_path}"
     ARCHIVE DESTINATION "${_vtk_python_STATIC_MODULE_DESTINATION}")
@@ -512,6 +543,7 @@ vtk_module_wrap_python(
   [INSTALL_HEADERS <ON|OFF>]
 
   [DEPENDS <target>...]
+  [UTILITY_TARGET <target>]
 
   [MODULE_DESTINATION <destination>]
   [STATIC_MODULE_DESTINATION <destination>]
@@ -520,9 +552,11 @@ vtk_module_wrap_python(
 
   [PYTHON_PACKAGE <package>]
   [SOABI <soabi>]
+  [USE_DEBUG_SUFFIX <ON|OFF>]
 
   [INSTALL_EXPORT <export>]
   [COMPONENT <component>])
+  [TARGET_SPECIFIC_COMPONENTS <ON|OFF>]
 ~~~
 
   * `MODULES`: (Required) The list of modules to wrap.
@@ -542,10 +576,15 @@ vtk_module_wrap_python(
     the same function is provided, but it is a no-op.
   * `INSTALL_HEADERS` (Defaults to `ON`): If unset, CMake properties will not
     be installed.
+  * `TARGET_SPECIFIC_COMPONENTS` (Defaults to `OFF`): If set, prepend the
+    output target name to the install component (`<TARGET>-<COMPONENT>`).
   * `DEPENDS`: This is list of other Python modules targets i.e. targets
     generated from previous calls to `vtk_module_wrap_python` that this new
     target depends on. This is used when `BUILD_STATIC` is true to ensure that
     the `void <TARGET>_load()` is correctly called for each of the dependencies.
+  * `UTILITY_TARGET`: If specified, all libraries made by the Python wrapping
+    will link privately to this target. This may be used to add compile flags
+    to the Python libraries.
   * `MODULE_DESTINATION`: Modules will be placed in this location in the
     build tree. The install tree should remove `$<CONFIGURATION>` bits, but it
     currently does not. See `vtk_module_python_default_destination` for the
@@ -563,17 +602,19 @@ vtk_module_wrap_python(
     `package.subpackage`).
   * `SOABI`: (Required for wheel support): If given, generate libraries with
     the SOABI tag in the module filename.
+  * `USE_DEBUG_SUFFIX` (Defaults to `OFF`): If `ON`, Windows modules will have
+    a `_d` suffix appended to the module name. This is intended for use with
+    debug Python builds.
   * `INSTALL_EXPORT`: If provided, static installs will add the installed
     libraries to the provided export set.
   * `COMPONENT`: Defaults to `python`. All install rules created by this
     function will use this installation component.
 #]==]
 function (vtk_module_wrap_python)
-  cmake_parse_arguments(_vtk_python
+  cmake_parse_arguments(PARSE_ARGV 0 _vtk_python
     ""
-    "MODULE_DESTINATION;STATIC_MODULE_DESTINATION;LIBRARY_DESTINATION;PYTHON_PACKAGE;BUILD_STATIC;INSTALL_HEADERS;INSTALL_EXPORT;TARGET;COMPONENT;WRAPPED_MODULES;CMAKE_DESTINATION;DEPENDS;SOABI"
-    "MODULES"
-    ${ARGN})
+    "MODULE_DESTINATION;STATIC_MODULE_DESTINATION;LIBRARY_DESTINATION;PYTHON_PACKAGE;BUILD_STATIC;INSTALL_HEADERS;INSTALL_EXPORT;TARGET_SPECIFIC_COMPONENTS;TARGET;COMPONENT;WRAPPED_MODULES;CMAKE_DESTINATION;SOABI;USE_DEBUG_SUFFIX;UTILITY_TARGET"
+    "DEPENDS;MODULES")
 
   if (_vtk_python_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -602,6 +643,14 @@ function (vtk_module_wrap_python)
 
   if (NOT DEFINED _vtk_python_INSTALL_HEADERS)
     set(_vtk_python_INSTALL_HEADERS ON)
+  endif ()
+
+  if (NOT DEFINED _vtk_python_TARGET_SPECIFIC_COMPONENTS)
+    set(_vtk_python_TARGET_SPECIFIC_COMPONENTS OFF)
+  endif ()
+
+  if (NOT DEFINED _vtk_python_USE_DEBUG_SUFFIX)
+    set(_vtk_python_USE_DEBUG_SUFFIX OFF)
   endif ()
 
   if (_vtk_python_SOABI)
@@ -720,6 +769,18 @@ function (vtk_module_wrap_python)
     endif ()
   endforeach ()
 
+  set(_vtk_python_headers_component "development")
+  set(_vtk_python_component "${_vtk_python_COMPONENT}")
+  if (_vtk_python_TARGET_SPECIFIC_COMPONENTS)
+    string(PREPEND _vtk_python_headers_component "${_vtk_python_TARGET_NAME}-")
+    string(PREPEND _vtk_python_component "${_vtk_python_TARGET_NAME}-")
+  endif ()
+
+  # Disable CMake's automoc support for these targets.
+  set(CMAKE_AUTOMOC 0)
+  set(CMAKE_AUTORCC 0)
+  set(CMAKE_AUTOUIC 0)
+
   set(_vtk_python_all_modules)
   set(_vtk_python_all_wrapped_modules)
   foreach (_vtk_python_module IN LISTS _vtk_python_sorted_modules_filtered)
@@ -746,7 +807,7 @@ function (vtk_module_wrap_python)
       FILES       "${_vtk_python_properties_install_file}"
       DESTINATION "${_vtk_python_CMAKE_DESTINATION}"
       RENAME      "${_vtk_python_properties_filename}"
-      COMPONENT   "development")
+      COMPONENT   "${_vtk_python_headers_component}")
   endif ()
 
   if (DEFINED _vtk_python_WRAPPED_MODULES)
@@ -772,7 +833,7 @@ function (vtk_module_wrap_python)
       install(
         TARGETS   "${_vtk_python_TARGET_NAME}"
         EXPORT    "${_vtk_python_INSTALL_EXPORT}"
-        COMPONENT "development")
+        COMPONENT "${_vtk_python_headers_component}")
     endif ()
 
     set(_vtk_python_all_modules_include_file
@@ -921,9 +982,10 @@ static void ${_vtk_python_TARGET_NAME}_load() {\n")
           ${_vtk_python_TARGET_NAME}
           VTK::WrappingPythonCore
           VTK::Python)
+
       install(
         TARGETS             "${_vtk_python_static_importer_name}"
-        COMPONENT           "${_vtk_python_COMPONENT}"
+        COMPONENT           "${_vtk_python_component}"
         RUNTIME DESTINATION "${_vtk_python_MODULE_DESTINATION}"
         LIBRARY DESTINATION "${_vtk_python_MODULE_DESTINATION}"
         ARCHIVE DESTINATION "${_vtk_python_STATIC_MODULE_DESTINATION}")
@@ -967,8 +1029,6 @@ function.
 A `<module>-<package>` target is created which ensures that all Python modules
 have been copied to the correct location in the build tree.
 
-@todo Support a tree of modules with a single call.
-
 @todo Support freezing the Python package. This should create a header and the
 associated target should provide an interface for including this header. The
 target should then be exported and the header installed properly.
@@ -979,11 +1039,10 @@ function (vtk_module_add_python_package name)
       "Python modules must match their module names.")
   endif ()
 
-  cmake_parse_arguments(_vtk_add_python_package
+  cmake_parse_arguments(PARSE_ARGV 1 _vtk_add_python_package
     ""
     "PACKAGE;MODULE_DESTINATION;COMPONENT"
-    "FILES"
-    ${ARGN})
+    "FILES")
 
   if (_vtk_add_python_package_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -1015,12 +1074,12 @@ function (vtk_module_add_python_package name)
     if (IS_ABSOLUTE "${_vtk_add_python_package_file}")
       file(RELATIVE_PATH _vtk_add_python_package_name
         "${CMAKE_CURRENT_BINARY_DIR}"
-        "${_vtk_add_python_package_name}")
+        "${_vtk_add_python_package_file}")
     else ()
       set(_vtk_add_python_package_name
         "${_vtk_add_python_package_file}")
-      set(_vtk_add_python_package_file
-        "${CMAKE_CURRENT_SOURCE_DIR}/${_vtk_add_python_package_file}")
+      string(PREPEND _vtk_add_python_package_file
+        "${CMAKE_CURRENT_SOURCE_DIR}/")
     endif ()
 
     set(_vtk_add_python_package_file_output
@@ -1034,11 +1093,11 @@ function (vtk_module_add_python_package name)
       COMMENT "Copying ${_vtk_add_python_package_name} to the binary directory")
     list(APPEND _vtk_add_python_package_file_outputs
       "${_vtk_add_python_package_file_output}")
-    # XXX
     if (BUILD_SHARED_LIBS)
+      get_filename_component(_vtk_add_python_package_install_path "${_vtk_add_python_package_name}" DIRECTORY)
       install(
         FILES       "${_vtk_add_python_package_name}"
-        DESTINATION "${_vtk_add_python_package_MODULE_DESTINATION}/${_vtk_add_python_package_path}"
+        DESTINATION "${_vtk_add_python_package_MODULE_DESTINATION}/${_vtk_add_python_package_install_path}"
         COMPONENT   "${_vtk_add_python_package_COMPONENT}")
     endif()
   endforeach ()
@@ -1078,11 +1137,10 @@ function (vtk_module_add_python_module name)
       "Python modules must match their module names.")
   endif ()
 
-  cmake_parse_arguments(_vtk_add_python_module
+  cmake_parse_arguments(PARSE_ARGV 1 _vtk_add_python_module
     ""
     ""
-    "PACKAGES"
-    ${ARGN})
+    "PACKAGES")
 
   if (_vtk_add_python_module_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -1118,3 +1176,5 @@ function (vtk_module_add_python_module name)
   _vtk_module_apply_properties("${_vtk_add_python_module_target_name}")
   _vtk_module_install("${_vtk_add_python_module_target_name}")
 endfunction ()
+
+cmake_policy(POP)

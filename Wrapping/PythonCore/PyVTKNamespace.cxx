@@ -28,11 +28,11 @@
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 static const char* PyVTKNamespace_Doc = "A python module that wraps a C++ namespace.\n";
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static void PyVTKNamespace_Delete(PyObject* op)
 {
   // remove from the map so that there is no dangling reference
@@ -41,7 +41,11 @@ static void PyVTKNamespace_Delete(PyObject* op)
   PyVTKNamespace_Type.tp_base->tp_dealloc(op);
 }
 
-//--------------------------------------------------------------------
+#ifdef VTK_PYTHON_NEEDS_DEPRECATION_WARNING_SUPPRESSION
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+//------------------------------------------------------------------------------
 // clang-format off
 PyTypeObject PyVTKNamespace_Type = {
   PyVarObject_HEAD_INIT(&PyType_Type, 0)
@@ -96,7 +100,7 @@ PyTypeObject PyVTKNamespace_Type = {
   VTK_WRAP_PYTHON_SUPPRESS_UNINITIALIZED };
 // clang-format on
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyObject* PyVTKNamespace_New(const char* name)
 {
   // first check to see if this namespace exists
@@ -122,13 +126,13 @@ PyObject* PyVTKNamespace_New(const char* name)
   return self;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyObject* PyVTKNamespace_GetDict(PyObject* self)
 {
   return PyModule_GetDict(self);
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* PyVTKNamespace_GetName(PyObject* self)
 {
   return PyModule_GetName(self);

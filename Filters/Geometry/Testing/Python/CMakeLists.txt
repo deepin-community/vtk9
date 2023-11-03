@@ -17,5 +17,9 @@ vtk_add_test_python(
   officeStreamPoints.py
   rectGrid.py
   structuredGridBlanking.py
+  TestGeometryFilter.py
+  TestGeometryFilter2.py
   TestGhostPoints.py,NO_DATA,NO_VALID,NO_OUTPUT
+  TestMarkBoundaryFilter.py,
+  TestMarkBoundaryFilter2.py
 )

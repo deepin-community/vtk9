@@ -27,6 +27,9 @@
 
 vtkStandardNewMacro(vtkPlaneSource);
 
+constexpr double EPSILON = 1.0E-6;
+
+//------------------------------------------------------------------------------
 // Construct plane perpendicular to z-axis, resolution 1x1, width and height
 // 1.0, and centered at the origin.
 vtkPlaneSource::vtkPlaneSource()
@@ -55,6 +58,7 @@ vtkPlaneSource::vtkPlaneSource()
   this->SetNumberOfInputPorts(0);
 }
 
+//------------------------------------------------------------------------------
 // Set the number of x-y subdivisions in the plane.
 void vtkPlaneSource::SetResolution(const int xR, const int yR)
 {
@@ -70,6 +74,23 @@ void vtkPlaneSource::SetResolution(const int xR, const int yR)
   }
 }
 
+//------------------------------------------------------------------------------
+void vtkPlaneSource::GetAxis1(double a1[3])
+{
+  a1[0] = this->Point1[0] - this->Origin[0];
+  a1[1] = this->Point1[1] - this->Origin[1];
+  a1[2] = this->Point1[2] - this->Origin[2];
+}
+
+//------------------------------------------------------------------------------
+void vtkPlaneSource::GetAxis2(double a2[3])
+{
+  a2[0] = this->Point2[0] - this->Origin[0];
+  a2[1] = this->Point2[1] - this->Origin[1];
+  a2[2] = this->Point2[2] - this->Origin[2];
+}
+
+//------------------------------------------------------------------------------
 int vtkPlaneSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -183,6 +204,7 @@ int vtkPlaneSource::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
+//------------------------------------------------------------------------------
 // Set the normal to the plane. Will modify the Origin, Point1, and Point2
 // instance variables as necessary (i.e., rotate the plane around its center).
 void vtkPlaneSource::SetNormal(double N[3])
@@ -220,27 +242,10 @@ void vtkPlaneSource::SetNormal(double N[3])
     theta = vtkMath::DegreesFromRadians(acos(dp));
   }
 
-  // create rotation matrix
-  vtkTransform* transform = vtkTransform::New();
-  transform->PostMultiply();
-
-  transform->Translate(-this->Center[0], -this->Center[1], -this->Center[2]);
-  transform->RotateWXYZ(theta, rotVector[0], rotVector[1], rotVector[2]);
-  transform->Translate(this->Center[0], this->Center[1], this->Center[2]);
-
-  // transform the three defining points
-  transform->TransformPoint(this->Origin, this->Origin);
-  transform->TransformPoint(this->Point1, this->Point1);
-  transform->TransformPoint(this->Point2, this->Point2);
-
-  this->Normal[0] = n[0];
-  this->Normal[1] = n[1];
-  this->Normal[2] = n[2];
-
-  this->Modified();
-  transform->Delete();
+  this->Rotate(theta, rotVector);
 }
 
+//------------------------------------------------------------------------------
 // Set the normal to the plane. Will modify the Origin, Point1, and Point2
 // instance variables as necessary (i.e., rotate the plane around its center).
 void vtkPlaneSource::SetNormal(double nx, double ny, double nz)
@@ -253,6 +258,7 @@ void vtkPlaneSource::SetNormal(double nx, double ny, double nz)
   this->SetNormal(n);
 }
 
+//------------------------------------------------------------------------------
 // Set the center of the plane. Will modify the Origin, Point1, and Point2
 // instance variables as necessary (i.e., translate the plane).
 void vtkPlaneSource::SetCenter(double center[3])
@@ -283,6 +289,7 @@ void vtkPlaneSource::SetCenter(double center[3])
   }
 }
 
+//------------------------------------------------------------------------------
 // Set the center of the plane. Will modify the Origin, Point1, and Point2
 // instance variables as necessary (i.e., translate the plane).
 void vtkPlaneSource::SetCenter(double x, double y, double z)
@@ -295,6 +302,7 @@ void vtkPlaneSource::SetCenter(double x, double y, double z)
   this->SetCenter(center);
 }
 
+//------------------------------------------------------------------------------
 // modifies the normal and origin
 void vtkPlaneSource::SetPoint1(double pnt[3])
 {
@@ -320,6 +328,7 @@ void vtkPlaneSource::SetPoint1(double pnt[3])
   }
 }
 
+//------------------------------------------------------------------------------
 // modifies the normal and origin
 void vtkPlaneSource::SetPoint2(double pnt[3])
 {
@@ -344,6 +353,7 @@ void vtkPlaneSource::SetPoint2(double pnt[3])
   }
 }
 
+//------------------------------------------------------------------------------
 void vtkPlaneSource::SetPoint1(double x, double y, double z)
 {
   double pnt[3];
@@ -363,6 +373,7 @@ void vtkPlaneSource::SetPoint2(double x, double y, double z)
   this->SetPoint2(pnt);
 }
 
+//------------------------------------------------------------------------------
 // Translate the plane in the direction of the normal by the distance specified.
 // Negative values move the plane in the opposite direction.
 void vtkPlaneSource::Push(double distance)
@@ -388,6 +399,32 @@ void vtkPlaneSource::Push(double distance)
   this->Modified();
 }
 
+//------------------------------------------------------------------------------
+void vtkPlaneSource::Rotate(double angle, double rotationAxis[3])
+{
+  if (std::abs(angle) < EPSILON)
+  {
+    return;
+  }
+
+  // create rotation matrix
+  vtkNew<vtkTransform> transform;
+  transform->PostMultiply();
+
+  transform->Translate(-this->Center[0], -this->Center[1], -this->Center[2]);
+  transform->RotateWXYZ(angle, rotationAxis[0], rotationAxis[1], rotationAxis[2]);
+  transform->Translate(this->Center[0], this->Center[1], this->Center[2]);
+
+  // transform the three defining points
+  transform->TransformPoint(this->Origin, this->Origin);
+  transform->TransformPoint(this->Point1, this->Point1);
+  transform->TransformPoint(this->Point2, this->Point2);
+  transform->TransformNormal(this->Normal, this->Normal);
+
+  this->Modified();
+}
+
+//------------------------------------------------------------------------------
 // Protected method updates normals and plane center from two axes.
 int vtkPlaneSource::UpdatePlane(double v1[3], double v2[3])
 {
@@ -409,6 +446,7 @@ int vtkPlaneSource::UpdatePlane(double v1[3], double v2[3])
   }
 }
 
+//------------------------------------------------------------------------------
 void vtkPlaneSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

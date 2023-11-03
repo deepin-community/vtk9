@@ -42,14 +42,14 @@ public:
   vtkTypeMacro(vtkImageDifference, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Specify the Image to compare the input to.
    */
   void SetImageConnection(vtkAlgorithmOutput* output) { this->SetInputConnection(1, output); }
   void SetImageData(vtkDataObject* image) { this->SetInputData(1, image); }
   vtkImageData* GetImage();
-  //@}
+  ///@}
 
   /**
    * Return the total error in comparing the two images.
@@ -65,15 +65,15 @@ public:
   double GetThresholdedError() { return this->ThresholdedError; }
   void GetThresholdedError(double* e) { *e = this->GetThresholdedError(); }
 
-  //@{
+  ///@{
   /**
    * Specify a threshold tolerance for pixel differences.
    */
   vtkSetMacro(Threshold, int);
   vtkGetMacro(Threshold, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether the comparison will allow a shift of two
    * pixels between the images.  If set, then the minimum difference
@@ -84,9 +84,9 @@ public:
   vtkSetMacro(AllowShift, vtkTypeBool);
   vtkGetMacro(AllowShift, vtkTypeBool);
   vtkBooleanMacro(AllowShift, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify whether the comparison will include comparison of
    * averaged 3x3 data between the images. For graphics renderings
@@ -96,20 +96,20 @@ public:
   vtkSetMacro(Averaging, vtkTypeBool);
   vtkGetMacro(Averaging, vtkTypeBool);
   vtkBooleanMacro(Averaging, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When doing Averaging, adjust the threshold for the average
    * by this factor. Defaults to 0.5 requiring a better match
    */
   vtkSetMacro(AverageThresholdFactor, double);
   vtkGetMacro(AverageThresholdFactor, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageDifference();
-  ~vtkImageDifference() override {}
+  ~vtkImageDifference() override = default;
 
   // Parameters
   vtkTypeBool AllowShift;
@@ -128,7 +128,7 @@ protected:
 
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData,
-    int extent[6], int threadId) override;
+    int outExt[6], int threadId) override;
 
   // Used for vtkMultiThreader operation.
   vtkImageDifferenceThreadData* ThreadData;

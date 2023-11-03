@@ -10,18 +10,21 @@ set(classes
   vtkOSPRayPass
   vtkOSPRayPolyDataMapperNode
   vtkOSPRayRendererNode
-  vtkOSPRayTetrahedraMapperNode
+  vtkOSPRayUnstructuredVolumeMapperNode
   vtkOSPRayViewNodeFactory
   vtkOSPRayVolumeMapper
   vtkOSPRayVolumeMapperNode
   vtkOSPRayVolumeNode
   vtkOSPRayWindowNode)
 
-set(sources
-    RTWrapper/RTWrapper.cxx)
+set(nowrap_classes
+  RTWrapper/RTWrapper)
 
-set(headers
-    RTWrapper/RTWrapper.h)
+set(nowrap_headers
+  RTWrapper/RTWrapper.h
+  RTWrapper/Types.h
+  RTWrapper/Backend.h
+  vtkOSPRayCache.h)
 
 vtk_object_factory_declare(
   BASE vtkOSPRayVolumeInterface
@@ -43,25 +46,22 @@ if (VTK_ENABLE_VISRTX)
 endif ()
 
 vtk_module_add_module(VTK::RenderingRayTracing
+  HEADER_DIRECTORIES
   CLASSES ${classes}
   SOURCES ${vtk_object_factory_source} ${sources}
-  PRIVATE_HEADERS ${vtk_object_factory_header} ${headers})
-
-vtk_module_install_headers(
-  FILES
-    RTWrapper/RTWrapper.h
-    RTWrapper/Types.h
-    RTWrapper/Backend.h
-  SUBDIR "RTWrapper")
+  NOWRAP_CLASSES  ${nowrap_classes}
+  NOWRAP_HEADERS  ${nowrap_headers}
+  PRIVATE_HEADERS ${vtk_object_factory_header})
 
 if (VTK_ENABLE_OSPRAY)
   vtk_module_find_package(
     PACKAGE ospray
-    VERSION 1.8)
+    VERSION 2.1)
 
   vtk_module_link(VTK::RenderingRayTracing
     PUBLIC
-      ospray::ospray)
+      ospray::ospray
+      )
   if (VTKOSPRAY_ENABLE_DENOISER)
     vtk_module_find_package(
       PACKAGE OpenImageDenoise
@@ -83,7 +83,8 @@ if (VTK_ENABLE_OSPRAY)
   endif ()
   vtk_module_definitions(VTK::RenderingRayTracing
     PRIVATE
-      VTK_ENABLE_OSPRAY)
+      VTK_ENABLE_OSPRAY
+      OSPRAY_VERSION_MINOR=${ospray_VERSION_MINOR})
 endif ()
 
 # VisRTX

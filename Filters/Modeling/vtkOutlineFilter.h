@@ -25,6 +25,11 @@
  * When an input composite dataset is provided, options exist for producing
  * different styles of outline(s). Also, if the composite dataset has
  * non-geometric members (like tables) the result is unpredictable.
+ *
+ * @warning
+ * Specialized versions of the outline filter are also available. For example
+ * see vtkStructuredGridOutlineFilter, vtkRectilinearGridOutlineFilter, and
+ * vtkImageDataOutlineFilter.
  */
 
 #ifndef vtkOutlineFilter_h
@@ -36,23 +41,23 @@
 class VTKFILTERSMODELING_EXPORT vtkOutlineFilter : public vtkPolyDataAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation. type information, and printing.
    */
   static vtkOutlineFilter* New();
   vtkTypeMacro(vtkOutlineFilter, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Generate solid faces for the box. This is off by default.
    */
   vtkSetMacro(GenerateFaces, vtkTypeBool);
   vtkBooleanMacro(GenerateFaces, vtkTypeBool);
   vtkGetMacro(GenerateFaces, vtkTypeBool);
-  //@}
+  ///@}
 
   enum CompositeOutlineStyle
   {
@@ -62,7 +67,7 @@ public:
     SPECIFIED_INDEX = 3
   };
 
-  //@{
+  ///@{
   /**
    * Specify a style for creating bounding boxes around input composite
    * datasets. (If the filter input is a vtkDataSet type these options have
@@ -79,9 +84,9 @@ public:
   void SetCompositeStyleToLeafs() { this->SetCompositeStyle(LEAF_DATASETS); }
   void SetCompositeStyleToRootAndLeafs() { this->SetCompositeStyle(ROOT_AND_LEAFS); }
   void SetCompositeStyleToSpecifiedIndex() { this->SetCompositeStyle(SPECIFIED_INDEX); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the composite style is set to SpecifiedIndex, then one or more flat
    * indices can be specified, and bounding boxes will be drawn around those
@@ -92,9 +97,9 @@ public:
   void AddIndex(unsigned int index);
   void RemoveIndex(unsigned int index);
   void RemoveAllIndices();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the desired precision for the output points.
    * vtkAlgorithm::SINGLE_PRECISION - Output single-precision floating point.
@@ -102,7 +107,7 @@ public:
    */
   vtkSetMacro(OutputPointsPrecision, int);
   vtkGetMacro(OutputPointsPrecision, int);
-  //@}
+  ///@}
 
 protected:
   vtkOutlineFilter();
@@ -126,4 +131,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkOutlineFilter.h

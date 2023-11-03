@@ -39,6 +39,13 @@
  * Finally this class provides a mechanism to determine which attributes a
  * group of sources have in common, and to copy tuples from a source into
  * the destination, for only those attributes that are held by all.
+ *
+ * @warning
+ * vtkDataSetAttributes is not in general thread safe due to the use of its
+ * vtkFieldData::BasicIterator RequiredArrays data member. The class
+ * vtkArrayListTemplate augments vtkDataSetAttributes for thread safety.
+ *
+ * @sa vtkArrayListTemplate
  */
 
 #ifndef vtkDataSetAttributes_h
@@ -57,6 +64,7 @@ public:
    * Construct object with copying turned on for all data.
    */
   static vtkDataSetAttributes* New();
+  static vtkDataSetAttributes* ExtendedNew();
 
   vtkTypeMacro(vtkDataSetAttributes, vtkFieldData);
   void PrintSelf(ostream& os, vtkIndent indent) override;
@@ -143,97 +151,97 @@ public:
 
   //-----------------------------------------------------------------------------------
 
-  //@{
+  ///@{
   /**
    * Set/Get the scalar data.
    */
   int SetScalars(vtkDataArray* da);
   int SetActiveScalars(const char* name);
   vtkDataArray* GetScalars();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the vector data.
    */
   int SetVectors(vtkDataArray* da);
   int SetActiveVectors(const char* name);
   vtkDataArray* GetVectors();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the normal data.
    */
   int SetNormals(vtkDataArray* da);
   int SetActiveNormals(const char* name);
   vtkDataArray* GetNormals();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the tangent data.
    */
   int SetTangents(vtkDataArray* da);
   int SetActiveTangents(const char* name);
   vtkDataArray* GetTangents();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the texture coordinate data.
    */
   int SetTCoords(vtkDataArray* da);
   int SetActiveTCoords(const char* name);
   vtkDataArray* GetTCoords();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the tensor data.
    */
   int SetTensors(vtkDataArray* da);
   int SetActiveTensors(const char* name);
   vtkDataArray* GetTensors();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the global id data.
    */
   int SetGlobalIds(vtkDataArray* da);
   int SetActiveGlobalIds(const char* name);
   vtkDataArray* GetGlobalIds();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the pedigree id data.
    */
   int SetPedigreeIds(vtkAbstractArray* da);
   int SetActivePedigreeIds(const char* name);
   vtkAbstractArray* GetPedigreeIds();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the rational weights data.
    */
   int SetRationalWeights(vtkDataArray* da);
   int SetActiveRationalWeights(const char* name);
   vtkDataArray* GetRationalWeights();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the rational degrees data.
    */
   int SetHigherOrderDegrees(vtkDataArray* da);
   int SetActiveHigherOrderDegrees(const char* name);
   vtkDataArray* GetHigherOrderDegrees();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This will first look for an array with the correct name.
    * If one exists, it is returned. Otherwise, the name argument
@@ -249,7 +257,7 @@ public:
   vtkAbstractArray* GetPedigreeIds(const char* name);
   vtkDataArray* GetRationalWeights(const char* name);
   vtkDataArray* GetHigherOrderDegrees(const char* name);
-  //@}
+  ///@}
 
   /**
    * Make the array with the given name the active attribute.
@@ -328,22 +336,22 @@ public:
    */
   vtkAbstractArray* GetAbstractAttribute(int attributeType);
 
-  //@{
+  ///@{
   /**
    * Remove an array (with the given name) from the list of arrays.
    */
   using vtkFieldData::RemoveArray;
   void RemoveArray(int index) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given an integer attribute type, this static method returns a string type
    * for the attribute (i.e. type = 0: returns "Scalars").
    */
   static const char* GetAttributeTypeAsString(int attributeType);
   static const char* GetLongAttributeTypeAsString(int attributeType);
-  //@}
+  ///@}
 
   // -- attribute copy properties ------------------------------------------
 
@@ -379,8 +387,8 @@ public:
   void SetCopyAttribute(int index, int value, int ctype = ALLCOPY);
 
   /**
-   * Get the attribute copy flag for copy operation <ctype> of attribute
-   * <index>.
+   * Get the attribute copy flag for copy operation \c ctype of attribute
+   * \c index.
    */
   int GetCopyAttribute(int index, int ctype);
 
@@ -455,7 +463,7 @@ public:
 
   // -- copytuple operations ------------------------------------------------
 
-  //@{
+  ///@{
   /**
    * Allocates point data for point-by-point (or cell-by-cell) copy operation.
    * If sze=0, then use the input DataSetAttributes to create (i.e., find
@@ -472,7 +480,7 @@ public:
     this->CopyAllocate(pd, sze, ext, 0);
   }
   void CopyAllocate(vtkDataSetAttributes* pd, vtkIdType sze, vtkIdType ext, int shallowCopyArrays);
-  //@}
+  ///@}
 
   /**
    * Create a mapping between the input attributes and this object
@@ -494,7 +502,7 @@ public:
   void CopyStructuredData(
     vtkDataSetAttributes* inDsa, const int* inExt, const int* outExt, bool setSize = true);
 
-  //@{
+  ///@{
   /**
    * Copy the attribute data from one id to another. Make sure CopyAllocate()
    * has been invoked before using this method. When copying a field,
@@ -507,7 +515,7 @@ public:
    */
   void CopyData(vtkDataSetAttributes* fromPd, vtkIdType fromId, vtkIdType toId);
   void CopyData(vtkDataSetAttributes* fromPd, vtkIdList* fromIds, vtkIdList* toIds);
-  //@}
+  ///@}
 
   /**
    * Copy n consecutive attributes starting at srcStart from fromPd to this
@@ -516,7 +524,7 @@ public:
    */
   void CopyData(vtkDataSetAttributes* fromPd, vtkIdType dstStart, vtkIdType n, vtkIdType srcStart);
 
-  //@{
+  ///@{
   /**
    * Copy a tuple (or set of tuples) of data from one data array to another.
    * This method assumes that the fromData and toData objects are of the
@@ -529,11 +537,11 @@ public:
     vtkAbstractArray* fromData, vtkAbstractArray* toData, vtkIdList* fromIds, vtkIdList* toIds);
   void CopyTuples(vtkAbstractArray* fromData, vtkAbstractArray* toData, vtkIdType dstStart,
     vtkIdType n, vtkIdType srcStart);
-  //@}
+  ///@}
 
   // -- interpolate operations ----------------------------------------------
 
-  //@{
+  ///@{
   /**
    * Initialize point interpolation method.
    * Note that pd HAS to be the vtkDataSetAttributes object which
@@ -548,7 +556,7 @@ public:
   }
   void InterpolateAllocate(
     vtkDataSetAttributes* pd, vtkIdType sze, vtkIdType ext, int shallowCopyArrays);
-  //@}
+  ///@}
 
   /**
    * Interpolate data set attributes from other data set attributes
@@ -641,8 +649,8 @@ protected:
   int AttributeIndices[NUM_ATTRIBUTES];            // index to attribute array in field data
   int CopyAttributeFlags[ALLCOPY][NUM_ATTRIBUTES]; // copy flag for attribute data
 
+  friend struct ArrayList; // Friend to base class in vtkArrayListTemplate
   vtkFieldData::BasicIterator RequiredArrays;
-
   int* TargetIndices;
 
   static const int NumberOfAttributeComponents[NUM_ATTRIBUTES];

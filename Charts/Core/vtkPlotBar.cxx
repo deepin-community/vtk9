@@ -13,6 +13,9 @@
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkPlotBar.h"
 
 #include "vtkAxis.h"
@@ -42,7 +45,7 @@
 #include <set>
 #include <vector>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace
 {
 
@@ -113,7 +116,7 @@ void CopyToPointsSwitch(vtkPoints2D* points, vtkPoints2D* previousPoints, A* a, 
 
 } // namespace
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 class vtkPlotBarSegment : public vtkObject
 {
@@ -426,7 +429,6 @@ public:
   {
   public:
     VectorPIMPL(vtkVector2f* array, size_t n)
-      : std::vector<vtkIndexedVector2f>()
     {
       this->reserve(n);
       for (size_t i = 0; i < n; ++i)
@@ -464,7 +466,7 @@ public:
   {
     vtkNew<vtkPlotBarSegment> segment;
     segment->Configure(this->Bar, xArray, yArray, xAxis, yAxis, prev);
-    this->Segments.push_back(segment.GetPointer());
+    this->Segments.emplace_back(segment.GetPointer());
     return segment.GetPointer();
   }
 
@@ -473,7 +475,7 @@ public:
   {
     int colorInSeries = 0;
     bool useColorSeries = this->Segments.size() > 1;
-    for (std::vector<vtkSmartPointer<vtkPlotBarSegment> >::iterator it = this->Segments.begin();
+    for (std::vector<vtkSmartPointer<vtkPlotBarSegment>>::iterator it = this->Segments.begin();
          it != this->Segments.end(); ++it)
     {
       if (useColorSeries && colorSeries)
@@ -488,7 +490,7 @@ public:
     float offset, int orientation, vtkIdType* segmentIndex)
   {
     vtkIdType segmentIndexCtr = 0;
-    for (std::vector<vtkSmartPointer<vtkPlotBarSegment> >::iterator it = this->Segments.begin();
+    for (std::vector<vtkSmartPointer<vtkPlotBarSegment>>::iterator it = this->Segments.begin();
          it != this->Segments.end(); ++it)
     {
       int barIndex = (*it)->GetNearestPoint(point, location, width, offset, orientation);
@@ -521,16 +523,16 @@ public:
     return this->Segments[0]->SelectPoints(min, max, width, offset, orientation);
   }
 
-  std::vector<vtkSmartPointer<vtkPlotBarSegment> > Segments;
+  std::vector<vtkSmartPointer<vtkPlotBarSegment>> Segments;
   vtkPlotBar* Bar;
   std::map<int, std::string> AdditionalSeries;
   vtkStdString GroupName;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkPlotBar);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlotBar::vtkPlotBar()
 {
   this->Private = new vtkPlotBarPrivate(this);
@@ -547,7 +549,7 @@ vtkPlotBar::vtkPlotBar()
   this->LogY = false;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlotBar::~vtkPlotBar()
 {
   if (this->Points)
@@ -558,7 +560,7 @@ vtkPlotBar::~vtkPlotBar()
   delete this->Private;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::Update()
 {
   if (!this->Visible)
@@ -591,7 +593,7 @@ void vtkPlotBar::Update()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPlotBar::Paint(vtkContext2D* painter)
 {
   // This is where everything should be drawn, or dispatched to other methods.
@@ -608,7 +610,7 @@ bool vtkPlotBar::Paint(vtkContext2D* painter)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPlotBar::PaintLegend(vtkContext2D* painter, const vtkRectf& rect, int legendIndex)
 {
   if (this->ColorSeries)
@@ -622,7 +624,7 @@ bool vtkPlotBar::PaintLegend(vtkContext2D* painter, const vtkRectf& rect, int le
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::GetBounds(double bounds[4], bool unscaled)
 {
   int seriesLow, seriesHigh, valuesLow, valuesHigh;
@@ -711,19 +713,19 @@ void vtkPlotBar::GetBounds(double bounds[4], bool unscaled)
                 << bounds[3]);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::GetBounds(double bounds[4])
 {
   this->GetBounds(bounds, false);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::GetUnscaledInputBounds(double bounds[4])
 {
   this->GetBounds(bounds, true);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::SetOrientation(int orientation)
 {
   if (orientation < 0 || orientation > 1)
@@ -734,19 +736,19 @@ void vtkPlotBar::SetOrientation(int orientation)
   this->Orientation = orientation;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::SetColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
   this->Brush->SetColor(r, g, b, a);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::SetColor(double r, double g, double b)
 {
   this->Brush->SetColorF(r, g, b);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::GetColor(double rgb[3])
 {
   double rgba[4];
@@ -756,16 +758,10 @@ void vtkPlotBar::GetColor(double rgb[3])
   rgb[2] = rgba[2];
 }
 
-//-----------------------------------------------------------------------------
-vtkIdType vtkPlotBar::GetNearestPoint(const vtkVector2f& point,
-#ifndef VTK_LEGACY_REMOVE
-  const vtkVector2f& tolerance,
-#else
-  const vtkVector2f& vtkNotUsed(tolerance),
-#endif // VTK_LEGACY_REMOVE
+//------------------------------------------------------------------------------
+vtkIdType vtkPlotBar::GetNearestPoint(const vtkVector2f& point, const vtkVector2f& tolerance,
   vtkVector2f* location, vtkIdType* segmentIndex)
 {
-#ifndef VTK_LEGACY_REMOVE
   if (!this->LegacyRecursionFlag)
   {
     this->LegacyRecursionFlag = true;
@@ -781,13 +777,12 @@ vtkIdType vtkPlotBar::GetNearestPoint(const vtkVector2f& point,
       return ret;
     }
   }
-#endif // VTK_LEGACY_REMOVE
 
   return this->Private->GetNearestPoint(
     point, location, this->Width, this->Offset, this->Orientation, segmentIndex);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStringArray* vtkPlotBar::GetLabels()
 {
   // If the label string is empty, return the y column name
@@ -833,7 +828,7 @@ vtkStdString vtkPlotBar::GetGroupName()
   return this->Private->GroupName;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPlotBar::UpdateTableCache(vtkTable* table)
 {
   // Get the x and y arrays (index 0 and 1 respectively)
@@ -910,13 +905,13 @@ bool vtkPlotBar::UpdateTableCache(vtkTable* table)
   return true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkPlotBar::SetInputArray(int index, const vtkStdString& name)
 {
@@ -931,7 +926,7 @@ void vtkPlotBar::SetInputArray(int index, const vtkStdString& name)
   this->AutoLabels = nullptr; // No longer valid
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::SetColorSeries(vtkColorSeries* colorSeries)
 {
   if (this->ColorSeries == colorSeries)
@@ -942,13 +937,13 @@ void vtkPlotBar::SetColorSeries(vtkColorSeries* colorSeries)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkColorSeries* vtkPlotBar::GetColorSeries()
 {
   return this->ColorSeries;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::SetLookupTable(vtkScalarsToColors* lut)
 {
   if (this->LookupTable != lut)
@@ -958,7 +953,7 @@ void vtkPlotBar::SetLookupTable(vtkScalarsToColors* lut)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkScalarsToColors* vtkPlotBar::GetLookupTable()
 {
   if (!this->LookupTable)
@@ -968,7 +963,7 @@ vtkScalarsToColors* vtkPlotBar::GetLookupTable()
   return this->LookupTable;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::CreateDefaultLookupTable()
 {
   vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -981,7 +976,7 @@ void vtkPlotBar::CreateDefaultLookupTable()
   this->LookupTable = lut;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::SelectColorArray(const vtkStdString& arrayName)
 {
   if (this->ColorArrayName == arrayName)
@@ -1008,7 +1003,7 @@ void vtkPlotBar::SelectColorArray(const vtkStdString& arrayName)
   this->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::SelectColorArray(vtkIdType arrayNum)
 {
   vtkTable* table = this->Data->GetInput();
@@ -1039,13 +1034,13 @@ void vtkPlotBar::SelectColorArray(vtkIdType arrayNum)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkPlotBar::GetColorArrayName()
 {
   return this->ColorArrayName;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPlotBar::SelectPoints(const vtkVector2f& min, const vtkVector2f& max)
 {
   if (!this->Selection)
@@ -1057,7 +1052,7 @@ bool vtkPlotBar::SelectPoints(const vtkVector2f& min, const vtkVector2f& max)
   return this->Private->SelectPoints(min, max, this->Width, this->Offset, this->Orientation);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStdString vtkPlotBar::GetTooltipLabel(
   const vtkVector2d& plotPos, vtkIdType seriesIndex, vtkIdType segmentIndex)
 {
@@ -1099,7 +1094,7 @@ vtkStdString vtkPlotBar::GetTooltipLabel(
   return tooltipLabel;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPlotBar::GetBarsCount()
 {
   vtkTable* table = this->Data->GetInput();
@@ -1112,7 +1107,7 @@ int vtkPlotBar::GetBarsCount()
   return x ? x->GetNumberOfTuples() : 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPlotBar::GetDataBounds(double bounds[2])
 {
   assert(bounds);

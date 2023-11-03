@@ -56,7 +56,7 @@ public:
    */
   static vtkAttributeDataToFieldDataFilter* New();
 
-  //@{
+  ///@{
   /**
    * Turn on/off the passing of point and cell non-field attribute data to the
    * output of the filter.
@@ -64,11 +64,11 @@ public:
   vtkSetMacro(PassAttributeData, vtkTypeBool);
   vtkGetMacro(PassAttributeData, vtkTypeBool);
   vtkBooleanMacro(PassAttributeData, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkAttributeDataToFieldDataFilter();
-  ~vtkAttributeDataToFieldDataFilter() override {}
+  ~vtkAttributeDataToFieldDataFilter() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**,
     vtkInformationVector*) override; // generate output data

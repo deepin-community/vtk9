@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkPConnectivityFilter.h"
 
 #include "vtkAOSDataArrayTemplate.h"
@@ -53,7 +57,7 @@ namespace
 typedef vtkTypeList::Unique<
   vtkTypeList::Create<vtkAOSDataArrayTemplate<int>, vtkAOSDataArrayTemplate<unsigned long>,
     vtkAOSDataArrayTemplate<char>, vtkAOSDataArrayTemplate<unsigned char>,
-    vtkAOSDataArrayTemplate<float>, vtkAOSDataArrayTemplate<double> > >::Result PointArrayTypes;
+    vtkAOSDataArrayTemplate<float>, vtkAOSDataArrayTemplate<double>>>::Result PointArrayTypes;
 
 struct WorkerBase
 {
@@ -198,8 +202,8 @@ struct AssemblePointsAndRegionIdsWorker : public WorkerBase
   bool Execute(const std::vector<int>& regionStarts,
     const vtkSmartPointer<vtkDataArray>& allBoundsArray,
     const vtkSmartPointer<vtkPointSet>& localResult,
-    std::map<int, vtkSmartPointer<vtkDataArray> >& pointsForMyNeighbors,
-    std::map<int, vtkSmartPointer<vtkIdTypeArray> >& regionIdsForMyNeighbors)
+    std::map<int, vtkSmartPointer<vtkDataArray>>& pointsForMyNeighbors,
+    std::map<int, vtkSmartPointer<vtkIdTypeArray>>& regionIdsForMyNeighbors)
   {
     this->RegionStarts = &regionStarts;
     this->LocalResult = localResult;
@@ -269,10 +273,10 @@ protected:
   vtkWeakPointer<vtkPointSet> LocalResult;
 
   // Output
-  std::map<int, vtkSmartPointer<vtkDataArray> >* PointsForMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkDataArray>>* PointsForMyNeighbors;
 
   // Output
-  std::map<int, vtkSmartPointer<vtkIdTypeArray> >* RegionIdsForMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkIdTypeArray>>* RegionIdsForMyNeighbors;
 };
 
 /**
@@ -290,10 +294,10 @@ struct SendReceivePointsWorker : public WorkerBase
 
   bool Execute(const vtkSmartPointer<vtkDataArray>& allBoundsArray,
     const std::map<int, int>& sendLengths, const std::map<int, int>& recvLengths,
-    const std::map<int, vtkSmartPointer<vtkDataArray> >& pointsForMyNeighbors,
-    const std::map<int, vtkSmartPointer<vtkIdTypeArray> >& regionIdsForMyNeighbors,
-    std::map<int, vtkSmartPointer<vtkDataArray> >& pointsFromMyNeighbors,
-    std::map<int, vtkSmartPointer<vtkIdTypeArray> >& regionIdsFromMyNeighbors)
+    const std::map<int, vtkSmartPointer<vtkDataArray>>& pointsForMyNeighbors,
+    const std::map<int, vtkSmartPointer<vtkIdTypeArray>>& regionIdsForMyNeighbors,
+    std::map<int, vtkSmartPointer<vtkDataArray>>& pointsFromMyNeighbors,
+    std::map<int, vtkSmartPointer<vtkIdTypeArray>>& regionIdsFromMyNeighbors)
   {
     this->SendLengths = sendLengths;
     this->RecvLengths = recvLengths;
@@ -370,12 +374,12 @@ protected:
   // Input
   std::map<int, int> SendLengths;
   std::map<int, int> RecvLengths;
-  std::map<int, vtkSmartPointer<vtkDataArray> > PointsForMyNeighbors;
-  std::map<int, vtkSmartPointer<vtkIdTypeArray> > RegionIdsForMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkDataArray>> PointsForMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkIdTypeArray>> RegionIdsForMyNeighbors;
 
   // Output
-  std::map<int, vtkSmartPointer<vtkDataArray> >* PointsFromMyNeighbors;
-  std::map<int, vtkSmartPointer<vtkIdTypeArray> >* RegionIdsFromMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkDataArray>>* PointsFromMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkIdTypeArray>>* RegionIdsFromMyNeighbors;
 };
 
 /**
@@ -383,7 +387,7 @@ protected:
  */
 void ExchangeNumberOfPointsToSend(vtkMPIController* subController,
   const std::vector<int>& myNeighbors,
-  const std::map<int, vtkSmartPointer<vtkIdTypeArray> >& regionIdsForMyNeighbors,
+  const std::map<int, vtkSmartPointer<vtkIdTypeArray>>& regionIdsForMyNeighbors,
   std::map<int, int>& sendLengths, std::map<int, int>& recvLengths)
 {
   const int PCF_SIZE_EXCHANGE_TAG = 194727;
@@ -412,9 +416,9 @@ void ExchangeNumberOfPointsToSend(vtkMPIController* subController,
 
 vtkStandardNewMacro(vtkPConnectivityFilter);
 
-vtkPConnectivityFilter::vtkPConnectivityFilter() {}
+vtkPConnectivityFilter::vtkPConnectivityFilter() = default;
 
-vtkPConnectivityFilter::~vtkPConnectivityFilter() {}
+vtkPConnectivityFilter::~vtkPConnectivityFilter() = default;
 
 int vtkPConnectivityFilter::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -550,8 +554,8 @@ int vtkPConnectivityFilter::RequestData(
   }
 
   AssemblePointsAndRegionIdsWorker assemblePointsAndRegionIds(subController);
-  std::map<int, vtkSmartPointer<vtkDataArray> > pointsForMyNeighbors;
-  std::map<int, vtkSmartPointer<vtkIdTypeArray> > regionIdsForMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkDataArray>> pointsForMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkIdTypeArray>> regionIdsForMyNeighbors;
   if (!assemblePointsAndRegionIds.Execute(
         regionStarts, allBoundsArray, output, pointsForMyNeighbors, regionIdsForMyNeighbors))
   {
@@ -566,8 +570,8 @@ int vtkPConnectivityFilter::RequestData(
     subController, myNeighbors, regionIdsForMyNeighbors, sendLengths, recvLengths);
 
   SendReceivePointsWorker sendReceivePoints(subController);
-  std::map<int, vtkSmartPointer<vtkDataArray> > pointsFromMyNeighbors;
-  std::map<int, vtkSmartPointer<vtkIdTypeArray> > regionIdsFromMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkDataArray>> pointsFromMyNeighbors;
+  std::map<int, vtkSmartPointer<vtkIdTypeArray>> regionIdsFromMyNeighbors;
   if (!sendReceivePoints.Execute(allBoundsArray, sendLengths, recvLengths, pointsForMyNeighbors,
         regionIdsForMyNeighbors, pointsFromMyNeighbors, regionIdsFromMyNeighbors))
   {
@@ -581,7 +585,7 @@ int vtkPConnectivityFilter::RequestData(
 
   // Links from local region ids to remote region ids. Vector index is local
   // region id, and the set contains linked remote ids.
-  typedef std::vector<std::set<vtkIdType> > RegionLinksType;
+  typedef std::vector<std::set<vtkIdType>> RegionLinksType;
   RegionLinksType links(regionStarts[numRanks]);
 
   if (output->GetNumberOfPoints() > 0)
@@ -861,7 +865,9 @@ int vtkPConnectivityFilter::RequestData(
     // Now extract only the cells that have the desired id.
     vtkNew<vtkThreshold> thresholder;
     thresholder->SetInputData(output);
-    thresholder->ThresholdBetween(threshold, threshold);
+    thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+    thresholder->SetLowerThreshold(threshold);
+    thresholder->SetUpperThreshold(threshold);
     thresholder->SetInputArrayToProcess(
       0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "RegionId");
     thresholder->Update();

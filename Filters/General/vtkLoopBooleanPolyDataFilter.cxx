@@ -47,7 +47,7 @@
 #include <sstream>
 #include <string>
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper typedefs and data structures.
 namespace
 {
@@ -769,13 +769,12 @@ void vtkLoopBooleanPolyDataFilter::Impl::SetCheckArrays()
     }
   }
 }
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkLoopBooleanPolyDataFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLoopBooleanPolyDataFilter::vtkLoopBooleanPolyDataFilter()
-  : vtkPolyDataAlgorithm()
 {
   this->Operation = VTK_UNION;
 
@@ -790,10 +789,10 @@ vtkLoopBooleanPolyDataFilter::vtkLoopBooleanPolyDataFilter()
   this->Tolerance = 1e-6;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLoopBooleanPolyDataFilter::~vtkLoopBooleanPolyDataFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLoopBooleanPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -968,7 +967,7 @@ int vtkLoopBooleanPolyDataFilter::RequestData(vtkInformation* vtkNotUsed(request
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLoopBooleanPolyDataFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -995,7 +994,7 @@ void vtkLoopBooleanPolyDataFilter::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "NumberOfIntersectionLines: " << this->NumberOfIntersectionLines << "\n";
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkLoopBooleanPolyDataFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))
@@ -1014,7 +1013,7 @@ int vtkLoopBooleanPolyDataFilter::FillInputPortInformation(int port, vtkInformat
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 // Determine type of intersection
 void vtkLoopBooleanPolyDataFilter::Impl::DetermineIntersection(std::vector<simLoop>* loops)
@@ -1321,7 +1320,9 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
   this->ThresholdRegions(surfaces);
   // thresholder->SetInputData(this->Mesh[0]);
   // thresholder->SetInputArrayToProcess(0, 0, 0, 1, "BooleanRegion");
-  // thresholder->ThresholdBetween(-1, -1);
+  // thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  // thresholder->SetLowerThreshold(-1.0);
+  // thresholder->SetUpperThreshold(-1.0);
   // thresholder->Update();
   // surfacer->SetInputData(thresholder->GetOutput());
   // surfacer->Update();
@@ -1329,7 +1330,9 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
 
   // thresholder->SetInputData(this->Mesh[0]);
   // thresholder->SetInputArrayToProcess(0, 0, 0, 1, "BooleanRegion");
-  // thresholder->ThresholdBetween(1, 1);
+  // thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  // thresholder->SetLowerThreshold(1.0);
+  // thresholder->SetUpperThreshold(1.0);
   // thresholder->Update();
   // surfacer->SetInputData(thresholder->GetOutput());
   // surfacer->Update();
@@ -1337,7 +1340,9 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
 
   // thresholder->SetInputData(this->Mesh[1]);
   // thresholder->SetInputArrayToProcess(0, 0, 0, 1, "BooleanRegion");
-  // thresholder->ThresholdBetween(1, 1);
+  // thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  // thresholder->SetLowerThreshold(1.0);
+  // thresholder->SetUpperThreshold(1.0);
   // thresholder->Update();
   // surfacer->SetInputData(thresholder->GetOutput());
   // surfacer->Update();
@@ -1345,7 +1350,9 @@ void vtkLoopBooleanPolyDataFilter::Impl::PerformBoolean(vtkPolyData* output, int
 
   // thresholder->SetInputData(this->Mesh[1]);
   // thresholder->SetInputArrayToProcess(0, 0, 0, 1, "BooleanRegion");
-  // thresholder->ThresholdBetween(-1, -1);
+  // thresholder->SetThresholdFunction(vtkThreshold::THRESHOLD_BETWEEN);
+  // thresholder->SetLowerThreshold(-1.0);
+  // thresholder->SetUpperThreshold(-1.0);
   // thresholder->Update();
   // surfacer->SetInputData(thresholder->GetOutput());
   // surfacer->Update();

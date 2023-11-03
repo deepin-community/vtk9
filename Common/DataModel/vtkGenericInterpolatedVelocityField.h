@@ -97,24 +97,24 @@ public:
    */
   int GetLastLocalCoordinates(double pcoords[3]);
 
-  //@{
+  ///@{
   /**
    * Turn caching on/off.
    */
   vtkGetMacro(Caching, vtkTypeBool);
   vtkSetMacro(Caching, vtkTypeBool);
   vtkBooleanMacro(Caching, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Caching statistics.
    */
   vtkGetMacro(CacheHit, int);
   vtkGetMacro(CacheMiss, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If you want to work with an arbitrary vector array, then set its name
    * here. By default this in nullptr and the filter will use the active vector
@@ -122,9 +122,9 @@ public:
    */
   vtkGetStringMacro(VectorsSelection);
   void SelectVectors(const char* fieldName) { this->SetVectorsSelection(fieldName); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the last dataset that was visited. Can be used
    * as a first guess as to where the next point will be as
@@ -132,7 +132,7 @@ public:
    * more information about the point.
    */
   vtkGetObjectMacro(LastDataSet, vtkGenericDataSet);
-  //@}
+  ///@}
 
   /**
    * Copy the user set parameters from source. This copies
@@ -159,7 +159,7 @@ protected:
 
   vtkGenericInterpolatedVelocityFieldDataSetsType* DataSets;
 
-  int FunctionValues(vtkGenericDataSet* ds, double* x, double* f);
+  int FunctionValues(vtkGenericDataSet* dataset, double* x, double* f);
 
   static const double TOLERANCE_SCALE;
 

@@ -32,6 +32,7 @@
 #ifndef vtkVariantCreate_h
 #define vtkVariantCreate_h
 
+#include "vtkVariant.h"
 #include <typeinfo> // for warnings
 
 template <typename T>
@@ -123,10 +124,8 @@ inline vtkVariant vtkVariantCreate<vtkStdString>(const vtkStdString& value)
 }
 
 template <>
-inline vtkVariant vtkVariantCreate<vtkUnicodeString>(const vtkUnicodeString& value)
-{
-  return value;
-}
+VTK_DEPRECATED_IN_9_1_0("Use vtkVariant vtkVariantCreate<vtkStdString>(const vtkStdString& value)")
+VTKCOMMONCORE_EXPORT vtkVariant vtkVariantCreate<vtkUnicodeString>(const vtkUnicodeString& value);
 
 template <>
 inline vtkVariant vtkVariantCreate<vtkVariant>(const vtkVariant& value)

@@ -24,7 +24,6 @@
 #ifndef vtkSMPMergePolyDataHelper_h
 #define vtkSMPMergePolyDataHelper_h
 
-#include "vtkConfigure.h"
 #include "vtkFiltersSMPModule.h"
 
 #include <vector>
@@ -36,7 +35,7 @@ class vtkIdList;
 class VTKFILTERSSMP_EXPORT vtkSMPMergePolyDataHelper
 {
 public:
-  //@{
+  ///@{
   /**
    * This is the data structure needed by the MergePolyData function.
    * Each input is represented by a polydata (Input), a locator generated
@@ -56,7 +55,7 @@ public:
     vtkIdList* LineConnOffsets;
     vtkIdList* PolyCellOffsets;
     vtkIdList* PolyConnOffsets;
-    //@}
+    ///@}
 
     InputData(vtkPolyData* input, vtkSMPMergePoints* locator, vtkIdList* vertCellOffsets,
       vtkIdList* vertConnOffsets, vtkIdList* lineCellOffsets, vtkIdList* lineConnOffsets,

@@ -12,13 +12,19 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkBlueObeliskData.h"
 
 #include "vtkAbstractArray.h"
 #include "vtkBlueObeliskDataInternal.h"
 #include "vtkBlueObeliskDataParser.h"
 #include "vtkFloatArray.h"
+#include "vtkLegacy.h" // For VTK_LEGACY_REMOVE
+#if !defined(VTK_LEGACY_REMOVE)
 #include "vtkMutexLock.h"
+#endif
 #include "vtkObjectFactory.h"
 #include "vtkStringArray.h"
 #include "vtkTypeTraits.h"
@@ -33,10 +39,14 @@ class MyStdVectorOfVtkAbstractArrays : public std::vector<vtkAbstractArray*>
 
 vtkStandardNewMacro(vtkBlueObeliskData);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBlueObeliskData::vtkBlueObeliskData()
-  : WriteMutex(vtkSimpleMutexLock::New())
-  , Initialized(false)
+  :
+#if !defined(VTK_LEGACY_REMOVE)
+  WriteMutex(vtkSimpleMutexLock::New())
+  ,
+#endif
+  Initialized(false)
   , NumberOfElements(0)
   , Arrays(new MyStdVectorOfVtkAbstractArrays)
 {
@@ -101,14 +111,16 @@ vtkBlueObeliskData::vtkBlueObeliskData()
   this->Arrays->push_back(this->Groups.GetPointer());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBlueObeliskData::~vtkBlueObeliskData()
 {
   delete Arrays;
+#if !defined(VTK_LEGACY_REMOVE)
   this->WriteMutex->Delete();
+#endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -142,7 +154,7 @@ void vtkBlueObeliskData::PrintSelf(ostream& os, vtkIndent indent)
   this->PrintSelfIfExists("this->Groups", this->Groups.GetPointer(), os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::PrintSelfIfExists(
   const char* name, vtkObject* obj, ostream& os, vtkIndent indent)
 {
@@ -187,7 +199,27 @@ void LoadDataArray(
 
 } // End anon namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkBlueObeliskData::LockWriteMutex()
+{
+#if !defined(VTK_LEGACY_REMOVE)
+  this->WriteMutex->Lock();
+#else
+  this->NewWriteMutex.lock();
+#endif
+}
+
+//------------------------------------------------------------------------------
+void vtkBlueObeliskData::UnlockWriteMutex()
+{
+#if !defined(VTK_LEGACY_REMOVE)
+  this->WriteMutex->Unlock();
+#else
+  this->NewWriteMutex.unlock();
+#endif
+}
+
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::Initialize()
 {
   if (IsInitialized())
@@ -305,7 +337,7 @@ void WriteDataArray(const std::string& name, ArrayT* data, std::ostream& out)
 
 } // end anon namespace
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkBlueObeliskData::GenerateHeaderFromXML(std::istream& xml, std::ostream& out)
 {
   vtkNew<vtkBlueObeliskData> data;
@@ -322,7 +354,7 @@ bool vtkBlueObeliskData::GenerateHeaderFromXML(std::istream& xml, std::ostream& 
          "\n"
          "namespace _vtkBlueObeliskData {\n"
          "\n"
-         "const static unsigned int numberOfElements = "
+         "static const unsigned int numberOfElements = "
       << data->GetNumberOfElements() << ";\n\n";
 
 #define DUMPARRAY(type, name) Write##type##Array(#name, data->Get##name(), out)
@@ -355,7 +387,7 @@ bool vtkBlueObeliskData::GenerateHeaderFromXML(std::istream& xml, std::ostream& 
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkBlueObeliskData::Allocate(vtkIdType sz, vtkIdType ext)
 {
   for (MyStdVectorOfVtkAbstractArrays::iterator it = this->Arrays->begin(),
@@ -370,7 +402,7 @@ vtkTypeBool vtkBlueObeliskData::Allocate(vtkIdType sz, vtkIdType ext)
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::Squeeze()
 {
   for (MyStdVectorOfVtkAbstractArrays::iterator it = this->Arrays->begin(),
@@ -381,7 +413,7 @@ void vtkBlueObeliskData::Squeeze()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBlueObeliskData::Reset()
 {
   for (MyStdVectorOfVtkAbstractArrays::iterator it = this->Arrays->begin(),

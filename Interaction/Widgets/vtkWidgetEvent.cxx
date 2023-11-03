@@ -38,12 +38,13 @@ static const char* vtkWidgetEventStrings[] = {
   "TimedOut",
   "ModifyEvent",
   "Reset",
+  "HoverLeave",
   nullptr,
 };
 
 vtkStandardNewMacro(vtkWidgetEvent);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkWidgetEvent::GetStringFromEventId(unsigned long event)
 {
   static unsigned long numevents = 0;
@@ -67,7 +68,7 @@ const char* vtkWidgetEvent::GetStringFromEventId(unsigned long event)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 unsigned long vtkWidgetEvent::GetEventIdFromString(const char* event)
 {
   unsigned long i;
@@ -82,7 +83,7 @@ unsigned long vtkWidgetEvent::GetEventIdFromString(const char* event)
   return vtkWidgetEvent::NoEvent;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWidgetEvent::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h

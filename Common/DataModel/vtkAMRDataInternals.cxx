@@ -25,7 +25,7 @@ vtkAMRDataInternals::Block::Block(unsigned int i, vtkUniformGrid* g)
   this->Grid = g;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkAMRDataInternals::vtkAMRDataInternals()
   : InternalIndex(nullptr)
@@ -52,7 +52,7 @@ void vtkAMRDataInternals::PrintSelf(ostream& os, vtkIndent indent)
 
 void vtkAMRDataInternals::Insert(unsigned int index, vtkUniformGrid* grid)
 {
-  this->Blocks.push_back(Block(index, grid));
+  this->Blocks.emplace_back(index, grid);
   int i = static_cast<int>(this->Blocks.size()) - 2;
   while (i >= 0 && this->Blocks[i].Index > this->Blocks[i + 1].Index)
   {
@@ -118,6 +118,30 @@ void vtkAMRDataInternals::ShallowCopy(vtkObject* src)
   if (vtkAMRDataInternals* hbds = vtkAMRDataInternals::SafeDownCast(src))
   {
     this->Blocks = hbds->Blocks;
+  }
+
+  this->Modified();
+}
+
+void vtkAMRDataInternals::RecursiveShallowCopy(vtkObject* src)
+{
+  if (src == this)
+  {
+    return;
+  }
+
+  if (vtkAMRDataInternals* hbds = vtkAMRDataInternals::SafeDownCast(src))
+  {
+    this->Blocks = hbds->Blocks;
+    for (auto& item : this->Blocks)
+    {
+      if (item.Grid)
+      {
+        auto clone = item.Grid->NewInstance();
+        clone->ShallowCopy(item.Grid);
+        item.Grid.TakeReference(clone);
+      }
+    }
   }
 
   this->Modified();

@@ -31,6 +31,7 @@ class VTKIMAGINGMATH_EXPORT vtkImageDotProduct : public vtkThreadedImageAlgorith
 public:
   static vtkImageDotProduct* New();
   vtkTypeMacro(vtkImageDotProduct, vtkThreadedImageAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Set the two inputs to this filter
@@ -40,13 +41,13 @@ public:
 
 protected:
   vtkImageDotProduct();
-  ~vtkImageDotProduct() override {}
+  ~vtkImageDotProduct() override = default;
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData,
-    int extent[6], int threadId) override;
+    int outExt[6], int threadId) override;
 
 private:
   vtkImageDotProduct(const vtkImageDotProduct&) = delete;
@@ -54,5 +55,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageDotProduct.h

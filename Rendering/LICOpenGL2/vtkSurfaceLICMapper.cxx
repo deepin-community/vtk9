@@ -37,10 +37,10 @@
 #endif
 #define vtkSurfaceLICMapperDEBUG 0
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkObjectFactoryNewMacro(vtkSurfaceLICMapper);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSurfaceLICMapper::vtkSurfaceLICMapper()
 {
   this->SetInputArrayToProcess(
@@ -49,7 +49,7 @@ vtkSurfaceLICMapper::vtkSurfaceLICMapper()
   this->LICInterface = vtkSurfaceLICInterface::New();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSurfaceLICMapper::~vtkSurfaceLICMapper()
 {
 #if vtkSurfaceLICMapperDEBUG >= 1
@@ -72,7 +72,7 @@ void vtkSurfaceLICMapper::ShallowCopy(vtkAbstractMapper* mapper)
   this->vtkOpenGLPolyDataMapper::ShallowCopy(mapper);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICMapper::ReleaseGraphicsResources(vtkWindow* win)
 {
   this->LICInterface->ReleaseGraphicsResources(win);
@@ -95,29 +95,39 @@ void vtkSurfaceLICMapper::ReplaceShaderValues(
   vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Dec",
     // 0/1, when 1 V is projected to surface for |V| computation.
     "uniform int uMaskOnSurface;\n"
-    "uniform mat3 normalMatrix;\n"
-    "in vec3 tcoordVCVSOutput;");
+    "in vec3 tcoordVCVSOutput;\n"
+    "//VTK::TCoord::Dec");
 
-  vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Impl",
-    // projected vectors
-    "  vec3 tcoordLIC = normalMatrix * tcoordVCVSOutput;\n"
-    "  vec3 normN = normalize(normalVCVSOutput);\n"
-    "  float k = dot(tcoordLIC, normN);\n"
-    "  tcoordLIC = (tcoordLIC - k*normN);\n"
-    "  gl_FragData[1] = vec4(tcoordLIC.x, tcoordLIC.y, 0.0 , gl_FragCoord.z);\n"
-    //   "  gl_FragData[1] = vec4(tcoordVC.xyz, gl_FragCoord.z);\n"
-    // vectors for fragment masking
-    "  if (uMaskOnSurface == 0)\n"
-    "    {\n"
-    "    gl_FragData[2] = vec4(tcoordVCVSOutput, gl_FragCoord.z);\n"
-    "    }\n"
-    "  else\n"
-    "    {\n"
-    "    gl_FragData[2] = vec4(tcoordLIC.x, tcoordLIC.y, 0.0 , gl_FragCoord.z);\n"
-    "    }\n"
-    //   "  gl_FragData[2] = vec4(19.0, 19.0, tcoordVC.x, gl_FragCoord.z);\n"
-    ,
-    false);
+  // No need to create uniform normalMatrix as it will be done in superclass
+  // if the data contains normals
+  if (this->VBOs->GetNumberOfComponents("normalMC") != 3)
+  {
+    vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Dec", "uniform mat3 normalMatrix;");
+  }
+
+  if (this->PrimitiveInfo[this->LastBoundBO].LastLightComplexity > 0)
+  {
+    vtkShaderProgram::Substitute(FSSource, "//VTK::TCoord::Impl",
+      // projected vectors
+      "  vec3 tcoordLIC = normalMatrix * tcoordVCVSOutput;\n"
+      "  vec3 normN = normalize(normalVCVSOutput);\n"
+      "  float k = dot(tcoordLIC, normN);\n"
+      "  tcoordLIC = (tcoordLIC - k*normN);\n"
+      "  gl_FragData[1] = vec4(tcoordLIC.x, tcoordLIC.y, 0.0 , gl_FragCoord.z);\n"
+      //   "  gl_FragData[1] = vec4(tcoordVC.xyz, gl_FragCoord.z);\n"
+      // vectors for fragment masking
+      "  if (uMaskOnSurface == 0)\n"
+      "    {\n"
+      "    gl_FragData[2] = vec4(tcoordVCVSOutput, gl_FragCoord.z);\n"
+      "    }\n"
+      "  else\n"
+      "    {\n"
+      "    gl_FragData[2] = vec4(tcoordLIC.x, tcoordLIC.y, 0.0 , gl_FragCoord.z);\n"
+      "    }\n"
+      //   "  gl_FragData[2] = vec4(19.0, 19.0, tcoordVC.x, gl_FragCoord.z);\n"
+      ,
+      false);
+  }
 
   shaders[vtkShader::Vertex]->SetSource(VSSource);
   shaders[vtkShader::Fragment]->SetSource(FSSource);
@@ -132,7 +142,7 @@ void vtkSurfaceLICMapper::SetMapperShaderParameters(
   cellBO.Program->SetUniformi("uMaskOnSurface", this->LICInterface->GetMaskOnSurface());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICMapper::RenderPiece(vtkRenderer* renderer, vtkActor* actor)
 {
 #ifdef vtkSurfaceLICMapperTIME
@@ -178,6 +188,7 @@ void vtkSurfaceLICMapper::RenderPiece(vtkRenderer* renderer, vtkActor* actor)
   vtkOpenGLRenderWindow* rw = vtkOpenGLRenderWindow::SafeDownCast(renderer->GetRenderWindow());
   vtkOpenGLState* ostate = rw->GetState();
   vtkOpenGLState::ScopedglEnableDisable bsaver(ostate, GL_BLEND);
+  vtkOpenGLState::ScopedglEnableDisable cfsaver(ostate, GL_CULL_FACE);
 
   vtkNew<vtkOpenGLFramebufferObject> fbo;
   fbo->SetContext(rw);
@@ -189,10 +200,15 @@ void vtkSurfaceLICMapper::RenderPiece(vtkRenderer* renderer, vtkActor* actor)
 
   // draw the geometry
   this->LICInterface->PrepareForGeometry();
+
+  this->UpdateCameraShiftScale(renderer, actor);
   this->RenderPieceStart(renderer, actor);
   this->RenderPieceDraw(renderer, actor);
   this->RenderPieceFinish(renderer, actor);
   this->LICInterface->CompletedGeometry();
+
+  // Disable cull face to make sure geometry won't be culled again
+  ostate->vtkglDisable(GL_CULL_FACE);
 
   // --------------------------------------------- compoiste vectors for parallel LIC
   this->LICInterface->GatherVectors();
@@ -218,7 +234,7 @@ void vtkSurfaceLICMapper::RenderPiece(vtkRenderer* renderer, vtkActor* actor)
 #endif
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICMapper::BuildBufferObjects(vtkRenderer* ren, vtkActor* act)
 {
   if (this->LICInterface->GetHasVectors())
@@ -230,7 +246,7 @@ void vtkSurfaceLICMapper::BuildBufferObjects(vtkRenderer* ren, vtkActor* act)
   this->Superclass::BuildBufferObjects(ren, act);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSurfaceLICMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

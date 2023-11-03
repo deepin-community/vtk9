@@ -33,6 +33,7 @@
 #define vtkResourceFileLocator_h
 
 #include "vtkCommonMiscModule.h" // For export macro
+#include "vtkDeprecation.h"      // For VTK_DEPRECATED_IN_9_0_0
 #include "vtkObject.h"
 
 #include <string> // needed for std::string
@@ -45,7 +46,7 @@ public:
   vtkTypeMacro(vtkResourceFileLocator, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Enable/disable printing of testing of various path during `Locate`
    * to `stdout`.
@@ -54,22 +55,26 @@ public:
    * this instance should log trace information. Default is
    * `vtkLogger::VERBOSITY_TRACE`.
    */
-  VTK_LEGACY(void SetPrintDebugInformation(bool));
-  VTK_LEGACY(bool GetPrintDebugInformation());
-  VTK_LEGACY(void PrintDebugInformationOn());
-  VTK_LEGACY(void PrintDebugInformationOff());
-  //@}
+  VTK_DEPRECATED_IN_9_0_0("Use vtkResourceFileLocator::SetLogVerbosity")
+  void SetPrintDebugInformation(bool);
+  VTK_DEPRECATED_IN_9_0_0("Use vtkResourceFileLocator::GetLogVerbosity")
+  bool GetPrintDebugInformation();
+  VTK_DEPRECATED_IN_9_0_0("Use vtkResourceFileLocator::SetLogVerbosity")
+  void PrintDebugInformationOn();
+  VTK_DEPRECATED_IN_9_0_0("Use vtkResourceFileLocator::SetLogVerbosity")
+  void PrintDebugInformationOff();
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The log verbosity to use when logging information about the resource
    * searching. Default is `vtkLogger::VERBOSITY_TRACE`.
    */
   vtkSetMacro(LogVerbosity, int);
   vtkGetMacro(LogVerbosity, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given a starting anchor directory, look for the landmark file relative to
    * the anchor. If found return the anchor. If not found, go one directory up
@@ -77,9 +82,9 @@ public:
    */
   virtual std::string Locate(const std::string& anchor, const std::string& landmark,
     const std::string& defaultDir = std::string());
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This variant is used to look for landmark relative to the anchor using
    * additional prefixes for the landmark file. For example, if you're looking for
@@ -91,9 +96,9 @@ public:
   virtual std::string Locate(const std::string& anchor,
     const std::vector<std::string>& landmark_prefixes, const std::string& landmark,
     const std::string& defaultDir = std::string());
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the name of the library providing the symbol. For example, if you
    * want to locate where the VTK libraries located call
@@ -102,9 +107,9 @@ public:
    * can simply use the `vtkGetLibraryPathForSymbol(GetVTKVersion)` macro
    * that makes the appropriate call as per the current platform.
    */
-  static std::string GetLibraryPathForSymbolUnix(const char* symbolname);
-  static std::string GetLibraryPathForSymbolWin32(const void* fptr);
-  //@}
+  static VTK_FILEPATH std::string GetLibraryPathForSymbolUnix(const char* symbolname);
+  static VTK_FILEPATH std::string GetLibraryPathForSymbolWin32(const void* fptr);
+  ///@}
 
 protected:
   vtkResourceFileLocator();

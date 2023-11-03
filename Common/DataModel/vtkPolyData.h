@@ -40,7 +40,7 @@
  * consist of a mixture of cell types. Because of the design of the class,
  * there are certain limitations on how mixed cell types are inserted into
  * the vtkPolyData, and in turn the order in which they are processed and
- * rendered. To preserve the consistency of cell ids, and to insure that
+ * rendered. To preserve the consistency of cell ids, and to ensure that
  * cells with cell data are rendered properly, users must insert mixed cells
  * in the order of vertices (vtkVertex and vtkPolyVertex), lines (vtkLine and
  * vtkPolyLine), polygons (vtkTriangle, vtkQuad, vtkPolygon), and triangle
@@ -63,6 +63,7 @@
 #define vtkPolyData_h
 
 #include "vtkCommonDataModelModule.h" // For export macro
+#include "vtkDeprecation.h"           // for VTK_DEPRECATED_IN_9_0_0
 #include "vtkPointSet.h"
 
 #include "vtkCellArray.h"         // Needed for inline methods
@@ -85,6 +86,7 @@ class VTKCOMMONDATAMODEL_EXPORT vtkPolyData : public vtkPointSet
 {
 public:
   static vtkPolyData* New();
+  static vtkPolyData* ExtendedNew();
 
   vtkTypeMacro(vtkPolyData, vtkPointSet);
   void PrintSelf(ostream& os, vtkIndent indent) override;
@@ -99,7 +101,7 @@ public:
    */
   void CopyStructure(vtkDataSet* ds) override;
 
-  //@{
+  ///@{
   /**
    * Standard vtkDataSet interface.
    */
@@ -110,7 +112,7 @@ public:
   int GetCellType(vtkIdType cellId) override;
   void GetCellBounds(vtkIdType cellId, double bounds[6]) override;
   void GetCellNeighbors(vtkIdType cellId, vtkIdList* ptIds, vtkIdList* cellIds) override;
-  //@}
+  ///@}
 
   /**
    * Copy cells listed in idList from pd, including points, point data,
@@ -134,10 +136,30 @@ public:
 
   /**
    * Compute the (X, Y, Z)  bounds of the data. Note that the method only considers
-   * points that are used by cells (unless there are no cells, in which case all
-   * points are considered). This is done for usability and historical reasons.
+   * points that are used by cells.
+   * This is done for usability and historical reasons.
+   *
+   * IMPORTANT
+   *
+   * Until vtk 9.0.1, vtkPolyData::ComputeBounds() used to ignore points that do not belong
+   * to any cell.
+   * That was not consistent with other vtkPointSet subclasses and thus was error prone.
+   * See this ParaView issue https://gitlab.kitware.com/paraview/paraview/-/issues/20354
+   * Now it defers to vtkPointSet::ComputeBounds() so vtkPolyData::GetBounds() may
+   * not return the same bounds as before. This behavior is probably the one you want
+   * when using bounds.
+   *
+   * The previous behavior is still availble through vtkPolyData::ComputeCellsBounds()
+   * and vtkPolyData::GetCellsBounds(). This is mainly used for rendering purpose.
    */
-  void ComputeBounds() override;
+  void ComputeCellsBounds();
+
+  /**
+   * Get the cells bounds.
+   * Internally calls ComputeCellsBounds().
+   * @sa ComputeCellsBounds()
+   */
+  void GetCellsBounds(double bounds[6]);
 
   /**
    * Recover extra allocated memory when creating data whose initial size
@@ -151,6 +173,13 @@ public:
    * Return the maximum cell size in this poly data.
    */
   int GetMaxCellSize() override;
+
+  /**
+   * Maps the cell at position `cellId` inside the `vtkPolyData` to its location in the
+   * corresponding cell array. For instance, if cell `cellId` is a line, then this method returns
+   * the position of this cell in the `Lines` cell array.
+   */
+  vtkIdType GetCellIdRelativeToCellArray(vtkIdType cellId);
 
   /**
    * Set the cell array defining vertices.
@@ -197,7 +226,7 @@ public:
    */
   vtkCellArray* GetStrips();
 
-  //@{
+  ///@{
   /**
    * Return the number of primitives of a particular type held.
    */
@@ -205,7 +234,7 @@ public:
   vtkIdType GetNumberOfLines() { return (this->Lines ? this->Lines->GetNumberOfCells() : 0); }
   vtkIdType GetNumberOfPolys() { return (this->Polys ? this->Polys->GetNumberOfCells() : 0); }
   vtkIdType GetNumberOfStrips() { return (this->Strips ? this->Strips->GetNumberOfCells() : 0); }
-  //@}
+  ///@}
 
   /**
    * Preallocate memory for the internal cell arrays. Each of the internal
@@ -362,18 +391,17 @@ public:
    */
   void DeleteLinks();
 
-  //@{
+  ///@{
   /**
    * Special (efficient) operations on poly data. Use carefully (i.e., make
    * sure that BuildLinks() has been called).
    */
   void GetPointCells(vtkIdType ptId, vtkIdType& ncells, vtkIdType*& cells)
     VTK_SIZEHINT(cells, ncells);
-#ifndef VTK_LEGACY_REMOVE
-  VTK_LEGACY(void GetPointCells(vtkIdType ptId, unsigned short& ncells, vtkIdType*& cells))
-  VTK_SIZEHINT(cells, ncells);
-#endif
-  //@}
+  VTK_DEPRECATED_IN_9_0_0("Use vtkPolyData::GetPointCells::vtkIdType, vtkIdType&, vtkIdType*&)")
+  void GetPointCells(vtkIdType ptId, unsigned short& ncells, vtkIdType*& cells)
+    VTK_SIZEHINT(cells, ncells);
+  ///@}
 
   /**
    * Get the neighbors at an edge. More efficient than the general
@@ -439,14 +467,14 @@ public:
    */
   void ReverseCell(vtkIdType cellId);
 
-  //@{
+  ///@{
   /**
    * Mark a point/cell as deleted from this vtkPolyData. Use this
    * method only when the dataset is set as Editable.
    */
   void DeletePoint(vtkIdType ptId);
   void DeleteCell(vtkIdType cellId);
-  //@}
+  ///@}
 
   /**
    * The cells marked by calls to DeleteCell are stored in the Cell Array
@@ -458,7 +486,7 @@ public:
    */
   void RemoveDeletedCells();
 
-  //@{
+  ///@{
   /**
    * Add a point to the cell data structure (after cell pointers have been
    * built). This method adds the point and then allocates memory for the
@@ -469,7 +497,7 @@ public:
    */
   vtkIdType InsertNextLinkedPoint(int numLinks);
   vtkIdType InsertNextLinkedPoint(double x[3], int numLinks);
-  //@}
+  ///@}
 
   /**
    * Add a new cell to the cell data structure (after cell pointers have been
@@ -538,13 +566,13 @@ public:
    */
   void Initialize() override;
 
-  //@{
+  ///@{
   /**
    * Get the piece and the number of pieces. Similar to extent in 3D.
    */
   virtual int GetPiece();
   virtual int GetNumberOfPieces();
-  //@}
+  ///@}
 
   /**
    * Get the ghost level.
@@ -561,28 +589,29 @@ public:
    */
   unsigned long GetActualMemorySize() override;
 
-  //@{
+  ///@{
   /**
    * Shallow and Deep copy.
    */
   void ShallowCopy(vtkDataObject* src) override;
   void DeepCopy(vtkDataObject* src) override;
-  //@}
+  ///@}
 
   /**
    * This method will remove any cell that is marked as ghost
-   * (has the vtkDataSetAttributes::DUPLICATECELL bit set).
+   * (has the vtkDataSetAttributes::DUPLICATECELL or
+   * the vtkDataSetAttributes::HIDDENCELL bit set).
    * It does not remove unused points.
    */
   void RemoveGhostCells();
 
-  //@{
+  ///@{
   /**
    * Retrieve an instance of this class from an information object.
    */
   static vtkPolyData* GetData(vtkInformation* info);
   static vtkPolyData* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
   /**
    * Scalar field critical point classification (for manifold 2D meshes).
@@ -679,6 +708,11 @@ protected:
   // dummy static member below used as a trick to simplify traversal
   static vtkPolyDataDummyContainter DummyContainer;
 
+  // Take into account only points that belong to at least one cell.
+  double CellsBounds[6];
+
+  vtkTimeStamp CellsBoundsTime;
+
 private:
   // Hide these from the user and the compiler.
 
@@ -704,14 +738,12 @@ inline void vtkPolyData::GetPointCells(vtkIdType ptId, vtkIdType& ncells, vtkIdT
   cells = this->Links->GetCells(ptId);
 }
 
-#ifndef VTK_LEGACY_REMOVE
 inline void vtkPolyData::GetPointCells(vtkIdType ptId, unsigned short& ncells, vtkIdType*& cells)
 {
   VTK_LEGACY_BODY(vtkPolyData::GetPointCells, "VTK 9.0");
   ncells = static_cast<unsigned short>(this->Links->GetNcells(ptId));
   cells = this->Links->GetCells(ptId);
 }
-#endif
 
 //------------------------------------------------------------------------------
 inline vtkIdType vtkPolyData::GetNumberOfCells()

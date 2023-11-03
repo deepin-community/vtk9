@@ -37,10 +37,11 @@ class VTKIMAGINGFOURIER_EXPORT vtkImageFFT : public vtkImageFourierFilter
 public:
   static vtkImageFFT* New();
   vtkTypeMacro(vtkImageFFT, vtkImageFourierFilter);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
-  vtkImageFFT() {}
-  ~vtkImageFFT() override {}
+  vtkImageFFT() = default;
+  ~vtkImageFFT() override = default;
 
   int IterativeRequestInformation(vtkInformation* in, vtkInformation* out) override;
   int IterativeRequestUpdateExtent(vtkInformation* in, vtkInformation* out) override;
@@ -55,5 +56,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageFFT.h

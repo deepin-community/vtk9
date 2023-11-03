@@ -32,10 +32,7 @@
 #ifndef vtkTemporalStreamTracer_h
 #define vtkTemporalStreamTracer_h
 
-#include "vtkConfigure.h" // For legacy defines
-#include "vtkSetGet.h"    // For legacy macros
-#ifndef VTK_LEGACY_REMOVE
-
+#include "vtkDeprecation.h"            // For VTK_DEPRECATED_IN_9_0_0
 #include "vtkFiltersFlowPathsModule.h" // For export macro
 #include "vtkSmartPointer.h"           // For protected ivars.
 #include "vtkStreamTracer.h"
@@ -56,16 +53,18 @@ class vtkCellArray;
 class vtkDoubleArray;
 class vtkFloatArray;
 class vtkIntArray;
-class vtkCharArray;
+class vtkSignedCharArray;
 class vtkAbstractParticleWriter;
 
 namespace vtkTemporalStreamTracerNamespace
 {
-typedef struct
+struct Position_t
 {
   double x[4];
-} Position;
-typedef struct
+};
+using Position = struct Position_t;
+
+struct ParticleInformation_t
 {
   // These are used during iteration
   Position CurrentPosition;
@@ -86,7 +85,8 @@ typedef struct
   float angularVel;
   float time;
   float speed;
-} ParticleInformation;
+};
+using ParticleInformation = struct ParticleInformation_t;
 
 typedef std::vector<ParticleInformation> ParticleVector;
 typedef ParticleVector::iterator ParticleIterator;
@@ -94,6 +94,8 @@ typedef std::list<ParticleInformation> ParticleDataList;
 typedef ParticleDataList::iterator ParticleListIterator;
 };
 
+VTK_DEPRECATED_IN_9_0_0("Use one of vtkParticleTracerBase, vtkParticleTracer, "
+                        "vtkParticlePathFilter, or vtkStreaklineFilter")
 class VTKFILTERSFLOWPATHS_EXPORT vtkTemporalStreamTracer : public vtkStreamTracer
 {
 public:
@@ -105,7 +107,7 @@ public:
    */
   static vtkTemporalStreamTracer* New();
 
-  //@{
+  ///@{
   /**
    * Set/Get the TimeStep. This is the primary means of advancing
    * the particles. The TimeStep should be animated and this will drive
@@ -113,9 +115,9 @@ public:
    */
   vtkSetMacro(TimeStep, unsigned int);
   vtkGetMacro(TimeStep, unsigned int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * To get around problems with the Paraview Animation controls
    * we can just animate the time step and ignore the TIME_ requests
@@ -123,9 +125,9 @@ public:
   vtkSetMacro(IgnorePipelineTime, vtkTypeBool);
   vtkGetMacro(IgnorePipelineTime, vtkTypeBool);
   vtkBooleanMacro(IgnorePipelineTime, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If the data source does not have the correct time values
    * present on each time step - setting this value to non unity can
@@ -135,9 +137,9 @@ public:
    */
   vtkSetMacro(TimeStepResolution, double);
   vtkGetMacro(TimeStepResolution, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When animating particles, it is nice to inject new ones every Nth step
    * to produce a continuous flow. Setting ForceReinjectionEveryNSteps to a
@@ -149,7 +151,7 @@ public:
    */
   vtkSetMacro(ForceReinjectionEveryNSteps, int);
   vtkGetMacro(ForceReinjectionEveryNSteps, int);
-  //@}
+  ///@}
 
   enum Units
   {
@@ -157,7 +159,7 @@ public:
     TERMINATION_STEP_UNIT
   };
 
-  //@{
+  ///@{
   /**
    * Setting TerminationTime to a positive value will cause particles
    * to terminate when the time is reached. Use a vlue of zero to
@@ -166,9 +168,9 @@ public:
    */
   vtkSetMacro(TerminationTime, double);
   vtkGetMacro(TerminationTime, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The units of TerminationTime may be actual 'Time' units as described
    * by the data, or just TimeSteps of iteration.
@@ -177,9 +179,9 @@ public:
   vtkGetMacro(TerminationTimeUnit, int);
   void SetTerminationTimeUnitToTimeUnit() { this->SetTerminationTimeUnit(TERMINATION_TIME_UNIT); }
   void SetTerminationTimeUnitToStepUnit() { this->SetTerminationTimeUnit(TERMINATION_STEP_UNIT); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * if StaticSeeds is set and the mesh is static,
    * then every time particles are injected we can re-use the same
@@ -191,9 +193,9 @@ public:
   vtkSetMacro(StaticSeeds, vtkTypeBool);
   vtkGetMacro(StaticSeeds, vtkTypeBool);
   vtkBooleanMacro(StaticSeeds, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * if StaticMesh is set, many optimizations for cell caching
    * can be assumed. if StaticMesh is not set, the algorithm
@@ -205,9 +207,9 @@ public:
   vtkSetMacro(StaticMesh, vtkTypeBool);
   vtkGetMacro(StaticMesh, vtkTypeBool);
   vtkBooleanMacro(StaticMesh, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Writer associated with this Particle Tracer
    * Ideally a parallel IO capable vtkH5PartWriter should be used
@@ -216,18 +218,18 @@ public:
    */
   virtual void SetParticleWriter(vtkAbstractParticleWriter* pw);
   vtkGetObjectMacro(ParticleWriter, vtkAbstractParticleWriter);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the filename to be used with the particle writer when
    * dumping particles to disk
    */
-  vtkSetStringMacro(ParticleFileName);
-  vtkGetStringMacro(ParticleFileName);
-  //@}
+  vtkSetFilePathMacro(ParticleFileName);
+  vtkGetFilePathMacro(ParticleFileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the filename to be used with the particle writer when
    * dumping particles to disk
@@ -235,18 +237,18 @@ public:
   vtkSetMacro(EnableParticleWriting, vtkTypeBool);
   vtkGetMacro(EnableParticleWriting, vtkTypeBool);
   vtkBooleanMacro(EnableParticleWriting, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Provide support for multiple see sources
    */
   void AddSourceConnection(vtkAlgorithmOutput* input);
   void RemoveAllSources();
-  //@}
+  ///@}
 
 protected:
-  VTK_LEGACY(vtkTemporalStreamTracer());
+  vtkTemporalStreamTracer();
   ~vtkTemporalStreamTracer() override;
 
   //
@@ -415,7 +417,7 @@ protected:
   //
   vtkSmartPointer<vtkFloatArray> ParticleAge;
   vtkSmartPointer<vtkIntArray> ParticleIds;
-  vtkSmartPointer<vtkCharArray> ParticleSourceIds;
+  vtkSmartPointer<vtkSignedCharArray> ParticleSourceIds;
   vtkSmartPointer<vtkIntArray> InjectedPointIds;
   vtkSmartPointer<vtkIntArray> InjectedStepIds;
   vtkSmartPointer<vtkIntArray> ErrorCodeArray;
@@ -441,10 +443,11 @@ protected:
   vtkSmartPointer<vtkDataSet> DataReferenceT[2];
 
   // Cache bounds info for each dataset we will use repeatedly
-  typedef struct
+  struct bounds_t
   {
     double b[6];
-  } bounds;
+  };
+  using bounds = struct bounds_t;
   std::vector<bounds> CachedBounds[2];
 
   // utility function we use to test if a point is inside any of our local datasets
@@ -466,7 +469,5 @@ private:
   vtkTemporalStreamTracer(const vtkTemporalStreamTracer&) = delete;
   void operator=(const vtkTemporalStreamTracer&) = delete;
 };
-
-#endif // VTK_LEGACY_REMOVE
 
 #endif

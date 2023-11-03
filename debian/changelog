@@ -1,14 +1,103 @@
-vtk9 (9.0.3+dfsg1.1-1+dde) UNRELEASED; urgency=medium
+vtk9 (9.1.0+really9.1.0+dfsg2-7) unstable; urgency=medium
 
-  * update
+  * Team upload.
+  * Cherry-pick patch from upstream to fix FTBFS with gcc-13.
+    (Closes: #1037887)
 
- -- Debian Science Team <debian-science-maintainers@lists.alioth.debian.org>  Mon, 25 Jul 2022 15:20:22 +0800
+ -- Michael R. Crusoe <crusoe@debian.org>  Tue, 22 Aug 2023 00:27:20 +0200
 
-vtk9 (9.0.3+dfsg1.1-1+dde) unstable; urgency=medium
+vtk9 (9.1.0+really9.1.0+dfsg2-6) unstable; urgency=medium
 
-  * Add sunway support.
+  * Team upload.
+  * Don't use netcdf-cxx-legacy.
+    (closes: #1038614)
 
- -- Miao Changwei <miaochangwei@uniontech.com>  Thu, 19 May 2022 23:21:01 +0800
+ -- Bas Couwenberg <sebastic@debian.org>  Thu, 22 Jun 2023 07:14:50 +0200
+
+vtk9 (9.1.0+really9.1.0+dfsg2-5) unstable; urgency=medium
+
+  [ Elvis Stansvik ]
+  * [a408ad0] Add upstream fix for shader crash with multivolume
+
+  [ Adrian Bunk ]
+  * [ab960ac] Build without libtbb also on alpha and ia64
+
+  [ Anton Gladky ]
+  * [be1ea19] Set upstream metadata fields: Bug-Database, Bug-Submit.
+  * [f5599c7] Update standards version to 4.6.2, no changes needed.
+
+ -- Anton Gladky <gladk@debian.org>  Sat, 25 Feb 2023 09:59:35 +0100
+
+vtk9 (9.1.0+really9.1.0+dfsg2-4) unstable; urgency=medium
+
+  * [b05b21f] Fix FTBFS against NETCDF>4.9.0. (Closes: #1012703)
+
+ -- Anton Gladky <gladk@debian.org>  Sun, 19 Jun 2022 16:25:33 +0200
+
+vtk9 (9.1.0+really9.1.0+dfsg2-3) unstable; urgency=medium
+
+  * Upload into unstable.
+
+ -- Anton Gladky <gladk@debian.org>  Fri, 21 Jan 2022 21:24:01 +0100
+
+vtk9 (9.1.0+really9.1.0+dfsg2-3~exp2) experimental; urgency=medium
+
+  [ Adrian Bunk ]
+  * [33b75d5] Restore the 83_allow_gles_platforms.patch hack for Qt with OpenGL ES
+  * [b243b24] HACK: vtkQWidgetTexture.cxx: Don't use vtkOpenGLCheckErrorMacro
+
+  [ Anton Gladky ]
+  * [4449d7a] Add missing Breaks+Replaces to libvtk9. (Closes: #1002063)
+
+ -- Anton Gladky <gladk@debian.org>  Wed, 19 Jan 2022 22:40:05 +0100
+
+vtk9 (9.1.0+really9.1.0+dfsg2-3~exp1) experimental; urgency=medium
+
+  * [948c358] Update package names due to so-version changes
+
+ -- Anton Gladky <gladk@debian.org>  Mon, 29 Nov 2021 22:26:25 +0100
+
+vtk9 (9.1.0+really9.0.3+dfsg1-4) unstable; urgency=medium
+
+  * [90cbc11] vtkFreeTypeTools: avoid using an internal macro.
+              (Closes: #1000746)
+  * [9e418ba] Use python3-dev in BD
+
+ -- Anton Gladky <gladk@debian.org>  Sun, 28 Nov 2021 23:34:47 +0100
+
+vtk9 (9.1.0+really9.0.3+dfsg1-3) unstable; urgency=medium
+
+  * Upload previous version to fix unstable. (Closes: #1000611)
+
+ -- Anton Gladky <gladk@debian.org>  Sat, 27 Nov 2021 21:27:37 +0100
+
+vtk9 (9.1.0+dfsg2-2) unstable; urgency=medium
+
+  * [dda0c55] Fix FTBFS on build-any
+
+ -- Anton Gladky <gladk@debian.org>  Wed, 24 Nov 2021 21:43:24 +0100
+
+vtk9 (9.1.0+dfsg2-1) unstable; urgency=medium
+
+  [ Anton Gladky ]
+  * [d2a3591] Drop Thirdparty/fides from the source
+  * [2f0d373] Fix lintian warnings
+  * [7169c10] Remove unused patches
+  * [a51ec5a] Fix manpages
+  * [e941542] Fix dependencies. (Closes: #998470, #1000501)
+  * [5c49e03] New upstream version 9.1.0+dfsg2
+
+  [ Samuel Thibault ]
+  * [82b2737] Disable libtbb-dev build-dep on !linux. (Closes: #996257)
+
+ -- Anton Gladky <gladk@debian.org>  Wed, 24 Nov 2021 18:07:18 +0100
+
+vtk9 (9.1.0+dfsg1-1) unstable; urgency=medium
+
+  * [5442030] New upstream version 9.1.0+dfsg1
+  * [1ee83fe] Fix compilation
+
+ -- Anton Gladky <gladk@debian.org>  Tue, 23 Nov 2021 20:17:56 +0100
 
 vtk9 (9.0.3+dfsg1-3) unstable; urgency=medium
 

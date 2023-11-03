@@ -19,9 +19,13 @@
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkArray.h"
 #include "vtkDenseArray.h"
 #include "vtkSparseArray.h"
+#include "vtkUnicodeString.h"
 #include "vtkVariant.h"
 
 #include <algorithm>
@@ -30,15 +34,15 @@
 // Standard functions
 //
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkArray::vtkArray() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkArray::~vtkArray() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkArray::PrintSelf(ostream& os, vtkIndent indent)
 {

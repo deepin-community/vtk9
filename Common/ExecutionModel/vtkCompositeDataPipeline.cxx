@@ -50,7 +50,7 @@ vtkInformationKeyMacro(vtkCompositeDataPipeline, DATA_COMPOSITE_INDICES, Integer
 vtkInformationKeyMacro(vtkCompositeDataPipeline, SUPPRESS_RESET_PI, Integer);
 vtkInformationKeyMacro(vtkCompositeDataPipeline, BLOCK_AMOUNT_OF_DETAIL, Double);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataPipeline::vtkCompositeDataPipeline()
 {
   this->InLocalLoop = 0;
@@ -86,7 +86,7 @@ vtkCompositeDataPipeline::vtkCompositeDataPipeline()
   this->DataRequest->Set(vtkExecutive::ALGORITHM_AFTER_FORWARD(), 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositeDataPipeline::~vtkCompositeDataPipeline()
 {
   this->InformationCache->Delete();
@@ -95,7 +95,7 @@ vtkCompositeDataPipeline::~vtkCompositeDataPipeline()
   this->InformationRequest->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataPipeline::ExecuteDataObject(
   vtkInformation* request, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -125,14 +125,14 @@ int vtkCompositeDataPipeline::ExecuteDataObject(
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataPipeline::ExecuteDataStart(
   vtkInformation* request, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
   this->Superclass::ExecuteDataStart(request, inInfoVec, outInfoVec);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Handle REQUEST_DATA
 int vtkCompositeDataPipeline::ExecuteData(
   vtkInformation* request, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
@@ -151,7 +151,8 @@ int vtkCompositeDataPipeline::ExecuteData(
     }
     else
     {
-      vtkErrorMacro("Can not execute simple algorithm without output ports");
+      vtkErrorMacro("Can not execute simple algorithm " << this->Algorithm->GetClassName()
+                                                        << " without output ports");
       return 0;
     }
   }
@@ -164,7 +165,7 @@ int vtkCompositeDataPipeline::ExecuteData(
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataPipeline::InputTypeIsValid(
   int port, int index, vtkInformationVector** inInfoVec)
 {
@@ -193,7 +194,7 @@ int vtkCompositeDataPipeline::InputTypeIsValid(
   return this->Superclass::InputTypeIsValid(port, index, inInfoVec);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkCompositeDataPipeline::ShouldIterateOverInput(
   vtkInformationVector** inInfoVec, int& compositePort)
 {
@@ -261,11 +262,11 @@ bool vtkCompositeDataPipeline::ShouldIterateOverInput(
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataPipeline::ExecuteEach(vtkCompositeDataIterator* iter,
   vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec, int compositePort,
   int connection, vtkInformation* request,
-  std::vector<vtkSmartPointer<vtkCompositeDataSet> >& compositeOutputs)
+  std::vector<vtkSmartPointer<vtkCompositeDataSet>>& compositeOutputs)
 {
   vtkInformation* inInfo = inInfoVec[compositePort]->GetInformationObject(connection);
 
@@ -312,7 +313,7 @@ void vtkCompositeDataPipeline::ExecuteEach(vtkCompositeDataIterator* iter,
   algo->SetProgressShiftScale(0.0, 1.0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Execute a simple (non-composite-aware) filter multiple times, once per
 // block. Collect the result in a composite dataset that is of the same
 // structure as the input.
@@ -352,10 +353,10 @@ void vtkCompositeDataPipeline::ExecuteSimpleAlgorithm(vtkInformation* request,
     vtkCompositeDataSet::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   bool compositeOutputFound = false;
-  std::vector<vtkSmartPointer<vtkCompositeDataSet> > compositeOutputs;
+  std::vector<vtkSmartPointer<vtkCompositeDataSet>> compositeOutputs;
   for (int port = 0; port < outInfoVec->GetNumberOfInformationObjects(); ++port)
   {
-    compositeOutputs.push_back(vtkCompositeDataSet::GetData(outInfoVec, port));
+    compositeOutputs.emplace_back(vtkCompositeDataSet::GetData(outInfoVec, port));
     if (compositeOutputs.back())
     {
       compositeOutputFound = true;
@@ -458,7 +459,7 @@ void vtkCompositeDataPipeline::ExecuteSimpleAlgorithm(vtkInformation* request,
   this->ExecuteDataEnd(request, inInfoVec, outInfoVec);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::vector<vtkDataObject*> vtkCompositeDataPipeline::ExecuteSimpleAlgorithmForBlock(
   vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec, vtkInformation* inInfo,
   vtkInformation* request, vtkDataObject* dobj)
@@ -556,7 +557,7 @@ std::vector<vtkDataObject*> vtkCompositeDataPipeline::ExecuteSimpleAlgorithmForB
   return outputs;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataPipeline::NeedToExecuteData(
   int outputPort, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -588,7 +589,7 @@ int vtkCompositeDataPipeline::NeedToExecuteData(
   }
 
   // First do the basic checks.
-  if (this->vtkDemandDrivenPipeline::NeedToExecuteData(outputPort, inInfoVec, outInfoVec))
+  if (this->Superclass::NeedToExecuteData(outputPort, inInfoVec, outInfoVec))
   {
     return 1;
   }
@@ -635,7 +636,7 @@ int vtkCompositeDataPipeline::NeedToExecuteData(
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataPipeline::NeedToExecuteBasedOnCompositeIndices(vtkInformation* outInfo)
 {
   if (outInfo->Has(UPDATE_COMPOSITE_INDICES()))
@@ -688,7 +689,7 @@ int vtkCompositeDataPipeline::NeedToExecuteBasedOnCompositeIndices(vtkInformatio
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataPipeline::ForwardUpstream(vtkInformation* request)
 {
   vtkDebugMacro(<< "ForwardUpstream");
@@ -740,7 +741,7 @@ int vtkCompositeDataPipeline::ForwardUpstream(vtkInformation* request)
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataPipeline::ForwardUpstream(int i, int j, vtkInformation* request)
 {
   // Do not forward upstream if input information is shared.
@@ -774,7 +775,7 @@ int vtkCompositeDataPipeline::ForwardUpstream(int i, int j, vtkInformation* requ
 
   return result;
 }
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataPipeline::CopyDefaultInformation(vtkInformation* request, int direction,
   vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -871,7 +872,7 @@ void vtkCompositeDataPipeline::CopyDefaultInformation(vtkInformation* request, i
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataPipeline::ResetPipelineInformation(int port, vtkInformation* info)
 {
   if (info->Has(SUPPRESS_RESET_PI()))
@@ -885,21 +886,21 @@ void vtkCompositeDataPipeline::ResetPipelineInformation(int port, vtkInformation
   info->Remove(LOAD_REQUESTED_BLOCKS());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataPipeline::PushInformation(vtkInformation* inInfo)
 {
   vtkDebugMacro(<< "PushInformation " << inInfo);
   this->InformationCache->CopyEntry(inInfo, WHOLE_EXTENT());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataPipeline::PopInformation(vtkInformation* inInfo)
 {
   vtkDebugMacro(<< "PopInformation " << inInfo);
   inInfo->CopyEntry(this->InformationCache, WHOLE_EXTENT());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCompositeDataPipeline::CheckCompositeData(
   vtkInformation*, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -930,7 +931,7 @@ int vtkCompositeDataPipeline::CheckCompositeData(
     if (needsToCreateCompositeOutput)
     {
       // Create the output objects
-      std::vector<vtkSmartPointer<vtkDataObject> > output = this->CreateOutputCompositeDataSet(
+      std::vector<vtkSmartPointer<vtkDataObject>> output = this->CreateOutputCompositeDataSet(
         vtkCompositeDataSet::SafeDownCast(this->GetInputData(compositePort, 0, inInfoVec)),
         compositePort, outInfoVec->GetNumberOfInformationObjects());
 
@@ -964,7 +965,7 @@ int vtkCompositeDataPipeline::CheckCompositeData(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkCompositeDataPipeline::GetCompositeInputData(
   int port, int index, vtkInformationVector** inInfoVec)
 {
@@ -980,7 +981,7 @@ vtkDataObject* vtkCompositeDataPipeline::GetCompositeInputData(
   return info->Get(vtkDataObject::DATA_OBJECT());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkDataObject* vtkCompositeDataPipeline::GetCompositeOutputData(int port)
 {
   if (!this->OutputPortIndexInRange(port, "get data for"))
@@ -1001,14 +1002,14 @@ vtkDataObject* vtkCompositeDataPipeline::GetCompositeOutputData(int port)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
-std::vector<vtkSmartPointer<vtkDataObject> > vtkCompositeDataPipeline::CreateOutputCompositeDataSet(
+//------------------------------------------------------------------------------
+std::vector<vtkSmartPointer<vtkDataObject>> vtkCompositeDataPipeline::CreateOutputCompositeDataSet(
   vtkCompositeDataSet* input, int compositePort, int numOutputPorts)
 {
   // pre: the algorithm is a non-composite algorithm.
   // pre: the question is
   //      whether to create vtkHierarchicalBoxDataSet or vtkMultiBlockDataSet.
-  std::vector<vtkSmartPointer<vtkDataObject> > outputVector;
+  std::vector<vtkSmartPointer<vtkDataObject>> outputVector;
 
   if (input->IsA("vtkHierarchicalBoxDataSet") || input->IsA("vtkOverlappingAMR") ||
     input->IsA("vtkNonOverlappingAMR"))
@@ -1022,7 +1023,7 @@ std::vector<vtkSmartPointer<vtkDataObject> > vtkCompositeDataPipeline::CreateOut
     {
       for (int i = 0; i < numOutputPorts; ++i)
       {
-        outputVector.push_back(vtkSmartPointer<vtkMultiBlockDataSet>::New());
+        outputVector.emplace_back(vtkSmartPointer<vtkMultiBlockDataSet>::New());
       }
     }
     else
@@ -1063,7 +1064,7 @@ std::vector<vtkSmartPointer<vtkDataObject> > vtkCompositeDataPipeline::CreateOut
         vtkDataObject* curOutput = outInfo->Get(vtkDataObject::DATA_OBJECT());
         if (!curOutput->IsA("vtkUniformGrid"))
         {
-          outputVector.push_back(vtkSmartPointer<vtkMultiBlockDataSet>::New());
+          outputVector.emplace_back(vtkSmartPointer<vtkMultiBlockDataSet>::New());
         }
         else
         {
@@ -1086,7 +1087,7 @@ std::vector<vtkSmartPointer<vtkDataObject> > vtkCompositeDataPipeline::CreateOut
   return outputVector;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataPipeline::MarkOutputsGenerated(
   vtkInformation* request, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -1116,7 +1117,7 @@ void vtkCompositeDataPipeline::MarkOutputsGenerated(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositeDataPipeline::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

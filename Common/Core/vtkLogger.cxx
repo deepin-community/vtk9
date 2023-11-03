@@ -74,9 +74,9 @@ vtkLogger::LogScopeRAII::~LogScopeRAII()
 namespace detail
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
-using scope_pair = std::pair<std::string, std::shared_ptr<loguru::LogScopeRAII> >;
+using scope_pair = std::pair<std::string, std::shared_ptr<loguru::LogScopeRAII>>;
 static std::mutex g_mutex;
-static std::unordered_map<std::thread::id, std::vector<scope_pair> > g_vectors;
+static std::unordered_map<std::thread::id, std::vector<scope_pair>> g_vectors;
 static std::vector<scope_pair>& get_vector()
 {
   std::lock_guard<std::mutex> guard(g_mutex);
@@ -85,13 +85,13 @@ static std::vector<scope_pair>& get_vector()
 
 static void push_scope(const char* id, std::shared_ptr<loguru::LogScopeRAII> ptr)
 {
-  get_vector().push_back(std::make_pair(std::string(id), ptr));
+  get_vector().emplace_back(std::string(id), ptr);
 }
 
 static void pop_scope(const char* id)
 {
   auto& vector = get_vector();
-  if (vector.size() > 0 && vector.back().first == id)
+  if (!vector.empty() && vector.back().first == id)
   {
     vector.pop_back();
 
@@ -110,13 +110,17 @@ static void pop_scope(const char* id)
 }
 
 //=============================================================================
-//----------------------------------------------------------------------------
-vtkLogger::vtkLogger() {}
+bool vtkLogger::EnableUnsafeSignalHandler = true;
+vtkLogger::Verbosity vtkLogger::InternalVerbosityLevel = vtkLogger::VERBOSITY_1;
+std::string vtkLogger::ThreadName;
 
-//----------------------------------------------------------------------------
-vtkLogger::~vtkLogger() {}
+//------------------------------------------------------------------------------
+vtkLogger::vtkLogger() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+vtkLogger::~vtkLogger() = default;
+
+//------------------------------------------------------------------------------
 void vtkLogger::Init(int& argc, char* argv[], const char* verbosity_flag /*= "-v"*/)
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
@@ -128,7 +132,24 @@ void vtkLogger::Init(int& argc, char* argv[], const char* verbosity_flag /*= "-v
 
   loguru::g_preamble_date = false;
   loguru::g_preamble_time = false;
-  loguru::init(argc, argv, verbosity_flag);
+  loguru::g_internal_verbosity = static_cast<loguru::Verbosity>(vtkLogger::InternalVerbosityLevel);
+
+  const auto current_stderr_verbosity = loguru::g_stderr_verbosity;
+  if (loguru::g_internal_verbosity > loguru::g_stderr_verbosity)
+  {
+    // this avoids printing the preamble-header on stderr except for cases
+    // where the stderr log is guaranteed to have some log text generated.
+    loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
+  }
+  loguru::Options options;
+  options.verbosity_flag = verbosity_flag;
+  options.unsafe_signal_handler = vtkLogger::EnableUnsafeSignalHandler;
+  if (!vtkLogger::ThreadName.empty())
+  {
+    options.main_thread_name = vtkLogger::ThreadName.c_str();
+  }
+  loguru::init(argc, argv, options);
+  loguru::g_stderr_verbosity = current_stderr_verbosity;
 #else
   (void)argc;
   (void)argv;
@@ -136,7 +157,7 @@ void vtkLogger::Init(int& argc, char* argv[], const char* verbosity_flag /*= "-v
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::Init()
 {
   int argc = 1;
@@ -145,7 +166,7 @@ void vtkLogger::Init()
   vtkLogger::Init(argc, argv);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::SetStderrVerbosity(vtkLogger::Verbosity level)
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
@@ -155,7 +176,18 @@ void vtkLogger::SetStderrVerbosity(vtkLogger::Verbosity level)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkLogger::SetInternalVerbosityLevel(vtkLogger::Verbosity level)
+{
+#if VTK_MODULE_ENABLE_VTK_loguru
+  loguru::g_internal_verbosity = static_cast<loguru::Verbosity>(level);
+  vtkLogger::InternalVerbosityLevel = level;
+#else
+  (void)level;
+#endif
+}
+
+//------------------------------------------------------------------------------
 void vtkLogger::LogToFile(
   const char* path, vtkLogger::FileMode filemode, vtkLogger::Verbosity verbosity)
 {
@@ -169,7 +201,7 @@ void vtkLogger::LogToFile(
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::EndLogToFile(const char* path)
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
@@ -179,17 +211,20 @@ void vtkLogger::EndLogToFile(const char* path)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::SetThreadName(const std::string& name)
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
   loguru::set_thread_name(name.c_str());
+  // Save threadname so if this is called before `Init`, we can pass the thread
+  // name to loguru::init().
+  vtkLogger::ThreadName = name;
 #else
   (void)name;
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkLogger::GetThreadName()
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
@@ -201,7 +236,7 @@ std::string vtkLogger::GetThreadName()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::AddCallback(const char* id, vtkLogger::LogHandlerCallbackT callback,
   void* user_data, vtkLogger::Verbosity verbosity, vtkLogger::CloseHandlerCallbackT on_close,
   vtkLogger::FlushHandlerCallbackT on_flush)
@@ -220,7 +255,7 @@ void vtkLogger::AddCallback(const char* id, vtkLogger::LogHandlerCallbackT callb
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkLogger::RemoveCallback(const char* id)
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
@@ -231,7 +266,7 @@ bool vtkLogger::RemoveCallback(const char* id)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::string vtkLogger::GetIdentifier(vtkObjectBase* obj)
 {
   if (obj)
@@ -243,13 +278,13 @@ std::string vtkLogger::GetIdentifier(vtkObjectBase* obj)
   return "(nullptr)";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->vtkObjectBase::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkLogger::IsEnabled()
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
@@ -259,7 +294,7 @@ bool vtkLogger::IsEnabled()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLogger::Verbosity vtkLogger::GetCurrentVerbosityCutoff()
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
@@ -269,7 +304,7 @@ vtkLogger::Verbosity vtkLogger::GetCurrentVerbosityCutoff()
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::Log(
   vtkLogger::Verbosity verbosity, const char* fname, unsigned int lineno, const char* txt)
 {
@@ -283,7 +318,7 @@ void vtkLogger::Log(
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::LogF(
   vtkLogger::Verbosity verbosity, const char* fname, unsigned int lineno, const char* format, ...)
 {
@@ -301,7 +336,7 @@ void vtkLogger::LogF(
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::StartScope(
   Verbosity verbosity, const char* id, const char* fname, unsigned int lineno)
 {
@@ -319,7 +354,7 @@ void vtkLogger::StartScope(
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::EndScope(const char* id)
 {
 #if VTK_MODULE_ENABLE_VTK_loguru
@@ -329,7 +364,7 @@ void vtkLogger::EndScope(const char* id)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkLogger::StartScopeF(Verbosity verbosity, const char* id, const char* fname,
   unsigned int lineno, const char* format, ...)
 {
@@ -358,7 +393,7 @@ void vtkLogger::StartScopeF(Verbosity verbosity, const char* id, const char* fna
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLogger::Verbosity vtkLogger::ConvertToVerbosity(int value)
 {
   if (value <= vtkLogger::VERBOSITY_INVALID)
@@ -372,7 +407,7 @@ vtkLogger::Verbosity vtkLogger::ConvertToVerbosity(int value)
   return static_cast<vtkLogger::Verbosity>(value);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkLogger::Verbosity vtkLogger::ConvertToVerbosity(const char* text)
 {
   if (text != nullptr)
@@ -383,27 +418,27 @@ vtkLogger::Verbosity vtkLogger::ConvertToVerbosity(const char* text)
     {
       return vtkLogger::ConvertToVerbosity(ivalue);
     }
-    if (std::string("OFF").compare(text) == 0)
+    if (!strcmp(text, "OFF"))
     {
       return vtkLogger::VERBOSITY_OFF;
     }
-    else if (std::string("ERROR").compare(text) == 0)
+    else if (!strcmp(text, "ERROR"))
     {
       return vtkLogger::VERBOSITY_ERROR;
     }
-    else if (std::string("WARNING").compare(text) == 0)
+    else if (!strcmp(text, "WARNING"))
     {
       return vtkLogger::VERBOSITY_WARNING;
     }
-    else if (std::string("INFO").compare(text) == 0)
+    else if (!strcmp(text, "INFO"))
     {
       return vtkLogger::VERBOSITY_INFO;
     }
-    else if (std::string("TRACE").compare(text) == 0)
+    else if (!strcmp(text, "TRACE"))
     {
       return vtkLogger::VERBOSITY_TRACE;
     }
-    else if (std::string("MAX").compare(text) == 0)
+    else if (!strcmp(text, "MAX"))
     {
       return vtkLogger::VERBOSITY_MAX;
     }

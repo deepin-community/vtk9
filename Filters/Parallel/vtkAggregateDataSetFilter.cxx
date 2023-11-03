@@ -29,16 +29,16 @@
 
 vtkObjectFactoryNewMacro(vtkAggregateDataSetFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAggregateDataSetFilter::vtkAggregateDataSetFilter()
 {
   this->NumberOfTargetProcesses = 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAggregateDataSetFilter::~vtkAggregateDataSetFilter() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAggregateDataSetFilter::SetNumberOfTargetProcesses(int tp)
 {
   if (tp != this->NumberOfTargetProcesses)
@@ -62,7 +62,7 @@ void vtkAggregateDataSetFilter::SetNumberOfTargetProcesses(int tp)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAggregateDataSetFilter::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
@@ -70,7 +70,7 @@ int vtkAggregateDataSetFilter::FillInputPortInformation(int, vtkInformation* inf
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // We should avoid marshalling more than once.
 int vtkAggregateDataSetFilter::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -144,8 +144,26 @@ int vtkAggregateDataSetFilter::RequestData(
     }
   }
 
-  std::vector<vtkSmartPointer<vtkDataObject> > recvBuffer;
+  std::vector<vtkSmartPointer<vtkDataObject>> recvBuffer;
+#ifdef VTKAGGREGATEDATASETFILTER_USE_GATHER
   subController->Gather(input, recvBuffer, receiveProc);
+#else
+  // by default, we don't use gather to avoid paraview/paraview#19937.
+  if (subRank == receiveProc)
+  {
+    recvBuffer.emplace_back(input);
+    for (int cc = 0; cc < (subNumProcs - 1); ++cc)
+    {
+      recvBuffer.push_back(vtkSmartPointer<vtkDataObject>::Take(
+        subController->ReceiveDataObject(vtkMultiProcessController::ANY_SOURCE, 909911)));
+    }
+  }
+  else
+  {
+    subController->Send(input, receiveProc, 909911);
+  }
+#endif
+
   if (subRank == receiveProc)
   {
     if (recvBuffer.size() == 1)
@@ -155,7 +173,7 @@ int vtkAggregateDataSetFilter::RequestData(
     else if (input->IsA("vtkPolyData"))
     {
       vtkNew<vtkAppendPolyData> appendFilter;
-      for (std::vector<vtkSmartPointer<vtkDataObject> >::iterator it = recvBuffer.begin();
+      for (std::vector<vtkSmartPointer<vtkDataObject>>::iterator it = recvBuffer.begin();
            it != recvBuffer.end(); ++it)
       {
         appendFilter->AddInputData(vtkPolyData::SafeDownCast(*it));
@@ -166,8 +184,8 @@ int vtkAggregateDataSetFilter::RequestData(
     else if (input->IsA("vtkUnstructuredGrid"))
     {
       vtkNew<vtkAppendFilter> appendFilter;
-      appendFilter->MergePointsOn();
-      for (std::vector<vtkSmartPointer<vtkDataObject> >::iterator it = recvBuffer.begin();
+      appendFilter->SetMergePoints(this->MergePoints);
+      for (std::vector<vtkSmartPointer<vtkDataObject>>::iterator it = recvBuffer.begin();
            it != recvBuffer.end(); ++it)
       {
         appendFilter->AddInputData(*it);
@@ -180,7 +198,7 @@ int vtkAggregateDataSetFilter::RequestData(
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAggregateDataSetFilter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

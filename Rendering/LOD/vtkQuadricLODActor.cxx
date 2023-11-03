@@ -31,11 +31,11 @@
 
 vtkStandardNewMacro(vtkQuadricLODActor);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the quadric clustering algorithm for decimating the geometry.
 vtkCxxSetObjectMacro(vtkQuadricLODActor, LODFilter, vtkQuadricClustering);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadricLODActor::vtkQuadricLODActor()
 {
   // Configure the decimation (quadric clustering) filter
@@ -66,7 +66,7 @@ vtkQuadricLODActor::vtkQuadricLODActor()
   m->Delete();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkQuadricLODActor::~vtkQuadricLODActor()
 {
   this->LODFilter->Delete();
@@ -75,43 +75,7 @@ vtkQuadricLODActor::~vtkQuadricLODActor()
   this->LODMapper->Delete();
 }
 
-//----------------------------------------------------------------------------
-int vtkQuadricLODActor::RenderOpaqueGeometry(vtkViewport* vp)
-{
-  int renderedSomething = 0;
-  vtkRenderer* ren = static_cast<vtkRenderer*>(vp);
-
-  if (!this->Mapper)
-  {
-    return 0;
-  }
-
-  // is this actor opaque ?
-  // Do this check only when not in selection mode
-  if (this->GetIsOpaque() || (ren->GetSelector() && this->Property->GetOpacity() > 0.0))
-  {
-    this->GetProperty()->Render(this, ren);
-
-    // render the backface property
-    if (this->BackfaceProperty)
-    {
-      this->BackfaceProperty->BackfaceRender(this, ren);
-    }
-
-    // render the texture
-    if (this->Texture)
-    {
-      this->Texture->Render(ren);
-    }
-    this->Render(ren, this->Mapper);
-
-    renderedSomething = 1;
-  }
-
-  return renderedSomething;
-}
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadricLODActor::Render(vtkRenderer* ren, vtkMapper* vtkNotUsed(m))
 {
   if (!this->Mapper)
@@ -126,7 +90,7 @@ void vtkQuadricLODActor::Render(vtkRenderer* ren, vtkMapper* vtkNotUsed(m))
   frameRate = (frameRate < 1.0 ? 1.0 : (frameRate > 75 ? 75.0 : frameRate));
   int interactiveRender = 0;
   // interactive renders are defined when compared with the desired update rate. Here we use
-  // a generous fudge factor to insure that the LOD kicks in.
+  // a generous fudge factor to ensure that the LOD kicks in.
   if (allowedTime <= (1.1 / frameRate))
   {
     interactiveRender = 1;
@@ -301,13 +265,17 @@ void vtkQuadricLODActor::Render(vtkRenderer* ren, vtkMapper* vtkNotUsed(m))
   // etc to work.
   this->LODActor->SetPropertyKeys(this->GetPropertyKeys());
 
+  // copy current translucent pass setting
+  this->LODActor->SetIsRenderingTranslucentPolygonalGeometry(
+    this->IsRenderingTranslucentPolygonalGeometry());
+
   // Store information on time it takes to render.
   // We might want to estimate time from the number of polygons in mapper.
   this->LODActor->Render(ren, bestMapper);
   this->EstimatedRenderTime = bestMapper->GetTimeToDraw();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadricLODActor::ReleaseGraphicsResources(vtkWindow* renWin)
 {
   vtkActor::ReleaseGraphicsResources(renWin);
@@ -315,14 +283,14 @@ void vtkQuadricLODActor::ReleaseGraphicsResources(vtkWindow* renWin)
   this->Mapper->ReleaseGraphicsResources(renWin);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadricLODActor::ShallowCopy(vtkProp* prop)
 {
   // Now do superclass
   this->vtkActor::ShallowCopy(prop);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadricLODActor::SetCamera(vtkCamera* camera)
 {
   vtkFollower* follower = vtkFollower::SafeDownCast(this->LODActor);
@@ -332,7 +300,7 @@ void vtkQuadricLODActor::SetCamera(vtkCamera* camera)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkQuadricLODActor::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

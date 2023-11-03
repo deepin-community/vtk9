@@ -38,17 +38,17 @@ public:
   vtkTypeMacro(vtkGraphWriter, vtkDataWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkGraph* GetInput();
   vtkGraph* GetInput(int port);
-  //@}
+  ///@}
 
 protected:
-  vtkGraphWriter() {}
-  ~vtkGraphWriter() override {}
+  vtkGraphWriter() = default;
+  ~vtkGraphWriter() override = default;
 
   void WriteData() override;
 

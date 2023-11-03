@@ -16,22 +16,24 @@
 
 #include "vtkObjectFactory.h"
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkObjectFactoryNewMacro(vtkHardwareWindow);
 
 vtkHardwareWindow::vtkHardwareWindow()
 {
-  this->Borders = 1;
+  this->Borders = true;
 #ifdef VTK_DEFAULT_RENDER_WINDOW_OFFSCREEN
   this->ShowWindow = false;
   this->UseOffScreenBuffers = true;
+#else
+  this->ShowWindow = true;
 #endif
 }
 
-//----------------------------------------------------------------------------
-vtkHardwareWindow::~vtkHardwareWindow() {}
+//------------------------------------------------------------------------------
+vtkHardwareWindow::~vtkHardwareWindow() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHardwareWindow::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

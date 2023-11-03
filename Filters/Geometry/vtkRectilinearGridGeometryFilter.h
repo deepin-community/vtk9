@@ -52,13 +52,13 @@ public:
    */
   static vtkRectilinearGridGeometryFilter* New();
 
-  //@{
+  ///@{
   /**
    * Get the extent in topological coordinate range (imin,imax, jmin,jmax,
    * kmin,kmax).
    */
   vtkGetVectorMacro(Extent, int, 6);
-  //@}
+  ///@}
 
   /**
    * Specify (imin,imax, jmin,jmax, kmin,kmax) indices.
@@ -72,7 +72,7 @@ public:
 
 protected:
   vtkRectilinearGridGeometryFilter();
-  ~vtkRectilinearGridGeometryFilter() override {}
+  ~vtkRectilinearGridGeometryFilter() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;

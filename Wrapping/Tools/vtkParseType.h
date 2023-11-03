@@ -74,15 +74,7 @@
 #define VTK_PARSE_THREAD_LOCAL 0x00800000
 
 /**
- * Attributes (used for hints)
- */
-#define VTK_PARSE_ATTRIBUTES 0x07000000
-#define VTK_PARSE_NEWINSTANCE 0x01000000
-#define VTK_PARSE_ZEROCOPY 0x02000000
-#define VTK_PARSE_WRAPEXCLUDE 0x04000000
-
-/**
- * Special
+ * Special internal-use specifiers
  */
 #define VTK_PARSE_SPECIALS 0x70000000
 #define VTK_PARSE_TYPEDEF 0x10000000

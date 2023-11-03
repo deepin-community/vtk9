@@ -27,6 +27,7 @@
 #include "vtkDataSet.h"
 #include "vtkDataSetReader.h"
 #include "vtkDataSetWriter.h"
+#include "vtkPlatform.h" // for VTK_MAXPATH
 #include "vtkPointData.h"
 #include "vtkTimeSourceExample.h"
 #include "vtkXdmfReader.h"
@@ -89,7 +90,7 @@ bool DoFilesExist(const char* xdmffile, const char* hdf5file, bool deleteIfSo)
 
 bool DoDataObjectsDiffer(vtkDataObject* dobj1, vtkDataObject* dobj2)
 {
-  if (strcmp(dobj1->GetClassName(), dobj2->GetClassName()))
+  if (strcmp(dobj1->GetClassName(), dobj2->GetClassName()) != 0)
   {
     cerr << "Class name test failed " << dobj1->GetClassName() << " != " << dobj2->GetClassName()
          << endl;

@@ -42,50 +42,70 @@ public:
    */
   static vtkProgressBarRepresentation* New();
 
-  //@{
+  ///@{
   /**
    * Standard VTK class methods.
    */
   vtkTypeMacro(vtkProgressBarRepresentation, vtkBorderRepresentation);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * By obtaining this property you can specify the properties of the
    * representation.
    */
   vtkGetObjectMacro(Property, vtkProperty2D);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the progress rate of the progress bar, between 0 and 1
    * default is 0
    */
   vtkSetClampMacro(ProgressRate, double, 0, 1);
   vtkGetMacro(ProgressRate, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get the padding between the border and the progressbar.
+   * The padding is expressed in percentage of the border box size
+   * default is 0.017,0.1
+   */
+  vtkSetVector2Macro(Padding, double);
+  vtkGetVector2Macro(Padding, double);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get frame visibility
+   * default is on
+   */
+  vtkSetMacro(DrawFrame, bool);
+  vtkGetMacro(DrawFrame, bool);
+  vtkBooleanMacro(DrawFrame, bool);
+  ///@}
+
+  ///@{
   /**
    * Set/Get the progress bar color
    * Default is pure green
    */
   vtkSetVector3Macro(ProgressBarColor, double);
   vtkGetVector3Macro(ProgressBarColor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the background color
    * Default is white
    */
   vtkSetVector3Macro(BackgroundColor, double);
   vtkGetVector3Macro(BackgroundColor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get background visibility
    * Default is off
@@ -93,17 +113,16 @@ public:
   vtkSetMacro(DrawBackground, bool);
   vtkGetMacro(DrawBackground, bool);
   vtkBooleanMacro(DrawBackground, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Satisfy the superclasses' API.
    */
   void BuildRepresentation() override;
-  void GetSize(double size[2]) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * These methods are necessary to make this representation behave as
    * a vtkProp.
@@ -114,7 +133,7 @@ public:
   int RenderOpaqueGeometry(vtkViewport*) override;
   int RenderTranslucentPolygonalGeometry(vtkViewport*) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
-  //@}
+  ///@}
 
 protected:
   vtkProgressBarRepresentation();
@@ -123,12 +142,15 @@ protected:
   double ProgressRate;
   double ProgressBarColor[3];
   double BackgroundColor[3];
+  double Padding[2];
   bool DrawBackground;
+  bool DrawFrame;
 
   vtkPoints* Points;
   vtkUnsignedCharArray* ProgressBarData;
   vtkProperty2D* Property;
   vtkActor2D* Actor;
+  vtkActor2D* FrameActor;
   vtkActor2D* BackgroundActor;
 
 private:

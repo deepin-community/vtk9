@@ -84,7 +84,7 @@ public:
    */
   virtual void PrefFullScreen(void);
 
-  //@{
+  ///@{
   /**
    * Set the size (width and height) of the rendering window in
    * screen coordinates (in pixels). This resizes the operating
@@ -95,7 +95,7 @@ public:
    */
   void SetSize(int width, int height) override;
   void SetSize(int a[2]) override { this->SetSize(a[0], a[1]); }
-  //@}
+  ///@}
 
   /**
    * Get the size (width and height) of the rendering window in
@@ -103,7 +103,7 @@ public:
    */
   int* GetSize() VTK_SIZEHINT(2) override;
 
-  //@{
+  ///@{
   /**
    * Set the position (x and y) of the rendering window in
    * screen coordinates (in pixels). This resizes the operating
@@ -111,7 +111,7 @@ public:
    */
   void SetPosition(int x, int y) override;
   void SetPosition(int a[2]) override { this->SetPosition(a[0], a[1]); }
-  //@}
+  ///@}
 
   /**
    * Get the current size of the screen in pixels.
@@ -130,6 +130,11 @@ public:
    * normally.
    */
   void SetWindowName(const char*) override;
+
+  /**
+   * Set the icon displayed in the title bar and the taskbar.
+   */
+  void SetIcon(vtkImageData* img) override;
 
   /**
    * Set this RenderWindow's window id to a pre-existing window.
@@ -158,13 +163,13 @@ public:
    */
   HWND GetWindowId();
 
-  //@{
+  ///@{
   /**
    * Set the window id to a pre-existing window.
    */
   void SetWindowId(HWND);
   void SetWindowId(void* foo) override { this->SetWindowId((HWND)foo); }
-  //@}
+  ///@}
 
   /**
    * Initialize the render window from the information associated
@@ -177,13 +182,13 @@ public:
    */
   bool GetPlatformSupportsRenderWindowSharing() override { return true; }
 
-  //@{
+  ///@{
   /**
    * Set the window's parent id to a pre-existing window.
    */
   void SetParentId(HWND);
   void SetParentId(void* foo) override { this->SetParentId((HWND)foo); }
-  //@}
+  ///@}
 
   void SetContextId(HGLRC);   // hsr
   void SetDeviceContext(HDC); // hsr
@@ -214,6 +219,11 @@ public:
   void MakeCurrent() override;
 
   /**
+   * Release the current context.
+   */
+  void ReleaseCurrent() override;
+
+  /**
    * Tells if this window is the current OpenGL context for the calling thread.
    */
   bool IsCurrent() override;
@@ -235,21 +245,21 @@ public:
    */
   vtkTypeBool GetEventPending() override;
 
-  //@{
+  ///@{
   /**
    * Initialize OpenGL for this window.
    */
   virtual void SetupPalette(HDC hDC);
   virtual void SetupPixelFormatPaletteAndContext(
     HDC hDC, DWORD dwFlags, int debug, int bpp = 16, int zbpp = 16);
-  //@}
+  ///@}
 
   /**
    * Clean up device contexts, rendering contexts, etc.
    */
   void Clean();
 
-  //@{
+  ///@{
   /**
    * Hide or Show the mouse cursor, it is nice to be able to hide the
    * default cursor if you want VTK to display a 3D cursor instead.
@@ -259,7 +269,7 @@ public:
   void HideCursor() override;
   void ShowCursor() override;
   void SetCursorPosition(int x, int y) override;
-  //@}
+  ///@}
 
   /**
    * Change the shape of the cursor
@@ -268,7 +278,7 @@ public:
 
   bool DetectDPI() override;
 
-  //@{
+  ///@{
   /**
    * Ability to push and pop this window's context
    * as the current context. The idea being to
@@ -278,7 +288,7 @@ public:
    */
   void PushContext() override;
   void PopContext() override;
-  //@}
+  ///@}
 
   /**
    * Set the number of vertical syncs required between frames.
@@ -305,6 +315,9 @@ protected:
   HWND ParentId;
   HWND NextWindowId;
   vtkTypeBool OwnWindow;
+  vtkTypeBool Resizing;
+  vtkTypeBool Repositioning;
+  static const std::string DEFAULT_BASE_WINDOW_NAME;
 
   std::stack<HGLRC> ContextStack;
   std::stack<HDC> DCStack;

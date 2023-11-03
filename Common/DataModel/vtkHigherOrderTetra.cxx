@@ -12,6 +12,11 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() and VTK_DEPRECATED_IN_9_1_0() warnings for
+// this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkHigherOrderTetra.h"
 
 #include "vtkDoubleArray.h"
@@ -39,11 +44,11 @@ namespace
 
 // The linearized tetra is comprised of six linearized edges. Each edge is
 // comprised of two vertices. These must be consistent with vtkTetra.
-static constexpr vtkIdType EdgeVertices[6][2] = { { 0, 1 }, { 1, 2 }, { 2, 0 }, { 0, 3 }, { 1, 3 },
+constexpr vtkIdType EdgeVertices[6][2] = { { 0, 1 }, { 1, 2 }, { 2, 0 }, { 0, 3 }, { 1, 3 },
   { 2, 3 } };
 
 // The barycentric coordinates of the four vertices of the linear tetra.
-static constexpr vtkIdType LinearVertices[4][4] = { { 0, 0, 0, 1 }, { 1, 0, 0, 0 }, { 0, 1, 0, 0 },
+constexpr vtkIdType LinearVertices[4][4] = { { 0, 0, 0, 1 }, { 1, 0, 0, 0 }, { 0, 1, 0, 0 },
   { 0, 0, 1, 0 } };
 
 // When describing a linearized tetra face, there is a mapping between the
@@ -51,36 +56,35 @@ static constexpr vtkIdType LinearVertices[4][4] = { { 0, 0, 0, 1 }, { 1, 0, 0, 0
 // triangle system. These are the relevant indices within the four-component
 // system for each face (e.g. face 0 varies across the barycentric tetra
 // coordinates 0, 2 and 3).
-static constexpr vtkIdType FaceBCoords[4][3] = { { 0, 2, 3 }, { 2, 0, 1 }, { 2, 1, 3 },
-  { 1, 0, 3 } };
+constexpr vtkIdType FaceBCoords[4][3] = { { 0, 2, 3 }, { 2, 0, 1 }, { 2, 1, 3 }, { 1, 0, 3 } };
 
 // When describing a linearized tetra face, there is a mapping between the
 // four-component barycentric tetra system and the three-component barycentric
 // triangle system. These are the constant indices within the four-component
 // system for each face (e.g. face 0 holds barycentric tetra coordinate 1
 // constant).
-static constexpr vtkIdType FaceMinCoord[4] = { 1, 3, 0, 2 };
+constexpr vtkIdType FaceMinCoord[4] = { 1, 3, 0, 2 };
 
 // Each linearized tetra edge holds two barycentric tetra coordinates constant
 // and varies the other two. These are the coordinates that are held constant
 // for each edge.
-static constexpr vtkIdType EdgeMinCoords[6][2] = { { 1, 2 }, { 2, 3 }, { 0, 2 }, { 0, 1 }, { 1, 3 },
+constexpr vtkIdType EdgeMinCoords[6][2] = { { 1, 2 }, { 2, 3 }, { 0, 2 }, { 0, 1 }, { 1, 3 },
   { 0, 3 } };
 
 // The coordinate that increments when traversing an edge (i.e. the coordinate
 // of the nonzero component of the second vertex of the edge).
-static constexpr vtkIdType EdgeCountingCoord[6] = { 0, 1, 3, 2, 2, 2 };
+constexpr vtkIdType EdgeCountingCoord[6] = { 0, 1, 3, 2, 2, 2 };
 
 // When a linearized tetra vertex is cast into barycentric coordinates, one of
 // its coordinates is maximal and the other three are minimal. These are the
 // indices of the maximal barycentric coordinate for each vertex.
-static constexpr vtkIdType VertexMaxCoords[4] = { 3, 0, 1, 2 };
+constexpr vtkIdType VertexMaxCoords[4] = { 3, 0, 1, 2 };
 
 // There are three different layouts for breaking an octahedron into four
 // tetras. given the six vertices of the octahedron, these are the layouts for
 // each of the three four-tetra configurations.
-static constexpr vtkIdType LinearTetras[3][4][4] = { { { 2, 0, 1, 4 }, { 2, 1, 5, 4 },
-                                                       { 2, 5, 3, 4 }, { 2, 3, 0, 4 } },
+constexpr vtkIdType LinearTetras[3][4][4] = { { { 2, 0, 1, 4 }, { 2, 1, 5, 4 }, { 2, 5, 3, 4 },
+                                                { 2, 3, 0, 4 } },
   { { 0, 4, 1, 5 }, { 0, 1, 2, 5 }, { 0, 2, 3, 5 }, { 0, 3, 4, 5 } },
   { { 1, 5, 2, 3 }, { 1, 2, 0, 3 }, { 1, 0, 4, 3 }, { 1, 4, 5, 3 } } };
 
@@ -89,16 +93,30 @@ double FifteenPointTetraCoords[15 * 3] = { 0., 0., 0., 1., 0., 0., 0., 1., 0., 0
   0., .5, .5, 0., 0., .5, 0., 0., 0., .5, .5, 0., .5, 0., .5, .5, 1. / 3., 1. / 3., 0., 1. / 3., 0.,
   1. / 3., 1. / 3., 1. / 3, 1. / 3., 0., 1. / 3., 1. / 3., .25, .25, .25 };
 
-static constexpr vtkIdType FifteenPointTetraSubtetras[28][4] = { { 0, 4, 10, 14 }, { 1, 4, 10, 14 },
-  { 1, 5, 10, 14 }, { 2, 5, 10, 14 }, { 2, 6, 10, 14 }, { 0, 6, 10, 14 }, { 0, 7, 11, 14 },
-  { 3, 7, 11, 14 }, { 3, 8, 11, 14 }, { 1, 8, 11, 14 }, { 1, 4, 11, 14 }, { 0, 4, 11, 14 },
-  { 1, 5, 12, 14 }, { 2, 5, 12, 14 }, { 2, 9, 12, 14 }, { 3, 9, 12, 14 }, { 3, 8, 12, 14 },
-  { 1, 8, 12, 14 }, { 0, 7, 13, 14 }, { 3, 7, 13, 14 }, { 3, 9, 13, 14 }, { 2, 9, 13, 14 },
-  { 2, 6, 13, 14 }, { 0, 6, 13, 14 } };
+constexpr vtkIdType FifteenPointTetraSubtetras[24][4] = { { 0, 4, 10, 14 }, { 4, 1, 10, 14 },
+  { 1, 5, 10, 14 }, { 5, 2, 10, 14 }, { 2, 6, 10, 14 }, { 6, 0, 10, 14 }, { 4, 0, 11, 14 },
+  { 1, 4, 11, 14 }, { 8, 1, 11, 14 }, { 3, 8, 11, 14 }, { 7, 3, 11, 14 }, { 0, 7, 11, 14 },
+  { 5, 1, 12, 14 }, { 2, 5, 12, 14 }, { 9, 2, 12, 14 }, { 3, 9, 12, 14 }, { 8, 3, 12, 14 },
+  { 1, 8, 12, 14 }, { 7, 0, 13, 14 }, { 3, 7, 13, 14 }, { 9, 3, 13, 14 }, { 2, 9, 13, 14 },
+  { 6, 2, 13, 14 }, { 0, 6, 13, 14 } };
 #endif
 }
 
-//----------------------------------------------------------------------------
+vtkHigherOrderCurve* vtkHigherOrderTetra::getEdgeCell()
+{
+  VTK_LEGACY_REPLACED_BODY(
+    vtkHigherOrderTetra::getEdgeCell, "VTK 9.1", vtkHigherOrderTetra::GetEdgeCell);
+  return this->GetEdgeCell();
+}
+
+vtkHigherOrderTriangle* vtkHigherOrderTetra::getFaceCell()
+{
+  VTK_LEGACY_REPLACED_BODY(
+    vtkHigherOrderHexahedron::getFaceCell, "VTK 9.1", vtkHigherOrderTetra::GetFaceCell);
+  return this->GetFaceCell();
+}
+
+//------------------------------------------------------------------------------
 vtkHigherOrderTetra::vtkHigherOrderTetra()
 {
   this->Order = 0;
@@ -116,7 +134,7 @@ vtkHigherOrderTetra::vtkHigherOrderTetra()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHigherOrderTetra::~vtkHigherOrderTetra()
 {
   this->Tetra->Delete();
@@ -187,7 +205,7 @@ void vtkHigherOrderTetra::SetFaceIdsAndPoints(vtkHigherOrderTriangle* result, in
   result->Initialize();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::Initialize()
 {
   vtkIdType order = this->ComputeOrder();
@@ -226,13 +244,13 @@ void vtkHigherOrderTetra::Initialize()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHigherOrderTetra::ComputeNumberOfSubtetras()
 {
 #ifdef FIFTEEN_POINT_TETRA
   if (this->Points->GetNumberOfPoints() == 15)
   {
-    return 28;
+    return 24;
   }
 #endif
   vtkIdType order = this->GetOrder();
@@ -248,7 +266,7 @@ vtkIdType vtkHigherOrderTetra::ComputeNumberOfSubtetras()
   return nRightSideUp + 4 * nOctahedra + nUpsideDown;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::SubtetraBarycentricPointIndices(
   vtkIdType cellIndex, vtkIdType (&pointBIndices)[4][4])
 {
@@ -426,7 +444,7 @@ void vtkHigherOrderTetra::SubtetraBarycentricPointIndices(
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::TetraFromOctahedron(
   vtkIdType cellIndex, const vtkIdType (&octBIndices)[6][4], vtkIdType (&tetraBIndices)[4][4])
 {
@@ -443,7 +461,7 @@ void vtkHigherOrderTetra::TetraFromOctahedron(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTetra::CellBoundary(
   int vtkNotUsed(subId), const double pcoords[3], vtkIdList* pts)
 {
@@ -473,7 +491,7 @@ int vtkHigherOrderTetra::CellBoundary(
     : 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTetra::EvaluatePosition(const double x[3], double closestPoint[3], int& subId,
   double pcoords[3], double& minDist2, double weights[])
 {
@@ -542,7 +560,7 @@ int vtkHigherOrderTetra::EvaluatePosition(const double x[3], double closestPoint
   return returnStatus;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::EvaluateLocation(
   int& vtkNotUsed(subId), const double pcoords[3], double x[3], double* weights)
 {
@@ -562,7 +580,7 @@ void vtkHigherOrderTetra::EvaluateLocation(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::Contour(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* verts, vtkCellArray* lines,
   vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd, vtkCellData* inCd, vtkIdType cellId,
@@ -591,7 +609,7 @@ void vtkHigherOrderTetra::Contour(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::Clip(double value, vtkDataArray* cellScalars,
   vtkIncrementalPointLocator* locator, vtkCellArray* polys, vtkPointData* inPd, vtkPointData* outPd,
   vtkCellData* inCd, vtkIdType cellId, vtkCellData* outCd, int insideOut)
@@ -619,7 +637,7 @@ void vtkHigherOrderTetra::Clip(double value, vtkDataArray* cellScalars,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTetra::IntersectWithLine(
   const double* p1, const double* p2, double tol, double& t, double* x, double* pcoords, int& subId)
 {
@@ -653,7 +671,7 @@ int vtkHigherOrderTetra::IntersectWithLine(
   return (t == VTK_DOUBLE_MAX ? 0 : 1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTetra::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vtkPoints* pts)
 {
   pts->Reset();
@@ -678,7 +696,7 @@ int vtkHigherOrderTetra::Triangulate(int vtkNotUsed(index), vtkIdList* ptIds, vt
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::JacobianInverse(const double pcoords[3], double** inverse, double* derivs)
 {
   // Given parametric coordinates compute inverse Jacobian transformation
@@ -722,7 +740,7 @@ void vtkHigherOrderTetra::JacobianInverse(const double pcoords[3], double** inve
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::Derivatives(
   int vtkNotUsed(subId), const double pcoords[3], const double* values, int dim, double* derivs)
 {
@@ -759,7 +777,7 @@ void vtkHigherOrderTetra::Derivatives(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkHigherOrderTetra::SetParametricCoords()
 {
@@ -807,14 +825,14 @@ double* vtkHigherOrderTetra::GetParametricCoords()
   return vtkDoubleArray::SafeDownCast(this->PointParametricCoordinates->GetData())->GetPointer(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHigherOrderTetra::GetParametricCenter(double pcoords[3])
 {
   pcoords[0] = pcoords[1] = pcoords[2] = 0.25;
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkHigherOrderTetra::GetParametricDistance(const double pcoords[3])
 {
   int i;
@@ -849,7 +867,7 @@ double vtkHigherOrderTetra::GetParametricDistance(const double pcoords[3])
   return pDistMax;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHigherOrderTetra::ComputeOrder()
 {
   return vtkHigherOrderTetra::ComputeOrder(this->Points->GetNumberOfPoints());
@@ -905,7 +923,7 @@ vtkIdType vtkHigherOrderTetra::ComputeOrder(const vtkIdType nPoints)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::ToBarycentricIndex(vtkIdType index, vtkIdType* bindex)
 {
 #ifdef ENABLE_CACHING
@@ -923,7 +941,7 @@ void vtkHigherOrderTetra::ToBarycentricIndex(vtkIdType index, vtkIdType* bindex)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHigherOrderTetra::ToIndex(const vtkIdType* bindex)
 {
 #ifdef FIFTEEN_POINT_TETRA
@@ -946,7 +964,7 @@ vtkIdType vtkHigherOrderTetra::ToIndex(const vtkIdType* bindex)
 #endif
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::BarycentricIndex(vtkIdType index, vtkIdType* bindex, vtkIdType order)
 {
   // "Barycentric index" is a set of 4 integers, each running from 0 to
@@ -1014,7 +1032,7 @@ void vtkHigherOrderTetra::BarycentricIndex(vtkIdType index, vtkIdType* bindex, v
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkHigherOrderTetra::Index(const vtkIdType* bindex, vtkIdType order)
 {
   vtkIdType index = 0;
@@ -1075,7 +1093,7 @@ vtkIdType vtkHigherOrderTetra::Index(const vtkIdType* bindex, vtkIdType order)
   return index;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHigherOrderTetra::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

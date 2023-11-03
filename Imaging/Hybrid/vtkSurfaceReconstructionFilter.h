@@ -42,7 +42,7 @@ public:
    */
   static vtkSurfaceReconstructionFilter* New();
 
-  //@{
+  ///@{
   /**
    * Specify the number of neighbors each point has, used for estimating the
    * local surface orientation.  The default value of 20 should be OK for
@@ -53,20 +53,20 @@ public:
    */
   vtkGetMacro(NeighborhoodSize, int);
   vtkSetMacro(NeighborhoodSize, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Specify the spacing of the 3D sampling grid. If not set, a
    * reasonable guess will be made.
    */
   vtkGetMacro(SampleSpacing, double);
   vtkSetMacro(SampleSpacing, double);
-  //@}
+  ///@}
 
 protected:
   vtkSurfaceReconstructionFilter();
-  ~vtkSurfaceReconstructionFilter() override {}
+  ~vtkSurfaceReconstructionFilter() override = default;
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;

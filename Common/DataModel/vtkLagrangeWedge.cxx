@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkLagrangeWedge.h"
 
 #include "vtkCellData.h"
@@ -33,10 +37,7 @@
 
 vtkStandardNewMacro(vtkLagrangeWedge);
 
-vtkLagrangeWedge::vtkLagrangeWedge()
-  : vtkHigherOrderWedge()
-{
-}
+vtkLagrangeWedge::vtkLagrangeWedge() = default;
 
 vtkLagrangeWedge::~vtkLagrangeWedge() = default;
 
@@ -105,19 +106,19 @@ void vtkLagrangeWedge::InterpolateDerivs(const double pcoords[3], double* derivs
     this->GetOrder(), this->GetOrder()[3], pcoords, derivs);
 }
 
-vtkHigherOrderQuadrilateral* vtkLagrangeWedge::getBdyQuad()
+vtkHigherOrderQuadrilateral* vtkLagrangeWedge::GetBoundaryQuad()
 {
   return BdyQuad;
 };
-vtkHigherOrderTriangle* vtkLagrangeWedge::getBdyTri()
+vtkHigherOrderTriangle* vtkLagrangeWedge::GetBoundaryTri()
 {
   return BdyTri;
 };
-vtkHigherOrderCurve* vtkLagrangeWedge::getEdgeCell()
+vtkHigherOrderCurve* vtkLagrangeWedge::GetEdgeCell()
 {
   return EdgeCell;
 }
-vtkHigherOrderInterpolation* vtkLagrangeWedge::getInterp()
+vtkHigherOrderInterpolation* vtkLagrangeWedge::GetInterpolation()
 {
   return Interp;
 };

@@ -29,7 +29,9 @@
 #include "vtkFiltersParallelDIY2Module.h" // for export macros
 #include "vtkObject.h"
 #include "vtkSmartPointer.h" // for vtkSmartPointer
-#include <vector>            // for std::vector
+
+#include <memory> // for std::shared_ptr
+#include <vector> // for std::vector
 
 class vtkDataObject;
 class vtkDataSet;
@@ -63,6 +65,14 @@ public:
     const double* local_bounds = nullptr);
 
   /**
+   * Another variant to GenerateCuts that simply takes in a vector of
+   * dataobjects, each can be a dataset or a composite dataset.
+   */
+  static std::vector<vtkBoundingBox> GenerateCuts(const std::vector<vtkDataObject*>& dobjs,
+    int number_of_partitions, bool use_cell_centers,
+    vtkMultiProcessController* controller = nullptr, const double* local_bounds = nullptr);
+
+  /**
    * Given a collection of points, this method will generate box cuts in the
    * domain to approximately load balance the points into `number_of_partitions`
    * requested. If `controller` is non-null, the operation will be performed
@@ -76,7 +86,7 @@ public:
    * to the `number_of_partitions`.
    */
   static std::vector<vtkBoundingBox> GenerateCuts(
-    const std::vector<vtkSmartPointer<vtkPoints> >& points, int number_of_partitions,
+    const std::vector<vtkSmartPointer<vtkPoints>>& points, int number_of_partitions,
     vtkMultiProcessController* controller = nullptr, const double* local_bounds = nullptr);
 
   /**
@@ -84,16 +94,22 @@ public:
    * defined by the `controller`. The parts are assigned to ranks in a
    * contiguous fashion.
    *
-   * This method assumes that the input vtkPartitionedDataSet will have exactly
-   * same number of partitions on all ranks. This is assumed since the
-   * partitions' index is what dictates which rank it is assigned to.
+   * To determine which partition in the `parts` is targeted for which ranks,
+   * the `block_assigner` is used, if specified. If not specified, an assigner
+   * will be created internally using the following rules. If the number of
+   * partitions is a power of two, then `vtkDIYKdTreeUtilities::CreateAssigner`
+   * is used otherwise a `diy::ContiguousAssigner` is created.
    *
    * The returned vtkPartitionedDataSet will also have exactly as many
    * partitions as the input vtkPartitionedDataSet, however only the partitions
    * assigned to this current rank may be non-null.
+   *
+   * block_assigner is an optional parameter that should be set if the user wants
+   * to assign blocks in a custom way. The default assigner is the one returned
+   * by vtkDIYKdTreeUtilities::CreateAssigner.
    */
-  static vtkSmartPointer<vtkPartitionedDataSet> Exchange(
-    vtkPartitionedDataSet* parts, vtkMultiProcessController* controller);
+  static vtkSmartPointer<vtkPartitionedDataSet> Exchange(vtkPartitionedDataSet* parts,
+    vtkMultiProcessController* controller, std::shared_ptr<diy::Assigner> block_assigner = nullptr);
 
   /**
    * Generates and adds global cell ids to datasets in `parts`. One this to note
@@ -122,6 +138,16 @@ public:
    * thus preserving the kd-tree ordering between ranks.
    */
   static vtkDIYExplicitAssigner CreateAssigner(diy::mpi::communicator& comm, int num_blocks);
+
+  /**
+   * `GenerateCuts` returns a kd-tree with power of 2 nodes. Use this function
+   * to resize the cuts to lower number while still preserving the kd-tree. This
+   * is done by merging leaf nodes till the requested size is reached. If `size`
+   * is negative or greater than then number of `cuts.size()`, then this
+   * function does nothing. Otherwise when the function returns, `cuts.size() ==
+   * size`.
+   */
+  static void ResizeCuts(std::vector<vtkBoundingBox>& cuts, int size);
 
 protected:
   vtkDIYKdTreeUtilities();

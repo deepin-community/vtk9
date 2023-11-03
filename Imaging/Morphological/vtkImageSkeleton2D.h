@@ -40,14 +40,14 @@ public:
   vtkTypeMacro(vtkImageSkeleton2D, vtkImageIterateFilter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * When prune is on, only closed loops are left unchanged.
    */
   vtkSetMacro(Prune, vtkTypeBool);
   vtkGetMacro(Prune, vtkTypeBool);
   vtkBooleanMacro(Prune, vtkTypeBool);
-  //@}
+  ///@}
 
   /**
    * Sets the number of cycles in the erosion.
@@ -56,7 +56,7 @@ public:
 
 protected:
   vtkImageSkeleton2D();
-  ~vtkImageSkeleton2D() override {}
+  ~vtkImageSkeleton2D() override = default;
 
   vtkTypeBool Prune;
 

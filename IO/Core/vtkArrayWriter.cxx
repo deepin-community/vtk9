@@ -13,6 +13,9 @@
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkArrayWriter.h"
 #include "vtkArrayData.h"
 #include "vtkArrayPrint.h"
@@ -401,7 +404,7 @@ bool vtkArrayWriter::Write(ostream& stream, bool WriteBinary)
     if (!array)
       throw std::runtime_error("Cannot serialize nullptr vtkArray.");
 
-    return this->Write(array, stream, WriteBinary);
+    return vtkArrayWriter::Write(array, stream, WriteBinary);
   }
   catch (std::exception& e)
   {

@@ -9,11 +9,9 @@ Subject: [PATCH] Fix build on mach-based OS which are not OS X
  include/diy/time.hpp | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp b/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp
-index 692cf36..671e69d 100644
---- a/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp
-+++ b/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp
-@@ -3,11 +3,11 @@
+--- vtk9.orig/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp
++++ vtk9/ThirdParty/diy2/vtkdiy2/include/vtkdiy2/time.hpp
+@@ -3,10 +3,10 @@
  
  #ifndef _WIN32
  #include <sys/time.h>
@@ -26,8 +24,7 @@ index 692cf36..671e69d 100644
  #endif // ifndef _WIN32
  
  namespace diy
- {
-@@ -16,7 +16,7 @@ typedef     unsigned long       time_type;
+@@ -16,7 +16,7 @@
  
  inline time_type get_time()
  {
@@ -36,5 +33,3 @@ index 692cf36..671e69d 100644
      clock_serv_t cclock;
      mach_timespec_t ts;
      host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
--- 
-GitLab

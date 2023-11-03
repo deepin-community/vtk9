@@ -14,7 +14,6 @@
 =========================================================================*/
 #include "vtkWin32VideoSource.h"
 
-#include "vtkCriticalSection.h"
 #include "vtkObjectFactory.h"
 #include "vtkTimerLog.h"
 #include "vtkUnsignedCharArray.h"
@@ -51,7 +50,7 @@ public:
 
 vtkStandardNewMacro(vtkWin32VideoSource);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWin32VideoSource::vtkWin32VideoSource()
 {
   this->Internal = new vtkWin32VideoSourceInternal;
@@ -73,7 +72,7 @@ vtkWin32VideoSource::vtkWin32VideoSource()
   this->Preview = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWin32VideoSource::~vtkWin32VideoSource()
 {
   this->vtkWin32VideoSource::ReleaseSystemResources();
@@ -84,7 +83,7 @@ vtkWin32VideoSource::~vtkWin32VideoSource()
   delete this->Internal;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -92,7 +91,7 @@ void vtkWin32VideoSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Preview: " << (this->Preview ? "On\n" : "Off\n");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This is empty for now because we aren't displaying the capture window
 LONG FAR PASCAL vtkWin32VideoSourceWinProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -123,7 +122,7 @@ LONG FAR PASCAL vtkWin32VideoSourceWinProc(HWND hwnd, UINT message, WPARAM wPara
   return (DefWindowProc(hwnd, message, wParam, lParam));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 LRESULT PASCAL vtkWin32VideoSourceCapControlProc(HWND hwndC, int nState)
 {
   vtkWin32VideoSource* self = (vtkWin32VideoSource*)(capGetUserData(hwndC));
@@ -141,7 +140,7 @@ LRESULT PASCAL vtkWin32VideoSourceCapControlProc(HWND hwndC, int nState)
   return TRUE;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 LRESULT PASCAL vtkWin32VideoSourceCallbackProc(HWND hwndC, LPVIDEOHDR lpVHdr)
 {
   vtkWin32VideoSource* self = (vtkWin32VideoSource*)(capGetUserData(hwndC));
@@ -150,7 +149,7 @@ LRESULT PASCAL vtkWin32VideoSourceCallbackProc(HWND hwndC, LPVIDEOHDR lpVHdr)
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // this callback is left in for debug purposes
 LRESULT PASCAL vtkWin32VideoSourceStatusCallbackProc(
   HWND vtkNotUsed(hwndC), int nID, LPCSTR vtkNotUsed(lpsz))
@@ -170,7 +169,7 @@ LRESULT PASCAL vtkWin32VideoSourceStatusCallbackProc(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 LRESULT PASCAL vtkWin32VideoSourceErrorCallbackProc(HWND hwndC, int ErrID, LPSTR lpErrorText)
 {
   if (ErrID)
@@ -183,7 +182,7 @@ LRESULT PASCAL vtkWin32VideoSourceErrorCallbackProc(HWND hwndC, int ErrID, LPSTR
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::Initialize()
 {
   int i;
@@ -206,7 +205,7 @@ void vtkWin32VideoSource::Initialize()
   strcpy(this->WndClassName, "VTKVideo");
 
   // set up a class for the main window
-  WNDCLASS wc;
+  WNDCLASSA wc;
   wc.lpszClassName = this->WndClassName;
   wc.hInstance = hinstance;
   wc.lpfnWndProc = reinterpret_cast<WNDPROC>(&vtkWin32VideoSourceWinProc);
@@ -220,7 +219,7 @@ void vtkWin32VideoSource::Initialize()
 
   for (i = 1; i <= 10; i++)
   {
-    if (RegisterClass(&wc))
+    if (RegisterClassA(&wc))
     {
       break;
     }
@@ -254,7 +253,7 @@ void vtkWin32VideoSource::Initialize()
     vtkWarningMacro("Initialize: AdjustWindowRect failed, error: " << GetLastError());
   }
 
-  this->Internal->ParentWnd = CreateWindow(this->WndClassName, "VTK Video Window", style, 0, 0,
+  this->Internal->ParentWnd = CreateWindowA(this->WndClassName, "VTK Video Window", style, 0, 0,
     r.right - r.left, r.bottom - r.top, nullptr, nullptr, hinstance, nullptr);
 
   if (!this->Internal->ParentWnd)
@@ -386,7 +385,7 @@ void vtkWin32VideoSource::Initialize()
   this->Initialized = 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::SetPreview(int p)
 {
   if (this->Preview == p)
@@ -412,7 +411,7 @@ void vtkWin32VideoSource::SetPreview(int p)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::ReleaseSystemResources()
 {
   // destruction of ParentWnd causes OnParentWndDestroy to be called
@@ -422,7 +421,7 @@ void vtkWin32VideoSource::ReleaseSystemResources()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::OnParentWndDestroy()
 {
   if (this->Playing || this->Recording)
@@ -450,7 +449,7 @@ void vtkWin32VideoSource::OnParentWndDestroy()
   this->Initialized = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // copy the Device Independent Bitmap from the VFW framebuffer into the
 // vtkVideoSource framebuffer (don't do the unpacking yet)
 void vtkWin32VideoSource::LocalInternalGrab(void* lpptr)
@@ -471,7 +470,7 @@ void vtkWin32VideoSource::LocalInternalGrab(void* lpptr)
   unsigned char* cptrDIB = lpVHdr->lpData;
 
   // get a thread lock on the frame buffer
-  this->FrameBufferMutex->Lock();
+  this->FrameBufferMutex.lock();
 
   if (this->AutoAdvance)
   {
@@ -531,10 +530,10 @@ void vtkWin32VideoSource::LocalInternalGrab(void* lpptr)
 
   this->Modified();
 
-  this->FrameBufferMutex->Unlock();
+  this->FrameBufferMutex.unlock();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::Grab()
 {
   if (this->Recording)
@@ -554,7 +553,7 @@ void vtkWin32VideoSource::Grab()
   capGrabFrameNoStop(this->Internal->CapWnd);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::Record()
 {
   this->Initialize();
@@ -576,13 +575,13 @@ void vtkWin32VideoSource::Record()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::Play()
 {
   this->vtkVideoSource::Play();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::Stop()
 {
   if (this->Recording)
@@ -598,7 +597,7 @@ void vtkWin32VideoSource::Stop()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // codecs
 
 static inline void vtkYUVToRGB(unsigned char* yuv, unsigned char* rgb)
@@ -665,7 +664,7 @@ static inline void vtkYUVToRGB(unsigned char* yuv, unsigned char* rgb)
   rgb[2] = B;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::UnpackRasterLine(char* outptr, char* inptr, int start, int count)
 {
   char alpha = (char)(this->Opacity * 255);
@@ -862,7 +861,7 @@ void vtkWin32VideoSource::UnpackRasterLine(char* outptr, char* inptr, int start,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::VideoFormatDialog()
 {
   this->Initialize();
@@ -889,13 +888,13 @@ void vtkWin32VideoSource::VideoFormatDialog()
   int success = capDlgVideoFormat(this->Internal->CapWnd);
   if (success)
   {
-    this->FrameBufferMutex->Lock();
+    this->FrameBufferMutex.lock();
     this->DoVFWFormatCheck();
-    this->FrameBufferMutex->Unlock();
+    this->FrameBufferMutex.unlock();
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::VideoSourceDialog()
 {
   this->Initialize();
@@ -922,13 +921,13 @@ void vtkWin32VideoSource::VideoSourceDialog()
   int success = capDlgVideoSource(this->Internal->CapWnd);
   if (success)
   {
-    this->FrameBufferMutex->Lock();
+    this->FrameBufferMutex.lock();
     this->DoVFWFormatCheck();
-    this->FrameBufferMutex->Unlock();
+    this->FrameBufferMutex.unlock();
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // try for the specified frame size
 void vtkWin32VideoSource::SetFrameSize(int x, int y, int z)
 {
@@ -950,14 +949,14 @@ void vtkWin32VideoSource::SetFrameSize(int x, int y, int z)
 
   if (this->Initialized)
   {
-    this->FrameBufferMutex->Lock();
+    this->FrameBufferMutex.lock();
     this->UpdateFrameBuffer();
     this->DoVFWFormatSetup();
-    this->FrameBufferMutex->Unlock();
+    this->FrameBufferMutex.unlock();
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::SetFrameRate(float rate)
 {
   if (rate == this->FrameRate)
@@ -983,7 +982,7 @@ void vtkWin32VideoSource::SetFrameRate(float rate)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::SetOutputFormat(int format)
 {
   if (format == this->OutputFormat)
@@ -1016,20 +1015,20 @@ void vtkWin32VideoSource::SetOutputFormat(int format)
 
   if (this->FrameBufferBitsPerPixel != numComponents * 8)
   {
-    this->FrameBufferMutex->Lock();
+    this->FrameBufferMutex.lock();
     this->FrameBufferBitsPerPixel = numComponents * 8;
     if (this->Initialized)
     {
       this->UpdateFrameBuffer();
       this->DoVFWFormatSetup();
     }
-    this->FrameBufferMutex->Unlock();
+    this->FrameBufferMutex.unlock();
   }
 
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // check the current video format and set up the VTK video framebuffer to match
 void vtkWin32VideoSource::DoVFWFormatCheck()
 {
@@ -1112,7 +1111,7 @@ void vtkWin32VideoSource::DoVFWFormatCheck()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWin32VideoSource::DoVFWFormatSetup()
 {
   static const int colorBits[3] = { 24, 32, 16 };

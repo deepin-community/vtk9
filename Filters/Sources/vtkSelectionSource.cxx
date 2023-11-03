@@ -27,12 +27,13 @@
 #include "vtkStringArray.h"
 #include "vtkUnsignedIntArray.h"
 
+#include <algorithm>
 #include <set>
 #include <vector>
 
 vtkStandardNewMacro(vtkSelectionSource);
 
-class vtkSelectionSourceInternals
+class vtkSelectionSource::vtkInternals
 {
 public:
   typedef std::set<vtkIdType> IDSetType;
@@ -45,70 +46,74 @@ public:
 
   std::vector<double> Thresholds;
   std::vector<double> Locations;
+
   IDSetType Blocks;
   double Frustum[32];
+
+  std::vector<std::string> BlockSelectors;
+  std::vector<std::string> Selectors; //< Qualifiers
+
+  vtkInternals() { std::fill_n(this->Frustum, 32, 0); }
 };
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSelectionSource::vtkSelectionSource()
+  : ContentType(vtkSelectionNode::INDICES)
+  , FieldType(vtkSelectionNode::CELL)
+  , ContainingCells(true)
+  , PreserveTopology(false)
+  , Inverse(false)
+  , CompositeIndex(-1)
+  , HierarchicalLevel(-1)
+  , HierarchicalIndex(-1)
+  , ArrayName(nullptr)
+  , ArrayComponent(0)
+  , QueryString(nullptr)
+  , NumberOfLayers(0)
+  , AssemblyName(nullptr)
+  , Internal(new vtkSelectionSource::vtkInternals())
 {
   this->SetNumberOfInputPorts(0);
-  this->Internal = new vtkSelectionSourceInternals;
-
-  this->ContentType = vtkSelectionNode::INDICES;
-  this->FieldType = vtkSelectionNode::CELL;
-  this->ContainingCells = 1;
-  this->Inverse = 0;
-  this->ArrayName = nullptr;
-  this->ArrayComponent = 0;
-  for (int cc = 0; cc < 32; cc++)
-  {
-    this->Internal->Frustum[cc] = 0;
-  }
-  this->CompositeIndex = -1;
-  this->HierarchicalLevel = -1;
-  this->HierarchicalIndex = -1;
-  this->QueryString = nullptr;
-  this->NumberOfLayers = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSelectionSource::~vtkSelectionSource()
 {
   delete this->Internal;
   delete[] this->ArrayName;
   delete[] this->QueryString;
+  delete[] this->AssemblyName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::RemoveAllIDs()
 {
   this->Internal->IDs.clear();
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::RemoveAllStringIDs()
 {
   this->Internal->StringIDs.clear();
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::RemoveAllLocations()
 {
   this->Internal->Locations.clear();
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::RemoveAllThresholds()
 {
   this->Internal->Thresholds.clear();
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::AddID(vtkIdType proc, vtkIdType id)
 {
   // proc == -1 means all processes. All other are stored at index proc+1
@@ -118,12 +123,12 @@ void vtkSelectionSource::AddID(vtkIdType proc, vtkIdType id)
   {
     this->Internal->IDs.resize(proc + 1);
   }
-  vtkSelectionSourceInternals::IDSetType& idSet = this->Internal->IDs[proc];
+  auto& idSet = this->Internal->IDs[proc];
   idSet.insert(id);
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::AddStringID(vtkIdType proc, const char* id)
 {
   // proc == -1 means all processes. All other are stored at index proc+1
@@ -133,12 +138,12 @@ void vtkSelectionSource::AddStringID(vtkIdType proc, const char* id)
   {
     this->Internal->StringIDs.resize(proc + 1);
   }
-  vtkSelectionSourceInternals::StringIDSetType& idSet = this->Internal->StringIDs[proc];
+  auto& idSet = this->Internal->StringIDs[proc];
   idSet.insert(id);
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::AddLocation(double x, double y, double z)
 {
   this->Internal->Locations.push_back(x);
@@ -147,7 +152,7 @@ void vtkSelectionSource::AddLocation(double x, double y, double z)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::AddThreshold(double min, double max)
 {
   this->Internal->Thresholds.push_back(min);
@@ -155,7 +160,7 @@ void vtkSelectionSource::AddThreshold(double min, double max)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::SetFrustum(double* vertices)
 {
   for (int cc = 0; cc < 32; cc++)
@@ -169,105 +174,90 @@ void vtkSelectionSource::SetFrustum(double* vertices)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::AddBlock(vtkIdType block)
 {
   this->Internal->Blocks.insert(block);
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSelectionSource::RemoveAllBlocks()
 {
   this->Internal->Blocks.clear();
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkSelectionSource::AddSelector(const char* selector)
+{
+  if (selector)
+  {
+    this->Internal->Selectors.emplace_back(selector);
+    this->Modified();
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkSelectionSource::RemoveAllSelectors()
+{
+  if (!this->Internal->Selectors.empty())
+  {
+    this->Internal->Selectors.clear();
+    this->Modified();
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkSelectionSource::AddBlockSelector(const char* selector)
+{
+  if (selector)
+  {
+    this->Internal->BlockSelectors.emplace_back(selector);
+    this->Modified();
+  }
+}
+
+//------------------------------------------------------------------------------
+void vtkSelectionSource::RemoveAllBlockSelectors()
+{
+  if (!this->Internal->BlockSelectors.empty())
+  {
+    this->Internal->BlockSelectors.clear();
+    this->Modified();
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkSelectionSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "ContentType: ";
-  switch (this->ContentType)
-  {
-    case vtkSelectionNode::SELECTIONS:
-      os << "SELECTIONS";
-      break;
-    case vtkSelectionNode::GLOBALIDS:
-      os << "GLOBALIDS";
-      break;
-    case vtkSelectionNode::VALUES:
-      os << "VALUES";
-      break;
-    case vtkSelectionNode::INDICES:
-      os << "INDICES";
-      break;
-    case vtkSelectionNode::FRUSTUM:
-      os << "FRUSTUM";
-      break;
-    case vtkSelectionNode::LOCATIONS:
-      os << "LOCATIONS";
-      break;
-    case vtkSelectionNode::THRESHOLDS:
-      os << "THRESHOLDS";
-      break;
-    case vtkSelectionNode::BLOCKS:
-      os << "BLOCKS";
-      break;
-    default:
-      os << "UNKNOWN";
-  }
-  os << endl;
-
-  os << indent << "FieldType: ";
-  switch (this->FieldType)
-  {
-    case vtkSelectionNode::CELL:
-      os << "CELL";
-      break;
-    case vtkSelectionNode::POINT:
-      os << "POINT";
-      break;
-    case vtkSelectionNode::FIELD:
-      os << "FIELD";
-      break;
-    case vtkSelectionNode::VERTEX:
-      os << "VERTEX";
-      break;
-    case vtkSelectionNode::EDGE:
-      os << "EDGE";
-      break;
-    case vtkSelectionNode::ROW:
-      os << "ROW";
-      break;
-    default:
-      os << "UNKNOWN";
-  }
-  os << endl;
-
-  os << indent << "ContainingCells: ";
-  os << (this->ContainingCells ? "CELLS" : "POINTS") << endl;
+  os << indent << "ContentType: " << vtkSelectionNode::GetContentTypeAsString(this->ContentType)
+     << endl;
+  os << indent << "FieldType: " << vtkSelectionNode::GetFieldTypeAsString(this->FieldType) << endl;
+  os << indent << "ContainingCells: " << (this->ContainingCells ? "CELLS" : "POINTS") << endl;
   os << indent << "Inverse: " << this->Inverse << endl;
-  os << indent << "ArrayName: " << (this->ArrayName ? this->ArrayName : "nullptr") << endl;
+  os << indent << "ArrayName: " << (this->ArrayName ? this->ArrayName : "(nullptr)") << endl;
   os << indent << "ArrayComponent: " << this->ArrayComponent << endl;
   os << indent << "CompositeIndex: " << this->CompositeIndex << endl;
   os << indent << "HierarchicalLevel: " << this->HierarchicalLevel << endl;
   os << indent << "HierarchicalIndex: " << this->HierarchicalIndex << endl;
-  os << indent << "QueryString: " << (this->QueryString ? this->QueryString : "nullptr") << endl;
+  os << indent << "QueryString: " << (this->QueryString ? this->QueryString : "(nullptr)") << endl;
   os << indent << "NumberOfLayers: " << this->NumberOfLayers << endl;
+  os << indent << "AssemblyName: " << (this->AssemblyName ? this->AssemblyName : "(nullptr)")
+     << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSelectionSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
   outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
-
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSelectionSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -292,6 +282,15 @@ int vtkSelectionSource::RequestData(vtkInformation* vtkNotUsed(request),
   {
     oProperties->Set(vtkSelectionNode::HIERARCHICAL_LEVEL(), this->HierarchicalLevel);
     oProperties->Set(vtkSelectionNode::HIERARCHICAL_INDEX(), this->HierarchicalIndex);
+  }
+
+  if (this->AssemblyName != nullptr && !this->Internal->Selectors.empty())
+  {
+    oProperties->Set(vtkSelectionNode::ASSEMBLY_NAME(), this->AssemblyName);
+    for (auto& selector : this->Internal->Selectors)
+    {
+      oProperties->Append(vtkSelectionNode::SELECTORS(), selector.c_str());
+    }
   }
 
   // First look for string ids.
@@ -332,14 +331,14 @@ int vtkSelectionSource::RequestData(vtkInformation* vtkNotUsed(request),
           continue;
         }
 
-        vtkSelectionSourceInternals::StringIDSetType& selSet = this->Internal->StringIDs[idx];
+        auto& selSet = this->Internal->StringIDs[idx];
 
         if (!selSet.empty())
         {
           // Create the selection list
           selectionList->SetNumberOfTuples(static_cast<vtkIdType>(selSet.size()));
           // iterate over ids and insert to the selection list
-          vtkSelectionSourceInternals::StringIDSetType::iterator iter = selSet.begin();
+          auto iter = selSet.begin();
           for (vtkIdType idx2 = 0; iter != selSet.end(); ++iter, ++idx2)
           {
             selectionList->SetValue(idx2, *iter);
@@ -385,14 +384,14 @@ int vtkSelectionSource::RequestData(vtkInformation* vtkNotUsed(request),
           continue;
         }
 
-        vtkSelectionSourceInternals::IDSetType& selSet = this->Internal->IDs[idx];
+        auto& selSet = this->Internal->IDs[idx];
 
         if (!selSet.empty())
         {
           // Create the selection list
           selectionList->SetNumberOfTuples(static_cast<vtkIdType>(selSet.size()));
           // iterate over ids and insert to the selection list
-          vtkSelectionSourceInternals::IDSetType::iterator iter = selSet.begin();
+          auto iter = selSet.begin();
           for (vtkIdType idx2 = 0; iter != selSet.end(); ++iter, ++idx2)
           {
             selectionList->SetValue(idx2, *iter);
@@ -464,11 +463,25 @@ int vtkSelectionSource::RequestData(vtkInformation* vtkNotUsed(request),
     vtkNew<vtkUnsignedIntArray> selectionList;
     selectionList->SetNumberOfComponents(1);
     selectionList->SetNumberOfTuples(static_cast<vtkIdType>(this->Internal->Blocks.size()));
-    vtkSelectionSourceInternals::IDSetType::iterator iter;
     vtkIdType cc = 0;
-    for (iter = this->Internal->Blocks.begin(); iter != this->Internal->Blocks.end(); ++iter, ++cc)
+    for (auto iter = this->Internal->Blocks.begin(); iter != this->Internal->Blocks.end();
+         ++iter, ++cc)
     {
       selectionList->SetValue(cc, *iter);
+    }
+    output->SetSelectionList(selectionList);
+  }
+
+  if (this->ContentType == vtkSelectionNode::BLOCK_SELECTORS)
+  {
+    oProperties->Set(vtkSelectionNode::CONTENT_TYPE(), this->ContentType);
+    oProperties->Set(vtkSelectionNode::FIELD_TYPE(), this->FieldType);
+    vtkNew<vtkStringArray> selectionList;
+    selectionList->SetNumberOfTuples(static_cast<vtkIdType>(this->Internal->BlockSelectors.size()));
+    vtkIdType cc = 0;
+    for (const auto& selector : this->Internal->BlockSelectors)
+    {
+      selectionList->SetValue(cc++, selector);
     }
     output->SetSelectionList(selectionList);
   }

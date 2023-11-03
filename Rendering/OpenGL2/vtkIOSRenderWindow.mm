@@ -13,12 +13,17 @@ PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkOpenGLRenderWindow.h"
 
 #import "vtkCommand.h"
 #import "vtkIOSRenderWindow.h"
 #import "vtkIdList.h"
 #import "vtkObjectFactory.h"
+#import "vtkOpenGLFramebufferObject.h"
+#import "vtkOpenGLState.h"
 #import "vtkRenderWindowInteractor.h"
 #import "vtkRendererCollection.h"
 
@@ -38,12 +43,27 @@ vtkIOSRenderWindow::vtkIOSRenderWindow()
   this->ForceMakeCurrent = 0;
   this->OnScreenInitialized = 0;
   this->OffScreenInitialized = 0;
-  // it seems that LEFT/RIGHT cause issues on IOS so we just use
-  // generic BACK/FRONT
-  this->BackLeftBuffer = static_cast<unsigned int>(GL_BACK);
-  this->BackRightBuffer = static_cast<unsigned int>(GL_BACK);
-  this->FrontLeftBuffer = static_cast<unsigned int>(GL_FRONT);
-  this->FrontRightBuffer = static_cast<unsigned int>(GL_FRONT);
+  this->SetFrameBlitModeToBlitToCurrent();
+}
+
+void vtkIOSRenderWindow::BlitDisplayFramebuffersToHardware()
+{
+  auto ostate = this->GetState();
+  ostate->PushFramebufferBindings();
+  this->DisplayFramebuffer->Bind(GL_READ_FRAMEBUFFER);
+  this->GetState()->vtkglViewport(0, 0, this->Size[0], this->Size[1]);
+  this->GetState()->vtkglScissor(0, 0, this->Size[0], this->Size[1]);
+
+  this->GetState()->vtkglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+  this->DisplayFramebuffer->ActivateReadBuffer(0);
+  this->GetState()->vtkglDrawBuffer(this->DoubleBuffer ? GL_BACK : GL_FRONT);
+
+  // recall Blit upper right corner is exclusive of the range
+  this->GetState()->vtkglBlitFramebuffer(0, 0, this->Size[0], this->Size[1], 0, 0, this->Size[0],
+    this->Size[1], GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
+  this->GetState()->PopFramebufferBindings();
 }
 
 //----------------------------------------------------------------------------
@@ -157,16 +177,6 @@ vtkTypeBool vtkIOSRenderWindow::GetEventPending()
 }
 
 //----------------------------------------------------------------------------
-// Initialize the rendering process.
-void vtkIOSRenderWindow::Start()
-{
-  this->Initialize();
-
-  // set the current window
-  this->MakeCurrent();
-}
-
-//----------------------------------------------------------------------------
 void vtkIOSRenderWindow::MakeCurrent()
 {
   // if (this->GetContextId())
@@ -184,16 +194,16 @@ bool vtkIOSRenderWindow::IsCurrent()
 }
 
 //----------------------------------------------------------------------------
-#ifndef VTK_LEGACY_REMOVE
 bool vtkIOSRenderWindow::IsDrawable()
 {
+  VTK_LEGACY_BODY(vtkGenericOpenGLRenderWindow::IsDrawable, "VTK 9.1");
+
   // you must initialize it first
   // else it always evaluates false
   this->Initialize();
 
   return true;
 }
-#endif
 
 //----------------------------------------------------------------------------
 void vtkIOSRenderWindow::UpdateContext() {}

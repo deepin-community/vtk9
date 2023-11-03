@@ -23,22 +23,22 @@
 
 vtkStandardNewMacro(vtkSILBuilder);
 vtkCxxSetObjectMacro(vtkSILBuilder, SIL, vtkMutableDirectedGraph);
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSILBuilder::vtkSILBuilder()
 {
-  this->NamesArray = 0;
-  this->CrossEdgesArray = 0;
-  this->SIL = 0;
+  this->NamesArray = nullptr;
+  this->CrossEdgesArray = nullptr;
+  this->SIL = nullptr;
   this->RootVertex = -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSILBuilder::~vtkSILBuilder()
 {
-  this->SetSIL(0);
+  this->SetSIL(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSILBuilder::Initialize()
 {
   this->SIL->Initialize();
@@ -54,7 +54,7 @@ void vtkSILBuilder::Initialize()
   this->RootVertex = this->AddVertex("SIL");
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkSILBuilder::AddVertex(const char* name)
 {
   vtkIdType vertex = this->SIL->AddVertex();
@@ -62,7 +62,7 @@ vtkIdType vtkSILBuilder::AddVertex(const char* name)
   return vertex;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkSILBuilder::AddChildEdge(vtkIdType src, vtkIdType dst)
 {
   vtkIdType id = this->SIL->AddEdge(src, dst).Id;
@@ -70,7 +70,7 @@ vtkIdType vtkSILBuilder::AddChildEdge(vtkIdType src, vtkIdType dst)
   return id;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkSILBuilder::AddCrossEdge(vtkIdType src, vtkIdType dst)
 {
   vtkIdType id = this->SIL->AddEdge(src, dst).Id;
@@ -78,7 +78,7 @@ vtkIdType vtkSILBuilder::AddCrossEdge(vtkIdType src, vtkIdType dst)
   return id;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSILBuilder::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

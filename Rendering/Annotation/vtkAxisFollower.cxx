@@ -49,10 +49,9 @@ const double AxisAlignedY[3][4][2][3] = {
 };
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Creates a follower with no camera set
 vtkAxisFollower::vtkAxisFollower()
-  : vtkFollower()
 {
   this->AutoCenter = 1;
 
@@ -71,10 +70,10 @@ vtkAxisFollower::vtkAxisFollower()
   this->VisibleAtCurrentViewAngle = -1;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAxisFollower::~vtkAxisFollower() = default;
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::SetAxis(vtkAxisActor* axis)
 {
   if (!axis)
@@ -92,13 +91,13 @@ void vtkAxisFollower::SetAxis(vtkAxisActor* axis)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkAxisActor* vtkAxisFollower::GetAxis()
 {
   return this->Axis;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::CalculateOrthogonalVectors(
   double rX[3], double rY[3], double rZ[3], vtkAxisActor* axis, double* dop, vtkRenderer* ren)
 {
@@ -179,7 +178,7 @@ void vtkAxisFollower::CalculateOrthogonalVectors(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkAxisFollower::AutoScale(
   vtkViewport* viewport, vtkCamera* camera, double screenSize, double position[3])
 {
@@ -216,7 +215,7 @@ double vtkAxisFollower::AutoScale(
   return newScale;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::ComputeTransformMatrix(vtkRenderer* ren)
 {
   if (!this->Axis)
@@ -294,7 +293,7 @@ void vtkAxisFollower::ComputeTransformMatrix(vtkRenderer* ren)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::ComputeRotationAndTranlation(vtkRenderer* ren, double translation[3],
   double rX[3], double rY[3], double rZ[3], vtkAxisActor* axis)
 {
@@ -359,7 +358,7 @@ void vtkAxisFollower::ComputeRotationAndTranlation(vtkRenderer* ren, double tran
   translation[2] = origRy[2] * autoScaleVert * vertSign + origRx[2] * autoScaleHoriz * horizSign;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::ComputerAutoCenterTranslation(
   const double& vtkNotUsed(autoScaleFactor), double translation[3])
 {
@@ -397,7 +396,7 @@ void vtkAxisFollower::ComputerAutoCenterTranslation(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkAxisFollower::TestDistanceVisibility()
 {
   if (!this->Camera->GetParallelProjection())
@@ -436,7 +435,7 @@ int vtkAxisFollower::TestDistanceVisibility()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::ExecuteViewAngleVisibility(double normal[3])
 {
   if (!normal)
@@ -460,7 +459,7 @@ void vtkAxisFollower::ExecuteViewAngleVisibility(double normal[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -483,65 +482,19 @@ void vtkAxisFollower::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::SetScreenOffset(double offset)
 {
   this->SetScreenOffsetVector(1, offset);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkAxisFollower::GetScreenOffset()
 {
   return this->GetScreenOffsetVector()[1];
 }
 
-//----------------------------------------------------------------------
-int vtkAxisFollower::RenderOpaqueGeometry(vtkViewport* vp)
-{
-  if (!this->Mapper)
-  {
-    return 0;
-  }
-
-  if (!this->Property)
-  {
-    // force creation of a property
-    this->GetProperty();
-  }
-
-  if (this->GetIsOpaque())
-  {
-    vtkRenderer* ren = static_cast<vtkRenderer*>(vp);
-    this->Render(ren);
-    return 1;
-  }
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
-int vtkAxisFollower::RenderTranslucentPolygonalGeometry(vtkViewport* vp)
-{
-  if (!this->Mapper)
-  {
-    return 0;
-  }
-
-  if (!this->Property)
-  {
-    // force creation of a property
-    this->GetProperty();
-  }
-
-  if (!this->GetIsOpaque())
-  {
-    vtkRenderer* ren = static_cast<vtkRenderer*>(vp);
-    this->Render(ren);
-    return 1;
-  }
-  return 0;
-}
-
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::Render(vtkRenderer* ren)
 {
   if (this->EnableDistanceLOD && !this->TestDistanceVisibility())
@@ -550,34 +503,11 @@ void vtkAxisFollower::Render(vtkRenderer* ren)
     return;
   }
 
-  this->Property->Render(this, ren);
-
-  this->Device->SetProperty(this->Property);
-  this->Property->Render(this, ren);
-  if (this->BackfaceProperty)
-  {
-    this->BackfaceProperty->BackfaceRender(this, ren);
-    this->Device->SetBackfaceProperty(this->BackfaceProperty);
-  }
-
-  /* render the texture */
-  if (this->Texture)
-  {
-    this->Texture->Render(ren);
-  }
-
-  // make sure the device has the same matrix
   this->ComputeTransformMatrix(ren);
-  this->Device->SetUserMatrix(this->Matrix);
-
-  this->SetVisibility(this->VisibleAtCurrentViewAngle);
-  if (this->VisibleAtCurrentViewAngle)
-  {
-    this->Device->Render(ren, this->Mapper);
-  }
+  this->Superclass::Render(ren);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkAxisFollower::ShallowCopy(vtkProp* prop)
 {
   vtkAxisFollower* f = vtkAxisFollower::SafeDownCast(prop);

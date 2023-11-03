@@ -13,6 +13,9 @@
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkSVGContextDevice2D.h"
 
 #include "vtkAssume.h"
@@ -131,10 +134,7 @@ struct FontKey
     this->TextProperty->SetOrientation(0.);
   }
 
-  FontKey(const FontKey& o)
-    : TextProperty(o.TextProperty)
-  {
-  }
+  FontKey(const FontKey& o) = default;
 
   bool operator<(const FontKey& other) const
   {
@@ -189,6 +189,8 @@ struct FontKey
   }
 };
 
+// FIXME(#18327): Port to work on UTf-8 directly rather than relying on
+// `vtkUnicodeString`.
 struct FontInfo
 {
   using CharType = vtkUnicodeString::value_type;
@@ -266,8 +268,8 @@ struct ImageInfo
     this->PNGBase64 = base64Stream.str();
   }
 
-  ImageInfo(ImageInfo&& o)
-    : Size(std::move(o.Size))
+  ImageInfo(ImageInfo&& o) noexcept
+    : Size(o.Size)
     , Id(std::move(o.Id))
     , PNGBase64(std::move(o.PNGBase64))
   {
@@ -321,9 +323,9 @@ struct PatternInfo
   {
   }
 
-  PatternInfo(PatternInfo&& o)
-    : TextureProperty(std::move(o.TextureProperty))
-    , ImageSize(std::move(o.ImageSize))
+  PatternInfo(PatternInfo&& o) noexcept
+    : TextureProperty(o.TextureProperty)
+    , ImageSize(o.ImageSize)
     , ImageId(std::move(o.ImageId))
     , PatternId(std::move(o.PatternId))
   {
@@ -365,8 +367,8 @@ struct ClipRectInfo
   {
   }
 
-  ClipRectInfo(ClipRectInfo&& o)
-    : Rect(std::move(o.Rect))
+  ClipRectInfo(ClipRectInfo&& o) noexcept
+    : Rect(o.Rect)
     , Id(std::move(o.Id))
   {
   }
@@ -1345,12 +1347,16 @@ void vtkSVGContextDevice2D::DrawEllipticArc(
 //------------------------------------------------------------------------------
 void vtkSVGContextDevice2D::DrawString(float* point, const vtkStdString& string)
 {
+  // FIXME(#18327): Migrate to processing here rather than working on
+  // `vtkUnicodeString`.
   this->DrawString(point, vtkUnicodeString::from_utf8(string));
 }
 
 //------------------------------------------------------------------------------
 void vtkSVGContextDevice2D::ComputeStringBounds(const vtkStdString& string, float bounds[4])
 {
+  // FIXME(#18327): Migrate to processing here rather than working on
+  // `vtkUnicodeString`.
   this->ComputeStringBounds(vtkUnicodeString::from_utf8(string), bounds);
 }
 
@@ -1438,6 +1444,8 @@ void vtkSVGContextDevice2D::ComputeStringBounds(const vtkUnicodeString& string, 
 //------------------------------------------------------------------------------
 void vtkSVGContextDevice2D::ComputeJustifiedStringBounds(const char* string, float bounds[4])
 {
+  // FIXME(#18327): Migrate to processing here rather than working on
+  // `vtkUnicodeString`.
   this->ComputeStringBounds(vtkUnicodeString::from_utf8(string), bounds);
 }
 

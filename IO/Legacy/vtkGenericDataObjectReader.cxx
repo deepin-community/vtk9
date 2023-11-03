@@ -235,7 +235,7 @@ int vtkGenericDataObjectReader::ReadMetaDataSimple(
     reader->SetReadFromInputString(this->GetReadFromInputString());
     reader->SetInputArray(this->GetInputArray());
     reader->SetInputString(this->GetInputString());
-    retVal = reader->ReadMetaDataSimple(fname.c_str(), metadata);
+    retVal = reader->ReadMetaDataSimple(fname, metadata);
     reader->Delete();
     return retVal;
   }
@@ -450,16 +450,15 @@ int vtkGenericDataObjectReader::ReadOutputType()
     {
       return VTK_NON_OVERLAPPING_AMR;
     }
-    if (strncmp(this->LowerCase(line), "partitioned", strlen("partitioned")) == 0)
-    {
-      return VTK_PARTITIONED_DATA_SET;
-    }
     if (strncmp(
           this->LowerCase(line), "partitioned_collection", strlen("partitioned_collection")) == 0)
     {
       return VTK_PARTITIONED_DATA_SET_COLLECTION;
     }
-
+    if (strncmp(this->LowerCase(line), "partitioned", strlen("partitioned")) == 0)
+    {
+      return VTK_PARTITIONED_DATA_SET;
+    }
     vtkDebugMacro(<< "Cannot read dataset type: " << line);
     return -1;
   }

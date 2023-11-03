@@ -33,7 +33,7 @@ vtkStandardNewMacro(vtkGeoProjection);
 
 static int vtkGeoProjectionNumProj = -1;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkGeoProjection::vtkInternals
 {
 public:
@@ -75,7 +75,7 @@ public:
 #endif
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoProjection::GetNumberOfProjections()
 {
   if (vtkGeoProjectionNumProj < 0)
@@ -86,7 +86,7 @@ int vtkGeoProjection::GetNumberOfProjections()
   }
   return vtkGeoProjectionNumProj;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetProjectionName(int projection)
 {
   if (projection < 0 || projection >= vtkGeoProjection::GetNumberOfProjections())
@@ -94,7 +94,7 @@ const char* vtkGeoProjection::GetProjectionName(int projection)
 
   return proj_list_operations()[projection].id;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetProjectionDescription(int projection)
 {
   if (projection < 0 || projection >= vtkGeoProjection::GetNumberOfProjections())
@@ -102,7 +102,7 @@ const char* vtkGeoProjection::GetProjectionDescription(int projection)
 
   return proj_list_operations()[projection].descr[0];
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGeoProjection::vtkGeoProjection()
 {
   this->Name = nullptr;
@@ -114,19 +114,23 @@ vtkGeoProjection::vtkGeoProjection()
   this->SetPROJ4String("");
   this->Internals = new vtkInternals();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGeoProjection::~vtkGeoProjection()
 {
   this->SetName(nullptr);
   this->SetPROJ4String(nullptr);
   if (this->Projection)
   {
+#if PROJ_VERSION_MAJOR >= 5
+    proj_destroy(this->Projection);
+#else
     pj_free(this->Projection);
+#endif
   }
   delete this->Internals;
   this->Internals = nullptr;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoProjection::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -141,7 +145,7 @@ void vtkGeoProjection::PrintSelf(ostream& os, vtkIndent indent)
        << this->GetOptionalParameterValue(i) << "\n";
   }
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoProjection::GetIndex()
 {
   int i = 0;
@@ -154,7 +158,7 @@ int vtkGeoProjection::GetIndex()
   }
   return -1;
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetDescription()
 {
   this->UpdateProjection();
@@ -168,14 +172,14 @@ const char* vtkGeoProjection::GetDescription()
   return this->Projection->descr;
 #endif
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 projPJ vtkGeoProjection::GetProjection()
 {
   this->UpdateProjection();
   return this->Projection;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoProjection::UpdateProjection()
 {
   if (this->GetMTime() <= this->ProjectionMTime)
@@ -185,13 +189,25 @@ int vtkGeoProjection::UpdateProjection()
 
   if (this->Projection)
   {
+#if PROJ_VERSION_MAJOR >= 5
+    proj_destroy(this->Projection);
+#else
     pj_free(this->Projection);
+#endif
     this->Projection = nullptr;
   }
 
   if (this->PROJ4String && strlen(this->PROJ4String))
   {
+#if PROJ_VERSION_MAJOR >= 5
+    this->Projection = proj_create(PJ_DEFAULT_CTX, this->PROJ4String);
+#else
     this->Projection = pj_init_plus(this->PROJ4String);
+#endif
+    if (!this->Projection)
+    {
+      vtkErrorMacro("Cannot set projection with string " << this->PROJ4String);
+    }
   }
   else
   {
@@ -230,8 +246,11 @@ int vtkGeoProjection::UpdateProjection()
       stringHolder[i] = param.str();
       pjArgs[3 + i] = stringHolder[i].c_str();
     }
-
+#if PROJ_VERSION_MAJOR >= 5
+    this->Projection = proj_create_argv(PJ_DEFAULT_CTX, argSize, const_cast<char**>(pjArgs));
+#else
     this->Projection = pj_init(argSize, const_cast<char**>(pjArgs));
+#endif
     delete[] pjArgs;
   }
   this->ProjectionMTime = this->GetMTime();
@@ -245,7 +264,7 @@ int vtkGeoProjection::UpdateProjection()
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoProjection::SetOptionalParameter(const char* key, const char* value)
 {
   if (key != nullptr && value != nullptr)
@@ -259,28 +278,28 @@ void vtkGeoProjection::SetOptionalParameter(const char* key, const char* value)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoProjection::RemoveOptionalParameter(const char* key)
 {
   this->Internals->OptionalParameters.erase(key);
   this->Modified();
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGeoProjection::GetNumberOfOptionalParameters()
 {
   return static_cast<int>(this->Internals->OptionalParameters.size());
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetOptionalParameterKey(int index)
 {
   return this->Internals->GetKeyAt(index);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGeoProjection::GetOptionalParameterValue(int index)
 {
   return this->Internals->GetValueAt(index);
 }
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGeoProjection::ClearOptionalParameters()
 {
   this->Internals->OptionalParameters.clear();

@@ -50,7 +50,7 @@ class PIO_DATA
 {
 public:
   PIO_DATA(const char* piofile = 0, const std::list<std::string>* fields_to_read = 0,
-    bool _defer_read_data = false, const std::set<const char*, Cstring_less>* rdata = 0,
+    bool _defer_read_data = true, const std::set<const char*, Cstring_less>* rdata = 0,
     const std::set<const char*, Cstring_less>* cdata = 0);
   ~PIO_DATA();
   bool GetPIOfileTime(const char*, double&);
@@ -60,7 +60,7 @@ public:
   bool set_scalar_field(std::valarray<int64_t>&, const char*);
   bool set_scalar_field(std::valarray<uint64_t>&, const char*);
   bool set_scalar_field(std::valarray<double>&, const char*);
-  bool set_vector_field(std::valarray<std::valarray<double> >&, const char*);
+  bool set_vector_field(std::valarray<std::valarray<double>>&, const char*);
   inline bool good_read() { return (pio_field != 0) ? true : false; }
   VAR_MAP VarMMap; // Multimap from pio_name to a PIO_FIELD class
   const char* get_name() const { return name; }

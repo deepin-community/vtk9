@@ -55,23 +55,15 @@ class vtkOSOpenGLRenderWindowInternal
   friend class vtkOSOpenGLRenderWindow;
 
 private:
-  vtkOSOpenGLRenderWindowInternal(vtkRenderWindow*);
-
-  // store previous settings of on screen window
-  int ScreenDoubleBuffer;
-  int ScreenMapped;
+  vtkOSOpenGLRenderWindowInternal();
 
   // OffScreen stuff
   OSMesaContext OffScreenContextId;
   void* OffScreenWindow;
 };
 
-vtkOSOpenGLRenderWindowInternal::vtkOSOpenGLRenderWindowInternal(vtkRenderWindow* rw)
+vtkOSOpenGLRenderWindowInternal::vtkOSOpenGLRenderWindowInternal()
 {
-
-  this->ScreenMapped = rw->GetMapped();
-  this->ScreenDoubleBuffer = rw->GetDoubleBuffer();
-
   // OpenGL specific
   this->OffScreenContextId = nullptr;
   this->OffScreenWindow = nullptr;
@@ -100,8 +92,9 @@ vtkOSOpenGLRenderWindow::vtkOSOpenGLRenderWindow()
   this->ForceMakeCurrent = 0;
   this->OwnWindow = 0;
   this->ShowWindow = false;
+  this->UseOffScreenBuffers = true;
 
-  this->Internal = new vtkOSOpenGLRenderWindowInternal(this);
+  this->Internal = new vtkOSOpenGLRenderWindowInternal();
 }
 
 // free up memory & close the window
@@ -109,7 +102,6 @@ vtkOSOpenGLRenderWindow::~vtkOSOpenGLRenderWindow()
 {
   // close-down all system-specific drawing resources
   this->Finalize();
-
   vtkRenderer* ren;
   vtkCollectionSimpleIterator rit;
   this->Renderers->InitTraversal(rit);
@@ -303,10 +295,7 @@ void vtkOSOpenGLRenderWindow::SetSize(int width, int height)
   if ((this->Size[0] != width) || (this->Size[1] != height))
   {
     this->Superclass::SetSize(width, height);
-    if (!this->UseOffScreenBuffers)
-    {
-      this->ResizeOffScreenWindow(width, height);
-    }
+    this->ResizeOffScreenWindow(width, height);
     this->Modified();
   }
 }
@@ -331,7 +320,7 @@ void vtkOSOpenGLRenderWindow::MakeCurrent()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Tells if this window is the current OpenGL context for the calling thread.
 bool vtkOSOpenGLRenderWindow::IsCurrent()

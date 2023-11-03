@@ -8,11 +8,9 @@ Thanks to Bernhard M. Wiedemann <bernhardout@lsmod.de>.
  Utilities/Doxygen/doc_class2example.pl | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/Utilities/Doxygen/doc_class2example.pl b/Utilities/Doxygen/doc_class2example.pl
-index 3978563..ce8aeca 100755
---- a/Utilities/Doxygen/doc_class2example.pl
-+++ b/Utilities/Doxygen/doc_class2example.pl
-@@ -261,6 +261,7 @@ if (exists $args{"parser"}) {
+--- vtk9.orig/Utilities/Doxygen/doc_class2example.pl
++++ vtk9/Utilities/Doxygen/doc_class2example.pl
+@@ -261,6 +261,7 @@
  } else {
      @parsers = keys %parsers;
  }
@@ -20,7 +18,3 @@ index 3978563..ce8aeca 100755
  
  my $os_is_win = ($^O =~ m/(MSWin32|Cygwin)/i);
  my $open_file_as_text = $os_is_win ? O_TEXT : 0;
--- 
-2.29.2
-
-

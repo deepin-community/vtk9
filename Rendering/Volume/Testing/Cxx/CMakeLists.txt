@@ -19,6 +19,7 @@ set (VolumeCxxTests
   TestGPURayCastCompositeMaskBlend.cxx
   TestGPURayCastCompositeToMIP.cxx
   TestGPURayCastCropping.cxx
+  TestGPURayCastCropping1.cxx
   TestGPURayCastDataTypesMIP.cxx
   TestGPURayCastDataTypesMinIP.cxx
   TestGPURayCastDependentComponentsLightParameters.cxx
@@ -40,6 +41,7 @@ set (VolumeCxxTests
   TestGPURayCastMIPBinaryMask.cxx
   TestGPURayCastMIPToComposite.cxx
   TestGPURayCastMapperBenchmark.cxx
+  TestGPURayCastMapperRectilinearGrid.cxx
   TestGPURayCastMapperSampleDistance.cxx
   TestGPURayCastMultiVolumeAddRemove.cxx
   TestGPURayCastMultiVolumeCellData.cxx
@@ -57,11 +59,14 @@ set (VolumeCxxTests
   TestGPURayCastThreeComponentsAdditive.cxx
   TestGPURayCastThreeComponentsIndependent.cxx
   TestGPURayCastTransfer2D.cxx
+  TestGPURayCastTransfer2DYScalars.cxx
   TestGPURayCastTwoComponentsDependent.cxx
   TestGPURayCastTwoComponentsDependentGradient.cxx
   TestGPURayCastTwoComponentsGradient.cxx
   TestGPURayCastTwoComponentsIndependent.cxx
   TestGPURayCastVolumeDepthPass.cxx
+  TestGPURayCastVolumeGhostArrays.cxx
+  TestGPURayCastVolumeGhostArraysCellData.cxx
   TestGPURayCastVolumeLightKit.cxx
   TestGPURayCastVolumeOrientation.cxx
   TestGPURayCastVolumePicking.cxx
@@ -69,15 +74,20 @@ set (VolumeCxxTests
   TestGPURayCastVolumePolyData.cxx
   TestGPURayCastVolumeRotation.cxx
   TestGPURayCastVolumeScale.cxx
+  TestGPURayCastVolumeUniformGridBlanking.cxx
   TestGPURayCastVolumeUpdate.cxx
   TestGPUVolumeRayCastMapper.cxx
   TestMinIntensityRendering.cxx
   TestMultiBlockMapper.cxx
+  TestMultiBlockMapperRectilinearGrid.cxx
+  TestMultiBlockUnstructuredGridVolumeMapper.cxx
   TestProjectedTetrahedra.cxx
   TestProjectedTetrahedraOffscreen.cxx
   TestProjectedTetrahedraTransform.cxx
+  TestProjectedTetrahedraVectorComponent.cxx
   TestRemoveVolumeNonCurrentContext.cxx
   TestSmartVolumeMapper.cxx
+  TestSmartVolumeMapperVolumeUpdate.cxx
   TestSmartVolumeMapperWindowLevel.cxx
   )
 
@@ -88,4 +98,9 @@ vtk_add_test_cxx(vtkRenderingVolumeCxxTests tests
 
 vtk_test_cxx_executable(vtkRenderingVolumeCxxTests tests
   RENDERING_FACTORY
+  )
+
+vtk_module_test_data(
+  Data/TestGPURayCastTransfer2DYScalarsTransferFunction.vti
+  Data/disk_out_ref.ex2
   )

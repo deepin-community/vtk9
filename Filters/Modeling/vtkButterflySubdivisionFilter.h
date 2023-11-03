@@ -56,17 +56,18 @@ class VTKFILTERSMODELING_EXPORT vtkButterflySubdivisionFilter
   : public vtkInterpolatingSubdivisionFilter
 {
 public:
-  //@{
+  ///@{
   /**
    * Construct object with NumberOfSubdivisions set to 1.
    */
   static vtkButterflySubdivisionFilter* New();
   vtkTypeMacro(vtkButterflySubdivisionFilter, vtkInterpolatingSubdivisionFilter);
-  //@}
+  void PrintSelf(ostream& os, vtkIndent indent) override;
+  ///@}
 
 protected:
-  vtkButterflySubdivisionFilter() {}
-  ~vtkButterflySubdivisionFilter() override {}
+  vtkButterflySubdivisionFilter() = default;
+  ~vtkButterflySubdivisionFilter() override = default;
 
 private:
   int GenerateSubdivisionPoints(vtkPolyData* inputDS, vtkIntArray* edgeData, vtkPoints* outputPts,
@@ -84,5 +85,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkButterflySubdivisionFilter.h

@@ -27,6 +27,7 @@
 
 #include "vtkCommonCoreModule.h"  // For export macro
 #include "vtkDebugLeaksManager.h" // Must be included before singletons
+#include "vtkDeprecation.h"       // For VTK_DEPRECATED_IN_9_0_0
 #include "vtkObject.h"
 
 class VTKCOMMONCORE_EXPORT vtkOutputWindowCleanup
@@ -68,7 +69,7 @@ public:
    */
   static void SetInstance(vtkOutputWindow* instance);
 
-  //@{
+  ///@{
   /**
    * Display the text. Four virtual methods exist, depending on the type of
    * message to display. This allows redirection or reformatting of the
@@ -81,9 +82,9 @@ public:
   virtual void DisplayWarningText(const char*);
   virtual void DisplayGenericWarningText(const char*);
   virtual void DisplayDebugText(const char*);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * If PromptUser is set to true then each time a line of text
    * is displayed, the user is asked if they want to keep getting
@@ -95,9 +96,9 @@ public:
    */
   vtkBooleanMacro(PromptUser, bool);
   vtkSetMacro(PromptUser, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Historically (VTK 8.1 and earlier), when printing messages to terminals,
    * vtkOutputWindow would always post messages to `cerr`. Setting this to true
@@ -107,13 +108,17 @@ public:
    *
    * @deprecated use `SetDisplayModeToAlwaysStdErr` instead.
    */
-  VTK_LEGACY(void SetUseStdErrorForAllMessages(bool));
-  VTK_LEGACY(bool GetUseStdErrorForAllMessages());
-  VTK_LEGACY(void UseStdErrorForAllMessagesOn());
-  VTK_LEGACY(void UseStdErrorForAllMessagesOff());
-  //@}
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOutputWindow::SetDisplayMode")
+  void SetUseStdErrorForAllMessages(bool);
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOutputWindow::GetDisplayMode")
+  bool GetUseStdErrorForAllMessages();
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOutputWindow::SetDisplayMode")
+  void UseStdErrorForAllMessagesOn();
+  VTK_DEPRECATED_IN_9_0_0("Use vtkOutputWindow::SetDisplayMode")
+  void UseStdErrorForAllMessagesOff();
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Flag indicates how the vtkOutputWindow handles displaying of text to
    * `stderr` / `stdout`. Default is `DEFAULT` except in
@@ -151,7 +156,7 @@ public:
   void SetDisplayModeToNever() { this->SetDisplayMode(vtkOutputWindow::NEVER); }
   void SetDisplayModeToAlways() { this->SetDisplayMode(vtkOutputWindow::ALWAYS); }
   void SetDisplayModeToAlwaysStdErr() { this->SetDisplayMode(vtkOutputWindow::ALWAYS_STDERR); }
-  //@}
+  ///@}
 protected:
   vtkOutputWindow();
   ~vtkOutputWindow() override;

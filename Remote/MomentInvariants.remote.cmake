@@ -5,5 +5,5 @@
 vtk_fetch_module(MomentInvariants
   "MomentInvariants filter"
   GIT_REPOSITORY https://gitlab.kitware.com/vtk/MomentInvariants.git
-  GIT_TAG 9b83e572687ee84fd6c4c4c63e32807d280119be
+  GIT_TAG 8cf0bf1d00c877bb563107c767bb955afa1b4b51
   )

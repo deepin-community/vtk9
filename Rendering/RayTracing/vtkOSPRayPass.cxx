@@ -40,6 +40,8 @@
 
 #include "RTWrapper/RTWrapper.h"
 
+#include <sstream>
+
 #ifdef __APPLE__
 #include <sys/sysctl.h>
 #include <sys/types.h>
@@ -55,7 +57,7 @@ public:
 
   ~vtkOSPRayPassInternals() override { delete this->QuadHelper; }
 
-  void Init(vtkOpenGLRenderWindow* context)
+  void Init(vtkOpenGLRenderWindow* context, const std::string& renType, vtkRenderer* ren)
   {
     std::string FSSource = vtkOpenGLRenderUtilities::GetFullScreenQuadFragmentShaderTemplate();
 
@@ -63,9 +65,31 @@ public:
       "uniform sampler2D colorTexture;\n"
       "uniform sampler2D depthTexture;\n");
 
-    vtkShaderProgram::Substitute(FSSource, "//VTK::FSQ::Impl",
-      "gl_FragData[0] = texture(colorTexture, texCoord);\n"
-      "gl_FragDepth = texture(depthTexture, texCoord).r;\n");
+    std::stringstream ss;
+    ss << "vec4 color = texture(colorTexture, texCoord);\n"
+       << "gl_FragDepth = texture(depthTexture, texCoord).r;\n";
+
+    // The framebuffer are linear, a conversion to sRGB is required
+    // This is particularly important for OSPRay pathtracer but for compatibility
+    // with legacy behavior we keep the old behavior with the sciviz backend
+    if (renType == "pathtracer")
+    {
+      // If the background image is an hdri (= mode in environment mode)
+      // we need to have an opaque background but ospray set it transparent
+      // Set it to opaque to let the tone mapping be applied on the background
+      auto bgMode = vtkOSPRayRendererNode::GetBackgroundMode(ren);
+      bool useHdri = ren->GetUseImageBasedLighting() && ren->GetEnvironmentTexture() &&
+        bgMode == vtkOSPRayRendererNode::Environment;
+      ss << "gl_FragData[0] = vec4(pow(color.rgb, vec3(1.0/2.2)), "
+         << (useHdri ? "1.0)" : "color.a)") << ";\n";
+      this->BgMode = bgMode;
+    }
+    else
+    {
+      ss << "gl_FragData[0] = color;\n";
+    }
+
+    vtkShaderProgram::Substitute(FSSource, "//VTK::FSQ::Impl", ss.str());
 
     this->QuadHelper = new vtkOpenGLQuadHelper(context,
       vtkOpenGLRenderUtilities::GetFullScreenQuadVertexShader().c_str(), FSSource.c_str(), "");
@@ -78,12 +102,16 @@ public:
     this->SharedColorTexture->AutoParametersOff();
     this->SharedDepthTexture->SetContext(context);
     this->SharedDepthTexture->AutoParametersOff();
+
+    this->RendererType = renType;
   }
 
   void Render(const vtkRenderState* s) override { this->Parent->RenderInternal(s); }
 
   vtkNew<vtkOSPRayViewNodeFactory> Factory;
   vtkOSPRayPass* Parent = nullptr;
+  std::string RendererType;
+  vtkOSPRayRendererNode::BackgroundMode BgMode;
 
   // OpenGL-based display
   vtkOpenGLQuadHelper* QuadHelper = nullptr;
@@ -95,13 +123,13 @@ public:
 
 int vtkOSPRayPass::RTDeviceRefCount = 0;
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOSPRayPassInternals);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkOSPRayPass);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayPass::vtkOSPRayPass()
 {
   this->SceneGraph = nullptr;
@@ -128,7 +156,7 @@ vtkOSPRayPass::vtkOSPRayPass()
   this->PreviousType = "none";
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOSPRayPass::~vtkOSPRayPass()
 {
   this->SetSceneGraph(nullptr);
@@ -167,7 +195,7 @@ vtkOSPRayPass::~vtkOSPRayPass()
   vtkOSPRayPass::RTShutdown();
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayPass::RTInit()
 {
   if (!vtkOSPRayPass::IsSupported())
@@ -181,7 +209,7 @@ void vtkOSPRayPass::RTInit()
   RTDeviceRefCount++;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayPass::RTShutdown()
 {
   if (!vtkOSPRayPass::IsSupported())
@@ -195,16 +223,16 @@ void vtkOSPRayPass::RTShutdown()
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayPass::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkOSPRayPass, SceneGraph, vtkOSPRayRendererNode);
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayPass::Render(const vtkRenderState* s)
 {
   if (!vtkOSPRayPass::IsSupported())
@@ -238,7 +266,7 @@ void vtkOSPRayPass::Render(const vtkRenderState* s)
   this->CameraPass->Render(s);
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOSPRayPass::RenderInternal(const vtkRenderState* s)
 {
   if (!vtkOSPRayPass::IsSupported())
@@ -305,9 +333,18 @@ void vtkOSPRayPass::RenderInternal(const vtkRenderState* s)
 
     vtkOpenGLRenderWindow* windowOpenGL = vtkOpenGLRenderWindow::SafeDownCast(rwin);
 
+    std::string renType = vtkOSPRayRendererNode::GetRendererType(ren);
+    int bgMode = vtkOSPRayRendererNode::GetBackgroundMode(ren);
+    if (this->Internal->QuadHelper &&
+      (this->Internal->RendererType != renType || this->Internal->BgMode != bgMode))
+    {
+      delete this->Internal->QuadHelper;
+      this->Internal->QuadHelper = nullptr;
+    }
+
     if (!this->Internal->QuadHelper)
     {
-      this->Internal->Init(windowOpenGL);
+      this->Internal->Init(windowOpenGL, renType, ren);
     }
     else
     {
@@ -337,13 +374,8 @@ void vtkOSPRayPass::RenderInternal(const vtkRenderState* s)
     else
     {
       // upload to the texture
-#ifdef VTKOSPRAY_ENABLE_DENOISER
       this->Internal->ColorTexture->Create2DFromRaw(
         viewportWidth, viewportHeight, 4, VTK_FLOAT, this->SceneGraph->GetBuffer());
-#else
-      this->Internal->ColorTexture->Create2DFromRaw(
-        viewportWidth, viewportHeight, 4, VTK_UNSIGNED_CHAR, this->SceneGraph->GetBuffer());
-#endif
       this->Internal->DepthTexture->CreateDepthFromRaw(viewportWidth, viewportHeight,
         vtkTextureObject::Float32, VTK_FLOAT, this->SceneGraph->GetZBuffer());
 
@@ -397,7 +429,7 @@ void vtkOSPRayPass::RenderInternal(const vtkRenderState* s)
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkOSPRayPass::IsSupported()
 {
   static bool detected = false;
@@ -449,7 +481,7 @@ bool vtkOSPRayPass::IsSupported()
   return is_supported;
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkOSPRayPass::IsBackendAvailable(const char* choice)
 {
   if (!vtkOSPRayPass::IsSupported())

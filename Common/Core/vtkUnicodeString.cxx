@@ -19,6 +19,9 @@
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkUnicodeString.h"
 
 #include "vtkObject.h"
@@ -113,10 +116,7 @@ private:
 
 vtkUnicodeString::vtkUnicodeString() = default;
 
-vtkUnicodeString::vtkUnicodeString(const vtkUnicodeString& rhs)
-  : Storage(rhs.Storage)
-{
-}
+vtkUnicodeString::vtkUnicodeString(const vtkUnicodeString&) = default;
 
 vtkUnicodeString::vtkUnicodeString(size_type count, value_type character)
 {

@@ -35,6 +35,7 @@ class VTKRENDERINGIMAGE_EXPORT vtkImageSliceCollection : public vtkPropCollectio
 public:
   static vtkImageSliceCollection* New();
   vtkTypeMacro(vtkImageSliceCollection, vtkPropCollection);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Sorts the vtkImageSliceCollection by layer number.  Smaller layer
@@ -70,7 +71,7 @@ public:
   vtkImageSlice* GetNextItem() { return this->GetNextImage(); }
 
 protected:
-  vtkImageSliceCollection() {}
+  vtkImageSliceCollection() = default;
   ~vtkImageSliceCollection() override;
 
   void DeleteElement(vtkCollectionElement*) override;

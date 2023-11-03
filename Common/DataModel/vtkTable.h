@@ -63,6 +63,7 @@ class VTKCOMMONDATAMODEL_EXPORT vtkTable : public vtkDataObject
 {
 public:
   static vtkTable* New();
+  static vtkTable* ExtendedNew();
   vtkTypeMacro(vtkTable, vtkDataObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -88,13 +89,13 @@ public:
    */
   unsigned long GetActualMemorySize() override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the main data (columns) of the table.
    */
   vtkGetObjectMacro(RowData, vtkDataSetAttributes);
   virtual void SetRowData(vtkDataSetAttributes* data);
-  //@}
+  ///@}
 
   //
   // Row functions
@@ -136,7 +137,7 @@ public:
    * Insert a row specified by a vtkVariantArray.  The number of entries in the array
    * should match the number of columns in the table.
    */
-  vtkIdType InsertNextRow(vtkVariantArray* arr);
+  vtkIdType InsertNextRow(vtkVariantArray* values);
 
   /**
    * Delete a row from the table.  Rows below the deleted row are shifted up.
@@ -212,21 +213,21 @@ public:
    */
   void Initialize() override;
 
-  //@{
+  ///@{
   /**
    * Retrieve the table from vtkInformation.
    */
   static vtkTable* GetData(vtkInformation* info);
   static vtkTable* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Shallow/deep copy the data from src into this object.
    */
   void ShallowCopy(vtkDataObject* src) override;
   void DeepCopy(vtkDataObject* src) override;
-  //@}
+  ///@}
 
   /**
    * Returns the attributes of the data object as a vtkFieldData.

@@ -49,18 +49,18 @@ public:
    */
   static vtkEdgeCenters* New();
 
-  //@{
+  ///@{
   /**
    * Enable/disable the generation of vertex cells.
    */
   vtkSetMacro(VertexCells, vtkTypeBool);
   vtkGetMacro(VertexCells, vtkTypeBool);
   vtkBooleanMacro(VertexCells, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkEdgeCenters();
-  ~vtkEdgeCenters() override {}
+  ~vtkEdgeCenters() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   int FillInputPortInformation(int port, vtkInformation* info) override;

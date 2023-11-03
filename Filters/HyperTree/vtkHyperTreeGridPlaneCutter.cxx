@@ -21,6 +21,8 @@
 #include "vtkCutter.h"
 #include "vtkDataObject.h"
 #include "vtkHyperTreeGrid.h"
+#include "vtkHyperTreeGridNonOrientedGeometryCursor.h"
+#include "vtkHyperTreeGridNonOrientedMooreSuperCursor.h"
 #include "vtkIdList.h"
 #include "vtkInformation.h"
 #include "vtkMath.h"
@@ -31,19 +33,20 @@
 #include "vtkPolyData.h"
 #include "vtkUnstructuredGrid.h"
 
-#include "vtkHyperTreeGridNonOrientedGeometryCursor.h"
-#include "vtkHyperTreeGridNonOrientedMooreSuperCursor.h"
-
 #include <cassert>
+#include <cmath>
 
+namespace
+{
 vtkIdType First8Integers[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
-static const unsigned int MooreCursors3D[26] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15,
-  16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 };
+constexpr unsigned int MooreCursors3D[26] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16,
+  17, 18, 19, 20, 21, 22, 23, 24, 25, 26 };
+}
 
 vtkStandardNewMacro(vtkHyperTreeGridPlaneCutter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHyperTreeGridPlaneCutter::vtkHyperTreeGridPlaneCutter()
 {
   this->Points = nullptr;
@@ -62,7 +65,7 @@ vtkHyperTreeGridPlaneCutter::vtkHyperTreeGridPlaneCutter()
   this->Leaves = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkHyperTreeGridPlaneCutter::~vtkHyperTreeGridPlaneCutter()
 {
   if (this->Points)
@@ -102,7 +105,7 @@ vtkHyperTreeGridPlaneCutter::~vtkHyperTreeGridPlaneCutter()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridPlaneCutter::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -170,14 +173,14 @@ void vtkHyperTreeGridPlaneCutter::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridPlaneCutter::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridPlaneCutter::Reset()
 {
   // Points and Cells are created in the constructor
@@ -209,7 +212,7 @@ void vtkHyperTreeGridPlaneCutter::Reset()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkHyperTreeGridPlaneCutter::ProcessTrees(vtkHyperTreeGrid* input, vtkDataObject* outputDO)
 {
   vtkPolyData* output = vtkPolyData::SafeDownCast(outputDO);
@@ -231,7 +234,7 @@ int vtkHyperTreeGridPlaneCutter::ProcessTrees(vtkHyperTreeGrid* input, vtkDataOb
   output->Initialize();
 
   // Retrieve input point data
-  this->InData = input->GetPointData();
+  this->InData = input->GetCellData();
 
   // Retrieve material mask
   this->InMask = input->HasMask() ? input->GetMask() : nullptr;
@@ -364,7 +367,7 @@ int vtkHyperTreeGridPlaneCutter::ProcessTrees(vtkHyperTreeGrid* input, vtkDataOb
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridPlaneCutter::RecursivelyProcessTreePrimal(
   vtkHyperTreeGridNonOrientedGeometryCursor* cursor)
 {
@@ -422,6 +425,8 @@ void vtkHyperTreeGridPlaneCutter::RecursivelyProcessTreePrimal(
     }
   }
 
+  const double SQRT_DBL_EPSILON = std::sqrt(VTK_DBL_EPSILON);
+
   // Check cell-plane intersection
   double functEval[8];
   if (this->CheckIntersection(cellCoords, functEval))
@@ -439,7 +444,7 @@ void vtkHyperTreeGridPlaneCutter::RecursivelyProcessTreePrimal(
       for (int i = 0; i < 8; ++i)
       {
         // Check all cell edges
-        if (functEval[i] == 0.0)
+        if (std::abs(functEval[i]) < SQRT_DBL_EPSILON)
         {
           // If current vertex is intersected then save it
           memcpy(points[n], cellCoords[i], 3 * sizeof(double));
@@ -448,17 +453,17 @@ void vtkHyperTreeGridPlaneCutter::RecursivelyProcessTreePrimal(
         else
         {
           // Check every edge of the current vertex.
-          if (!(i & 1) && functEval[i] * functEval[i + 1] <= 0)
+          if (!(i & 1) && functEval[i] * functEval[i + 1] < 0)
           {
             // Edge in X
             this->PlaneCut(i, i + 1, cellCoords, n, points);
           }
-          if (!(i & 2) && functEval[i] * functEval[i + 2] <= 0)
+          if (!(i & 2) && functEval[i] * functEval[i + 2] < 0)
           {
             // Edge in Y
             this->PlaneCut(i, i + 2, cellCoords, n, points);
           }
-          if (!(i & 4) && functEval[i] * functEval[i + 4] <= 0)
+          if (!(i & 4) && functEval[i] * functEval[i + 4] < 0)
           {
             // Edge in Z
             this->PlaneCut(i, i + 4, cellCoords, n, points);
@@ -498,7 +503,7 @@ void vtkHyperTreeGridPlaneCutter::RecursivelyProcessTreePrimal(
   }     // CheckIntersection
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHyperTreeGridPlaneCutter::RecursivelyPreProcessTree(
   vtkHyperTreeGridNonOrientedGeometryCursor* cursor)
 {
@@ -554,7 +559,7 @@ bool vtkHyperTreeGridPlaneCutter::RecursivelyPreProcessTree(
   return selected;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridPlaneCutter::RecursivelyProcessTreeDual(
   vtkHyperTreeGridNonOrientedMooreSuperCursor* cursor)
 {
@@ -705,7 +710,7 @@ void vtkHyperTreeGridPlaneCutter::RecursivelyProcessTreeDual(
   }     // else
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHyperTreeGridPlaneCutter::CheckIntersection(double cellCoords[8][3], double functEval[8])
 {
   // Iterate over cell vertices
@@ -731,7 +736,7 @@ bool vtkHyperTreeGridPlaneCutter::CheckIntersection(double cellCoords[8][3], dou
   return (i != 0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkHyperTreeGridPlaneCutter::CheckIntersection(double cellCoords[8][3])
 {
   // Evaluate plane equation at first corner
@@ -752,7 +757,7 @@ bool vtkHyperTreeGridPlaneCutter::CheckIntersection(double cellCoords[8][3])
   return !sameSign;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridPlaneCutter::SetPlane(double a, double b, double c, double d)
 {
   assert(!(a == 0 && b == 0 && c == 0) && "Plane's normal equals zero");
@@ -779,7 +784,7 @@ void vtkHyperTreeGridPlaneCutter::SetPlane(double a, double b, double c, double 
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridPlaneCutter::PlaneCut(
   int i, int j, double cellCoords[8][3], int& n, double point[][3])
 {
@@ -816,7 +821,7 @@ void vtkHyperTreeGridPlaneCutter::PlaneCut(
   ++n;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkHyperTreeGridPlaneCutter::ReorderCutPoints(int n, double points[][3])
 {
   // Iterate over all polygonal vertices but the last one

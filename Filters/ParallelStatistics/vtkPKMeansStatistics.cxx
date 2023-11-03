@@ -17,8 +17,8 @@
   Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
   the U.S. Government retains certain rights in this software.
   -------------------------------------------------------------------------*/
-#include "vtkToolkits.h"
 
+#include "vtkPKMeansStatistics.h"
 #include "vtkCommunicator.h"
 #include "vtkDoubleArray.h"
 #include "vtkIdTypeArray.h"
@@ -27,33 +27,32 @@
 #include "vtkKMeansStatistics.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkPKMeansStatistics.h"
 #include "vtkTable.h"
 #include "vtkVariantArray.h"
 
 vtkStandardNewMacro(vtkPKMeansStatistics);
 vtkCxxSetObjectMacro(vtkPKMeansStatistics, Controller, vtkMultiProcessController);
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPKMeansStatistics::vtkPKMeansStatistics()
 {
-  this->Controller = 0;
+  this->Controller = nullptr;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPKMeansStatistics::~vtkPKMeansStatistics()
 {
-  this->SetController(0);
+  this->SetController(nullptr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPKMeansStatistics::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "Controller: " << this->Controller << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPKMeansStatistics::GetTotalNumberOfObservations(vtkIdType numObservations)
 {
   int np = this->Controller->GetNumberOfProcesses();
@@ -74,7 +73,7 @@ vtkIdType vtkPKMeansStatistics::GetTotalNumberOfObservations(vtkIdType numObserv
   return totalNumObservations;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPKMeansStatistics::UpdateClusterCenters(vtkTable* newClusterElements,
   vtkTable* curClusterElements, vtkIdTypeArray* numMembershipChanges,
   vtkIdTypeArray* numDataElementsInCluster, vtkDoubleArray* error, vtkIdTypeArray* startRunID,
@@ -186,7 +185,7 @@ void vtkPKMeansStatistics::UpdateClusterCenters(vtkTable* newClusterElements,
   allNewClusterElements->Delete();
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPKMeansStatistics::CreateInitialClusterCenters(vtkIdType numToAllocate,
   vtkIdTypeArray* numberOfClusters, vtkTable* inData, vtkTable* curClusterElements,
   vtkTable* newClusterElements)

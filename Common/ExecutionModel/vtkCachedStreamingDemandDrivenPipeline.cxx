@@ -27,7 +27,7 @@
 
 vtkStandardNewMacro(vtkCachedStreamingDemandDrivenPipeline);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCachedStreamingDemandDrivenPipeline ::vtkCachedStreamingDemandDrivenPipeline()
 {
   this->CacheSize = 0;
@@ -37,13 +37,13 @@ vtkCachedStreamingDemandDrivenPipeline ::vtkCachedStreamingDemandDrivenPipeline(
   this->SetCacheSize(10);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCachedStreamingDemandDrivenPipeline ::~vtkCachedStreamingDemandDrivenPipeline()
 {
   this->SetCacheSize(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCachedStreamingDemandDrivenPipeline::SetCacheSize(int size)
 {
   int idx;
@@ -85,14 +85,14 @@ void vtkCachedStreamingDemandDrivenPipeline::SetCacheSize(int size)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCachedStreamingDemandDrivenPipeline ::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "CacheSize: " << this->CacheSize << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCachedStreamingDemandDrivenPipeline ::NeedToExecuteData(
   int outputPort, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {
@@ -105,6 +105,7 @@ int vtkCachedStreamingDemandDrivenPipeline ::NeedToExecuteData(
 
   // Does the superclass want to execute? We must skip our direct superclass
   // because it looks at update extents but does not know about the cache
+  // NOLINTNEXTLINE(bugprone-parent-virtual-call)
   if (this->vtkDemandDrivenPipeline::NeedToExecuteData(outputPort, inInfoVec, outInfoVec))
   {
     return 1;
@@ -208,7 +209,7 @@ int vtkCachedStreamingDemandDrivenPipeline ::NeedToExecuteData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkCachedStreamingDemandDrivenPipeline ::ExecuteData(
   vtkInformation* request, vtkInformationVector** inInfoVec, vtkInformationVector* outInfoVec)
 {

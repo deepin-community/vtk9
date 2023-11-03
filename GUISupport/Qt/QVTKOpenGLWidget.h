@@ -28,9 +28,9 @@
 #define QVTKOpenGLWidget_h
 
 #include "QVTKOpenGLStereoWidget.h"
+#include "vtkDeprecation.h" // for VTK_DEPRECATED_IN_9_0_0
 
-#ifndef VTK_LEGACY_REMOVE
-typedef QVTKOpenGLStereoWidget VTK_LEGACY(QVTKOpenGLWidget);
-#endif
+VTK_DEPRECATED_IN_9_0_0("Renamed to QVTKOpenGLStereoWidget")
+typedef QVTKOpenGLStereoWidget QVTKOpenGLWidget;
 
 #endif

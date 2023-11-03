@@ -78,16 +78,16 @@ public:
    */
   void SetInput(vtkPolyData* input);
 
-  //@{
+  ///@{
   /**
    * Set/get the tolerance usued for the locator.
    * Default is 0.01.
    */
   vtkGetMacro(Tolerance, double);
   vtkSetMacro(Tolerance, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the norm to use:
    * L0: 0 when the projection is inside the input polygon, 1 otherwise
@@ -101,16 +101,16 @@ public:
   }
 #ifndef __VTK_WRAP_JAVA__
   // The Java wrappers cannot resolve this signature from the one above,
-  // see https://gitlab.kitware.com/vtk/vtk/issues/17744
+  // see https://gitlab.kitware.com/vtk/vtk/-/issues/17744
   void SetNorm(int n)
   {
     Norm = static_cast<NormType>(n);
     Modified();
   }
 #endif
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get the Locator used by to compute the distance.
    * A vtkStaticCellLocator is provided by default if
@@ -118,7 +118,7 @@ public:
    */
   vtkGetSmartPointerMacro(Locator, vtkAbstractCellLocator);
   vtkSetSmartPointerMacro(Locator, vtkAbstractCellLocator);
-  //@}
+  ///@}
 
 protected:
   vtkImplicitProjectOnPlaneDistance();

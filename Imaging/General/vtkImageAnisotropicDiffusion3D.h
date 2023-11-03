@@ -59,14 +59,14 @@ public:
    */
   void SetNumberOfIterations(int num);
 
-  //@{
+  ///@{
   /**
    * Get the number of iterations.
    */
   vtkGetMacro(NumberOfIterations, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the difference threshold that stops diffusion.
    * when the difference between two pixel is greater than this threshold,
@@ -76,17 +76,17 @@ public:
    */
   vtkSetMacro(DiffusionThreshold, double);
   vtkGetMacro(DiffusionThreshold, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the difference factor
    */
   vtkSetMacro(DiffusionFactor, double);
   vtkGetMacro(DiffusionFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Choose neighbors to diffuse (6 faces, 12 edges, 8 corners).
    */
@@ -99,20 +99,20 @@ public:
   vtkSetMacro(Corners, vtkTypeBool);
   vtkGetMacro(Corners, vtkTypeBool);
   vtkBooleanMacro(Corners, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Switch between gradient magnitude threshold and pixel gradient threshold.
    */
   vtkSetMacro(GradientMagnitudeThreshold, vtkTypeBool);
   vtkGetMacro(GradientMagnitudeThreshold, vtkTypeBool);
   vtkBooleanMacro(GradientMagnitudeThreshold, vtkTypeBool);
-  //@}
+  ///@}
 
 protected:
   vtkImageAnisotropicDiffusion3D();
-  ~vtkImageAnisotropicDiffusion3D() override {}
+  ~vtkImageAnisotropicDiffusion3D() override = default;
 
   int NumberOfIterations;
   double DiffusionThreshold;
@@ -126,8 +126,8 @@ protected:
 
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector, vtkImageData*** inData, vtkImageData** outData,
-    int extent[6], int id) override;
-  void Iterate(vtkImageData* in, vtkImageData* out, double ar0, double ar1, double ar3,
+    int outExt[6], int id) override;
+  void Iterate(vtkImageData* in, vtkImageData* out, double ar0, double ar1, double ar2,
     int* coreExtent, int count);
 
 private:

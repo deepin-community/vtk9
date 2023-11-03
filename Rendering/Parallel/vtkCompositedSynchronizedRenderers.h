@@ -14,8 +14,7 @@
 =========================================================================*/
 /**
  * @class   vtkCompositedSynchronizedRenderers
- *
- * vtkCompositedSynchronizedRenderers is vtkSynchronizedRenderers that uses
+ * @brief   vtkCompositedSynchronizedRenderers is vtkSynchronizedRenderers that uses
  * vtkCompositer to composite the images on the root node.
  */
 
@@ -36,13 +35,13 @@ public:
   vtkTypeMacro(vtkCompositedSynchronizedRenderers, vtkSynchronizedRenderers);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the composite. vtkTreeCompositer is used by default.
    */
   void SetCompositer(vtkCompositer*);
   vtkGetObjectMacro(Compositer, vtkCompositer);
-  //@}
+  ///@}
 
 protected:
   vtkCompositedSynchronizedRenderers();

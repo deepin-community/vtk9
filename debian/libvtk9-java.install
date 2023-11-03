@@ -1,4 +1,4 @@
-usr/bin/vtkParseJava-9.0                    usr/bin
-usr/bin/vtkWrapJava-9.0                     usr/bin
+usr/bin/vtkParseJava-9.1                    usr/bin
+usr/bin/vtkWrapJava-9.1                     usr/bin
 usr/lib/*/java/vtk9.jar                     usr/share/java
 usr/lib/*/java/vtk-L*

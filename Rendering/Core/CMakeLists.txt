@@ -5,6 +5,7 @@ configure_file(
   "${CMAKE_CURRENT_BINARY_DIR}/vtkTDxConfigure.h")
 
 set(classes
+  vtkAbstractHyperTreeGridMapper
   vtkAbstractMapper
   vtkAbstractMapper3D
   vtkAbstractPicker
@@ -89,6 +90,7 @@ set(classes
   vtkRendererCollection
   vtkRendererDelegate
   vtkRendererSource
+  vtkResizingWindowToImageFilter
   vtkSelectVisiblePoints
   vtkShaderProperty
   vtkSkybox
@@ -170,6 +172,7 @@ set(headers
   vtkPythagoreanQuadruples.h
   vtkRayCastStructures.h
   vtkRenderingCoreEnums.h
+  vtkStateStorage.h
   "${CMAKE_CURRENT_BINARY_DIR}/vtkTDxConfigure.h"
   vtkTDxMotionEventInfo.h)
 

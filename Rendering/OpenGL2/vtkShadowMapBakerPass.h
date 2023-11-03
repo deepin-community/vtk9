@@ -73,7 +73,7 @@ public:
    */
   void ReleaseGraphicsResources(vtkWindow* w) override;
 
-  //@{
+  ///@{
   /**
    * Delegate for rendering the camera, lights, and opaque geometry.
    * If it is NULL, nothing will be rendered and a warning will be emitted.
@@ -82,9 +82,9 @@ public:
    */
   vtkGetObjectMacro(OpaqueSequence, vtkRenderPass);
   virtual void SetOpaqueSequence(vtkRenderPass* opaqueSequence);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Delegate for compositing of the shadow maps across processors.
    * If it is NULL, there is no z compositing.
@@ -93,9 +93,9 @@ public:
    */
   vtkGetObjectMacro(CompositeZPass, vtkRenderPass);
   virtual void SetCompositeZPass(vtkRenderPass* compositeZPass);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of pixels in each dimension of the shadow maps
    * (shadow maps are square). Initial value is 256. The greater the better.
@@ -103,7 +103,7 @@ public:
    */
   vtkSetMacro(Resolution, unsigned int);
   vtkGetMacro(Resolution, unsigned int);
-  //@}
+  ///@}
 
   /**
    * INTERNAL USE ONLY.
@@ -131,7 +131,7 @@ public:
 
    * Give access to the baked shadow maps.
    */
-  std::vector<vtkSmartPointer<vtkTextureObject> >* GetShadowMaps();
+  std::vector<vtkSmartPointer<vtkTextureObject>>* GetShadowMaps();
 
   /**
    * INTERNAL USE ONLY.
@@ -139,7 +139,7 @@ public:
 
    * Give access the cameras builds from the ligths.
    */
-  std::vector<vtkSmartPointer<vtkCamera> >* GetLightCameras();
+  std::vector<vtkSmartPointer<vtkCamera>>* GetLightCameras();
 
   /**
    * INTERNAL USE ONLY.
@@ -219,8 +219,8 @@ protected:
    */
   vtkOpenGLFramebufferObject* FrameBufferObject;
 
-  std::vector<vtkSmartPointer<vtkTextureObject> >* ShadowMaps;
-  std::vector<vtkSmartPointer<vtkCamera> >* LightCameras;
+  std::vector<vtkSmartPointer<vtkTextureObject>>* ShadowMaps;
+  std::vector<vtkSmartPointer<vtkCamera>>* LightCameras;
 
   vtkTimeStamp LastRenderTime;
   bool NeedUpdate;

@@ -18,8 +18,6 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
-#include "vtkToolkits.h"
-
 #include "vtkStatisticsAlgorithm.h"
 
 #include "vtkDataObjectCollection.h"
@@ -39,7 +37,7 @@
 
 vtkCxxSetObjectMacro(vtkStatisticsAlgorithm, AssessNames, vtkStringArray);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStatisticsAlgorithm::vtkStatisticsAlgorithm()
 {
   this->SetNumberOfInputPorts(3);
@@ -56,14 +54,14 @@ vtkStatisticsAlgorithm::vtkStatisticsAlgorithm()
   this->Internals = new vtkStatisticsAlgorithmPrivate;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStatisticsAlgorithm::~vtkStatisticsAlgorithm()
 {
   this->SetAssessNames(nullptr);
   delete this->Internals;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStatisticsAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -79,7 +77,7 @@ void vtkStatisticsAlgorithm::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Internals: " << this->Internals << endl;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStatisticsAlgorithm::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (port == INPUT_DATA)
@@ -104,7 +102,7 @@ int vtkStatisticsAlgorithm::FillInputPortInformation(int port, vtkInformation* i
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStatisticsAlgorithm::FillOutputPortInformation(int port, vtkInformation* info)
 {
   if (port == OUTPUT_DATA)
@@ -126,43 +124,43 @@ int vtkStatisticsAlgorithm::FillOutputPortInformation(int port, vtkInformation* 
   return 0;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStatisticsAlgorithm::SetColumnStatus(const char* namCol, int status)
 {
   this->Internals->SetBufferColumnStatus(namCol, status);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStatisticsAlgorithm::ResetAllColumnStates()
 {
   this->Internals->ResetBuffer();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStatisticsAlgorithm::RequestSelectedColumns()
 {
   return this->Internals->AddBufferToRequests();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStatisticsAlgorithm::ResetRequests()
 {
   this->Internals->ResetRequests();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkStatisticsAlgorithm::GetNumberOfRequests()
 {
   return this->Internals->GetNumberOfRequests();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkStatisticsAlgorithm::GetNumberOfColumnsForRequest(vtkIdType request)
 {
   return this->Internals->GetNumberOfColumnsForRequest(request);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkStatisticsAlgorithm::GetColumnForRequest(vtkIdType r, vtkIdType c)
 {
   static vtkStdString columnName;
@@ -173,13 +171,13 @@ const char* vtkStatisticsAlgorithm::GetColumnForRequest(vtkIdType r, vtkIdType c
   return nullptr;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStatisticsAlgorithm::GetColumnForRequest(vtkIdType r, vtkIdType c, vtkStdString& columnName)
 {
   return this->Internals->GetColumnForRequest(r, c, columnName) ? 1 : 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStatisticsAlgorithm::AddColumn(const char* namCol)
 {
   if (this->Internals->AddColumnToRequests(namCol))
@@ -188,7 +186,7 @@ void vtkStatisticsAlgorithm::AddColumn(const char* namCol)
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStatisticsAlgorithm::AddColumnPair(const char* namColX, const char* namColY)
 {
   if (this->Internals->AddColumnPairToRequests(namColX, namColY))
@@ -197,14 +195,14 @@ void vtkStatisticsAlgorithm::AddColumnPair(const char* namColX, const char* namC
   }
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkStatisticsAlgorithm::SetParameter(
   const char* vtkNotUsed(parameter), int vtkNotUsed(index), vtkVariant vtkNotUsed(value))
 {
   return false;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkStatisticsAlgorithm::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -283,7 +281,7 @@ int vtkStatisticsAlgorithm::RequestData(
   return 1;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkStatisticsAlgorithm::Assess(
   vtkTable* inData, vtkMultiBlockDataSet* inMeta, vtkTable* outData, int numVariables)
 {
@@ -298,7 +296,7 @@ void vtkStatisticsAlgorithm::Assess(
   }
 
   // Loop over requests
-  for (std::set<std::set<vtkStdString> >::const_iterator rit = this->Internals->Requests.begin();
+  for (std::set<std::set<vtkStdString>>::const_iterator rit = this->Internals->Requests.begin();
        rit != this->Internals->Requests.end(); ++rit)
   {
     // Storage for variable names of the request (smart pointer because of several exit points)

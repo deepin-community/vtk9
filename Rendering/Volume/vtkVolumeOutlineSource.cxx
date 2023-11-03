@@ -36,7 +36,7 @@ vtkStandardNewMacro(vtkVolumeOutlineSource);
 
 vtkCxxSetObjectMacro(vtkVolumeOutlineSource, VolumeMapper, vtkVolumeMapper);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVolumeOutlineSource::vtkVolumeOutlineSource()
 {
   this->VolumeMapper = nullptr;
@@ -56,7 +56,7 @@ vtkVolumeOutlineSource::vtkVolumeOutlineSource()
   this->SetNumberOfInputPorts(0);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVolumeOutlineSource::~vtkVolumeOutlineSource()
 {
   if (this->VolumeMapper)
@@ -66,7 +66,7 @@ vtkVolumeOutlineSource::~vtkVolumeOutlineSource()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumeOutlineSource::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -96,7 +96,7 @@ void vtkVolumeOutlineSource::PrintSelf(ostream& os, vtkIndent indent)
      << this->ActivePlaneColor[1] << ", " << this->ActivePlaneColor[2] << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVolumeOutlineSource::ComputeCubePlanes(
   double planes[3][4], double croppingPlanes[6], double bounds[6])
 {
@@ -149,7 +149,7 @@ int vtkVolumeOutlineSource::ComputeCubePlanes(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVolumeOutlineSource::ComputePipelineMTime(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector),
   int vtkNotUsed(requestFromOutputPort), vtkMTimeType* mtime)
@@ -182,7 +182,7 @@ int vtkVolumeOutlineSource::ComputePipelineMTime(vtkInformation* vtkNotUsed(requ
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVolumeOutlineSource::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* vtkNotUsed(outputVector))
 {
@@ -256,7 +256,7 @@ int vtkVolumeOutlineSource::RequestInformation(vtkInformation* vtkNotUsed(reques
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkVolumeOutlineSource::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -295,7 +295,7 @@ int vtkVolumeOutlineSource::RequestData(vtkInformation* vtkNotUsed(request),
   // Create an array to nudge crop planes over to the bounds if they are
   // within tolerance of the bounds
   int tolPtId[3][4];
-  this->NudgeCropPlanesToBounds(tolPtId, planes, tol);
+  vtkVolumeOutlineSource::NudgeCropPlanesToBounds(tolPtId, planes, tol);
 
   // The all-important cropping flags
   int flags = this->CroppingRegionFlags;
@@ -309,7 +309,7 @@ int vtkVolumeOutlineSource::RequestData(vtkInformation* vtkNotUsed(request),
 
   // Convert the colors to unsigned char for scalars
   unsigned char colors[2][3];
-  this->CreateColorValues(colors, this->Color, this->ActivePlaneColor);
+  vtkVolumeOutlineSource::CreateColorValues(colors, this->Color, this->ActivePlaneColor);
 
   // Create the scalars used to color the lines
   vtkUnsignedCharArray* scalars = nullptr;
@@ -326,7 +326,7 @@ int vtkVolumeOutlineSource::RequestData(vtkInformation* vtkNotUsed(request),
   if (this->GenerateOutline)
   {
     lines = vtkCellArray::New();
-    this->GenerateLines(lines, scalars, colors, activePlane, flags, tolPtId);
+    vtkVolumeOutlineSource::GenerateLines(lines, scalars, colors, activePlane, flags, tolPtId);
   }
 
   // Generate the polys for the outline
@@ -335,12 +335,12 @@ int vtkVolumeOutlineSource::RequestData(vtkInformation* vtkNotUsed(request),
   if (this->GenerateFaces)
   {
     polys = vtkCellArray::New();
-    this->GeneratePolys(polys, scalars, colors, activePlane, flags, tolPtId);
+    vtkVolumeOutlineSource::GeneratePolys(polys, scalars, colors, activePlane, flags, tolPtId);
   }
 
   // Generate the points that are used by the lines.
   vtkPoints* points = vtkPoints::New();
-  this->GeneratePoints(points, lines, polys, planes, tol);
+  vtkVolumeOutlineSource::GeneratePoints(points, lines, polys, planes, tol);
 
   output->SetPoints(points);
   points->Delete();
@@ -366,7 +366,7 @@ int vtkVolumeOutlineSource::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumeOutlineSource::GeneratePolys(vtkCellArray* polys, vtkUnsignedCharArray* scalars,
   unsigned char colors[2][3], int activePlane, int flags, int tolPtId[3][4])
 {
@@ -490,7 +490,7 @@ void vtkVolumeOutlineSource::GeneratePolys(vtkCellArray* polys, vtkUnsignedCharA
   }       // loop over dim0
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumeOutlineSource::GenerateLines(vtkCellArray* lines, vtkUnsignedCharArray* scalars,
   unsigned char colors[2][3], int activePlane, int flags, int tolPtId[3][4])
 {
@@ -622,7 +622,7 @@ void vtkVolumeOutlineSource::GenerateLines(vtkCellArray* lines, vtkUnsignedCharA
   }       // loop over dim0
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumeOutlineSource::GeneratePoints(
   vtkPoints* points, vtkCellArray* lines, vtkCellArray* polys, double planes[3][4], double tol)
 {
@@ -721,7 +721,7 @@ void vtkVolumeOutlineSource::GeneratePoints(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumeOutlineSource::NudgeCropPlanesToBounds(
   int tolPtId[3][4], double planes[3][4], double tol)
 {
@@ -742,7 +742,7 @@ void vtkVolumeOutlineSource::NudgeCropPlanesToBounds(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumeOutlineSource::CreateColorValues(
   unsigned char colors[2][3], double color1[3], double color2[3])
 {

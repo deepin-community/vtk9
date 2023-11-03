@@ -31,9 +31,6 @@
  *    double * x, double * f);
  * to define how the integration works.
  *
- * Inherited classes could reimplement InitializeVariablesParticleData and
- * InsertVariablesParticleData to add new UserVariables to integrate with.
- *
  * Inherited classes could reimplement InteractWithSurface or other surface interaction methods
  * to change the way particles interact with surfaces.
  *
@@ -122,7 +119,7 @@ public:
    */
   int FunctionValues(double* x, double* f, void* userData) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the locator used to locate cells in the datasets.
    * Only the locator class matter here, as it is used only to
@@ -131,22 +128,22 @@ public:
    */
   virtual void SetLocator(vtkAbstractCellLocator* locator);
   vtkGetObjectMacro(Locator, vtkAbstractCellLocator);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the state of the current locators
    */
   vtkGetMacro(LocatorsBuilt, bool);
   vtkSetMacro(LocatorsBuilt, bool);
-  //@}
+  ///@}
 
   /**
    * Set the parent tracker.
    */
   virtual void SetTracker(vtkLagrangianParticleTracker* Tracker);
 
-  //@{
+  ///@{
   /**
    * Add a dataset to locate cells in
    * This create a specific locator for the provided dataset
@@ -159,23 +156,30 @@ public:
   virtual void AddDataSet(
     vtkDataSet* dataset, bool surface = false, unsigned int surfaceFlatIndex = 0);
   virtual void ClearDataSets(bool surface = false);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the Use of initial integration input array to process
    */
   vtkSetMacro(UseInitialIntegrationTime, bool);
   vtkGetMacro(UseInitialIntegrationTime, bool);
   vtkBooleanMacro(UseInitialIntegrationTime, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the tolerance to use with this model.
    */
   vtkGetMacro(Tolerance, double);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Get the specific tolerance to use with the locators.
+   */
+  vtkGetMacro(LocatorTolerance, double);
+  ///@}
 
   /**
    * Interact the current particle with a surfaces
@@ -218,7 +222,7 @@ public:
   virtual bool FindInLocators(double* x, vtkLagrangianParticle* particle, vtkDataSet*& dataset,
     vtkIdType& cellId, vtkAbstractCellLocator*& loc, double*& weights);
 
-  //@{
+  ///@{
   /**
    * Convienience methods to call FindInLocators with less arguments
    * THESE METHODS ARE NOT THREAD-SAFE
@@ -226,7 +230,7 @@ public:
   virtual bool FindInLocators(
     double* x, vtkLagrangianParticle* particle, vtkDataSet*& dataset, vtkIdType& cellId);
   virtual bool FindInLocators(double* x, vtkLagrangianParticle* particle);
-  //@}
+  ///@}
 
   /**
    * Initialize a particle by setting user variables and perform any user
@@ -260,14 +264,14 @@ public:
     return false;
   }
 
-  //@{
+  ///@{
   /**
    * Set/Get Non Planar Quad Support
    */
   vtkSetMacro(NonPlanarQuadSupport, bool);
   vtkGetMacro(NonPlanarQuadSupport, bool);
   vtkBooleanMacro(NonPlanarQuadSupport, bool);
-  //@}
+  ///@}
 
   /**
    * Get the seed arrays expected name
@@ -317,13 +321,13 @@ public:
    */
   virtual vtkIntArray* GetSurfaceArrayComps();
 
-  //@{
+  ///@{
   /**
    * Get the maximum weights size necessary for calling
    * FindInLocators with weights
    */
   virtual int GetWeightsSize();
-  //@}
+  ///@}
 
   /**
    * Let the model define it's own way to integrate
@@ -364,13 +368,13 @@ public:
    * Let the model allocate and initialize a threaded data.
    * This method is thread-safe, its reimplementation should still be thread-safe.
    */
-  virtual void InitializeThreadedData(vtkLagrangianThreadedData* vtkNotUsed(data)) {}
+  virtual vtkLagrangianThreadedData* InitializeThreadedData();
 
   /**
    * Let the model finalize and deallocate a user data at thread level
    * This method is called serially for each thread and does not require to be thread safe.
    */
-  virtual void FinalizeThreadedData(vtkLagrangianThreadedData* vtkNotUsed(data)) {}
+  virtual void FinalizeThreadedData(vtkLagrangianThreadedData*& data);
 
   /**
    * Enable model post process on output
@@ -382,6 +386,11 @@ public:
   {
     return true;
   }
+
+  /**
+   * Allow for model setup prior to Particle Initalization
+   */
+  virtual void PreParticleInitalization() {}
 
   /**
    * Enable model to modify particle before integration
@@ -462,6 +471,15 @@ public:
    * This can be called with not fully initialized particle.
    */
   virtual void ParticleAboutToBeDeleted(vtkLagrangianParticle* vtkNotUsed(particle)) {}
+
+  /**
+   * Method to be reimplemented if needed in inherited classes.
+   * Allows a inherited class to add surface interaction data from the model
+   */
+  virtual void InsertSurfaceInteractionData(
+    vtkLagrangianParticle* vtkNotUsed(particle), vtkPointData* vtkNotUsed(particleData))
+  {
+  }
 
 protected:
   vtkLagrangianBasicIntegrationModel();
@@ -594,7 +612,7 @@ protected:
   bool LocatorsBuilt;
   vtkLocatorsType* Locators;
   vtkDataSetsType* DataSets;
-  std::vector<double> SharedWeights;
+  int WeightsSize = 0;
 
   struct ArrayVal
   {
@@ -607,7 +625,7 @@ protected:
   {
     int nComp;
     int type;
-    std::vector<std::pair<int, std::string> > enumValues;
+    std::vector<std::pair<int, std::string>> enumValues;
   } SurfaceArrayDescription;
   std::map<std::string, SurfaceArrayDescription> SurfaceArrayDescriptions;
 
@@ -615,6 +633,7 @@ protected:
   vtkLocatorsType* SurfaceLocators;
 
   double Tolerance;
+  double LocatorTolerance = 0.001;
   bool NonPlanarQuadSupport;
   bool UseInitialIntegrationTime;
   int NumberOfTrackedUserData = 0;

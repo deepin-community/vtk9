@@ -54,7 +54,7 @@
 
 vtkStandardNewMacro(vtkPDALReader);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPDALReader::vtkPDALReader()
 {
   this->FileName = nullptr;
@@ -63,16 +63,13 @@ vtkPDALReader::vtkPDALReader()
   this->SetNumberOfOutputPorts(1);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPDALReader::~vtkPDALReader()
 {
-  if (this->FileName)
-  {
-    delete[] this->FileName;
-  }
+  delete[] this->FileName;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPDALReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(request), vtkInformationVector* outputVector)
 {
@@ -85,7 +82,7 @@ int vtkPDALReader::RequestData(vtkInformation* vtkNotUsed(request),
     vtkPolyData* output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
     pdal::StageFactory factory;
-    std::string driverName = factory.inferReaderDriver(this->FileName);
+    std::string driverName = pdal::StageFactory::inferReaderDriver(this->FileName);
     if (driverName.empty())
     {
       vtkErrorMacro("Cannot infer the reader driver for " << this->FileName);
@@ -124,7 +121,7 @@ int vtkPDALReader::RequestData(vtkInformation* vtkNotUsed(request),
   return 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDALReader::ReadPointRecordData(pdal::Stage& reader, vtkPolyData* pointsPolyData)
 {
   vtkNew<vtkPoints> points;
@@ -396,7 +393,7 @@ void vtkPDALReader::ReadPointRecordData(pdal::Stage& reader, vtkPolyData* points
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPDALReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);

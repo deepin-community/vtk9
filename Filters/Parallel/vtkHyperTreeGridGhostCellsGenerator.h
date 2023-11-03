@@ -39,9 +39,9 @@
 #include <vector> // For vtkHypertreeGridGhostCellsGenerator::ExtractInterface
 
 class vtkBitArray;
+class vtkCellData;
 class vtkHyperTreeGrid;
 class vtkHyperTreeGridNonOrientedCursor;
-class vtkPointData;
 
 class VTKFILTERSPARALLEL_EXPORT vtkHyperTreeGridGhostCellsGenerator
   : public vtkHyperTreeGridAlgorithm
@@ -49,7 +49,7 @@ class VTKFILTERSPARALLEL_EXPORT vtkHyperTreeGridGhostCellsGenerator
 public:
   static vtkHyperTreeGridGhostCellsGenerator* New();
   vtkTypeMacro(vtkHyperTreeGridGhostCellsGenerator, vtkHyperTreeGridAlgorithm);
-  void PrintSelf(ostream&, vtkIndent) override;
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkHyperTreeGridGhostCellsGenerator();
@@ -71,8 +71,8 @@ protected:
    * Copies the input to the output, filling memory gaps if present.
    */
   void CopyInputTreeToOutput(vtkHyperTreeGridNonOrientedCursor* inCursor,
-    vtkHyperTreeGridNonOrientedCursor* outCursor, vtkPointData* inPointData,
-    vtkPointData* outPointData, vtkBitArray* inMask, vtkBitArray* outMask);
+    vtkHyperTreeGridNonOrientedCursor* outCursor, vtkCellData* inCellData, vtkCellData* outCellData,
+    vtkBitArray* inMask, vtkBitArray* outMask);
 
   /**
    * Reads the input interface with neighbor processes.

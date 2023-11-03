@@ -14,9 +14,7 @@
 =========================================================================*/
 /**
  * @class   vtkAMRFlashReaderInternal
- *
- *
- *  Consists of the low-level Flash Reader used by the vtkAMRFlashReader.
+ * @brief   Consists of the low-level Flash Reader used by the vtkAMRFlashReader.
  *
  * @sa
  *  vtkAMRFlashReader
@@ -168,7 +166,7 @@ public:
   double GetTime();
 
   void Init();
-  void SetFileName(char* fileName) { this->FileName = fileName; }
+  void SetFileName(VTK_FILEPATH char* fileName) { this->FileName = fileName; }
   const char* GetParticleName(char* variableName)
   {
     static std::string particleName;

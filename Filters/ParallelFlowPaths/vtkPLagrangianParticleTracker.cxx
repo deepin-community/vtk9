@@ -38,16 +38,8 @@
 #define LAGRANGIAN_PARTICLE_TAG 621
 #define LAGRANGIAN_RANG_FLAG_TAG 622
 #define LAGRANGIAN_ARRAY_TAG 623
-
-namespace
-{
-enum CommunicationFlag
-{
-  VTK_PLAGRANGIAN_WORKING_FLAG = 0,
-  VTK_PLAGRANGIAN_EMPTY_FLAG = 1,
-  VTK_PLAGRANGIAN_FINISHED_FLAG = 2
-};
-}
+#define LAGRANGIAN_PARTICLE_ID_TAG 624
+#define LAGRANGIAN_PARTICLE_CONTROL_TAG 625
 
 // Class used to serialize and stream a particle
 class MessageStream
@@ -61,7 +53,7 @@ public:
     this->count = 0;
   }
 
-  ~MessageStream() {}
+  ~MessageStream() = default;
 
   int GetSize() { return this->Size; }
 
@@ -113,7 +105,6 @@ public:
     // Initialize Members
     this->Controller = controller;
     this->SeedData = seedData;
-    this->WeightsSize = model->GetWeightsSize();
 
     // Gather bounds and initialize requests
     std::vector<double> allBounds(6 * this->Controller->GetNumberOfProcesses(), 0);
@@ -129,10 +120,10 @@ public:
 
     // Compute StreamSize for one particle
     // This is strongly linked to Send and Receive code
-    this->StreamSize = sizeof(int) * 2 + sizeof(double) * 2 + 4 * sizeof(vtkIdType) + sizeof(int) +
-      2 * sizeof(double) +
-      3 * sizeof(double) *
-        (model->GetNumberOfIndependentVariables() + model->GetNumberOfTrackedUserData());
+    this->StreamSize = 2 * sizeof(int) + 2 * sizeof(double) + 4 * sizeof(vtkIdType) + sizeof(int) +
+      2 * sizeof(bool) +
+      3 * (model->GetNumberOfIndependentVariables() + model->GetNumberOfTrackedUserData()) *
+        sizeof(double);
     for (int i = 0; i < seedData->GetNumberOfArrays(); i++)
     {
       vtkDataArray* array = seedData->GetArray(i);
@@ -141,6 +132,8 @@ public:
 
     // Initialize Streams
     this->ReceiveStream = new MessageStream(this->StreamSize);
+
+    this->SendCounter = 0;
   }
 
   ~ParticleStreamManager()
@@ -221,24 +214,25 @@ public:
       if (particle->GetPManualShift() || this->Boxes[i].ContainsPoint(particle->GetPosition()))
       {
         ++sendStream->count; // increment counter on message
-        this->SendRequests.push_back(std::make_pair(new vtkMPICommunicator::Request, sendStream));
+        this->SendRequests.emplace_back(new vtkMPICommunicator::Request, sendStream);
         this->Controller->NoBlockSend(sendStream->GetRawData(), this->StreamSize, i,
           LAGRANGIAN_PARTICLE_TAG, *this->SendRequests.back().first);
+        ++this->SendCounter;
       }
     }
   }
 
   // Method to receive and deserialize a particle from any other rank
-  bool ReceiveParticleIfAny(vtkLagrangianParticle*& particle)
+  bool ReceiveParticleIfAny(vtkLagrangianParticle*& particle, int& source)
   {
-    int probe, source;
+    int probe;
     if (this->Controller->Iprobe(
           vtkMultiProcessController::ANY_SOURCE, LAGRANGIAN_PARTICLE_TAG, &probe, &source) &&
       probe)
     {
       this->ReceiveStream->Reset();
-      this->Controller->Receive(this->ReceiveStream->GetRawData(), this->StreamSize,
-        vtkMultiProcessController::ANY_SOURCE, LAGRANGIAN_PARTICLE_TAG);
+      this->Controller->Receive(
+        this->ReceiveStream->GetRawData(), this->StreamSize, source, LAGRANGIAN_PARTICLE_TAG);
       // Deserialize particle
       // This is strongly linked to Constructor and Send method
       int nVar, userFlag, nTrackedUserData;
@@ -259,8 +253,8 @@ public:
 
       // Create a particle with out of range seedData
       particle = vtkLagrangianParticle::NewInstance(nVar, seedId, particleId,
-        this->SeedData->GetNumberOfTuples(), iTime, this->SeedData, this->WeightsSize,
-        nTrackedUserData, nSteps, prevITime);
+        this->SeedData->GetNumberOfTuples(), iTime, this->SeedData, nTrackedUserData, nSteps,
+        prevITime);
       particle->SetParentId(parentId);
       particle->SetUserFlag(userFlag);
       particle->SetPInsertPreviousPosition(pInsertPrevious);
@@ -332,179 +326,239 @@ public:
     }
   }
 
+  int GetSendCounter() { return this->SendCounter; }
+
 private:
   vtkMPIController* Controller;
   int StreamSize;
-  int WeightsSize;
+  int SendCounter; // Total number of particles sent
   MessageStream* ReceiveStream;
   vtkPointData* SeedData;
   ParticleStreamManager(const ParticleStreamManager&) {}
   std::vector<vtkBoundingBox> Boxes;
-  std::vector<std::pair<vtkMPICommunicator::Request*, MessageStream*> > SendRequests;
+  std::vector<std::pair<vtkMPICommunicator::Request*, MessageStream*>> SendRequests;
 };
 
-// Class used by the master rank to receive and send flag
-// to other ranks
-class MasterFlagManager
+// A singleton class used by each rank to send particle id and valid status to another rank
+// It sends to other ranks and can receive it from any other rank.
+class ParticleIdManager
 {
 public:
-  MasterFlagManager(vtkMPIController* controller)
+  ParticleIdManager(vtkMPIController* controller)
+  {
+    // Initialize Members
+    this->Controller = controller;
+
+    // Compute StreamSize
+    // This is strongly linked to Send and Receive code
+    this->StreamSize = sizeof(vtkIdType) + sizeof(bool);
+
+    // Initialize Streams
+    this->ReceiveStream = new MessageStream(this->StreamSize);
+
+    this->ReceivedCounter = 0;
+  }
+
+  ~ParticleIdManager()
+  {
+    for (size_t i = 0; i < this->SendRequests.size(); i++)
+    {
+      this->SendRequests[i].first->Wait();
+    }
+    this->CleanSendRequests();
+
+    // Delete  receive stream
+    delete this->ReceiveStream;
+  }
+
+  // Method to send a particle id to others ranks
+  void SendParticleId(vtkIdType id, bool valid, int sendToRank)
+  {
+    // This is strongly linked to Constructor and Receive code
+    MessageStream* sendStream = new MessageStream(this->StreamSize);
+    *sendStream << id << valid;
+
+    // clean out old requests & sendStreams
+    this->CleanSendRequests();
+
+    // Send to sendToRank
+    ++sendStream->count; // increment counter on message
+    this->SendRequests.emplace_back(new vtkMPICommunicator::Request, sendStream);
+    this->Controller->NoBlockSend(sendStream->GetRawData(), this->StreamSize, sendToRank,
+      LAGRANGIAN_PARTICLE_ID_TAG, *this->SendRequests.back().first);
+  }
+
+  // Method to receive a particle id from any other rank
+  bool ReceiveParticleIdIfAny(vtkIdType& id, bool& valid)
+  {
+    int probe, source;
+    if (this->Controller->Iprobe(
+          vtkMultiProcessController::ANY_SOURCE, LAGRANGIAN_PARTICLE_ID_TAG, &probe, &source) &&
+      probe)
+    {
+      this->ReceiveStream->Reset();
+      this->Controller->Receive(
+        this->ReceiveStream->GetRawData(), this->StreamSize, source, LAGRANGIAN_PARTICLE_ID_TAG);
+
+      *this->ReceiveStream >> id >> valid;
+      ++this->ReceivedCounter;
+      return true;
+    }
+    return false;
+  }
+
+  void CleanSendRequests()
+  {
+    auto it = SendRequests.begin();
+    while (it != SendRequests.end())
+    {
+      if (it->first->Test())
+      {
+        delete it->first;    // delete Request
+        --it->second->count; // decrement counter
+        if (it->second->count == 0)
+        {
+          // delete the SendStream
+          delete it->second;
+        }
+        it = SendRequests.erase(it);
+      }
+      else
+      {
+        ++it;
+      }
+    }
+  }
+
+  int GetReceivedCounter() { return this->ReceivedCounter; }
+
+private:
+  vtkMPIController* Controller;
+  int StreamSize;
+  int ReceivedCounter; // Total number of particlesIds recieved
+  MessageStream* ReceiveStream;
+  ParticleIdManager(const ParticleIdManager&) {}
+  std::vector<std::pair<vtkMPICommunicator::Request*, MessageStream*>> SendRequests;
+};
+
+// a class used to manage the feed of particles using GetGlobalStatus(status) function
+//  input a local partition 'status' and outputs the globalStatus
+//  status = 0 - INACTIVE - particle queue is empty and all sent particles have been confirmed as
+//  being recieved status = 1 - ACTIVE - either the particle queue has particles or we are waiting
+//  on confirmation of pariticles
+//               being recieved.
+//  - each rank updates master when its status changes
+//  globalStatus is 0 when all paritition are INACTIVE and 1 if at least one partition is ACTIVE.
+class ParticleFeedManager
+{
+public:
+  ParticleFeedManager(vtkMPIController* controller)
   {
     this->Controller = controller;
 
-    this->NRank = this->Controller->GetNumberOfProcesses() - 1;
-    this->RankStates.resize(this->NRank);
-    this->SentFlag = nullptr;
-    this->SendRequests.resize(this->NRank);
-    for (int i = 0; i < this->NRank; i++)
-    {
-      this->RankStates[i] = VTK_PLAGRANGIAN_WORKING_FLAG;
-      this->SendRequests[i] = nullptr;
-    }
+    this->RankStates.resize(this->Controller->GetNumberOfProcesses() - 1, 1);
+    this->GlobalStatus = 1;
+    this->CurrentStatus = 1;
   }
 
-  ~MasterFlagManager()
+  void MasterUpdateRankStatus()
   {
-    for (int i = 0; i < this->NRank; i++)
-    {
-      delete this->SendRequests[i];
-    }
-    delete this->SentFlag;
-  }
-
-  // Send a flag to all other ranks
-  void SendFlag(int flag)
-  {
-    delete this->SentFlag;
-    this->SentFlag = new int;
-    *this->SentFlag = flag;
-    for (int i = 0; i < this->NRank; i++)
-    {
-      if (this->SendRequests[i])
-      {
-        this->SendRequests[i]->Wait();
-        delete this->SendRequests[i];
-      }
-      this->SendRequests[i] = new vtkMPICommunicator::Request;
-      this->Controller->NoBlockSend(
-        this->SentFlag, 1, i + 1, LAGRANGIAN_RANG_FLAG_TAG, *this->SendRequests[i]);
-    }
-  }
-
-  // Receive flag from other ranks
-  // This method should not be used directly
-  int* UpdateAndGetFlags()
-  {
+    // only called on master process - receive any updated status from other ranks
     int probe, source;
+
     while (this->Controller->Iprobe(
              vtkMultiProcessController::ANY_SOURCE, LAGRANGIAN_RANG_FLAG_TAG, &probe, &source) &&
       probe)
     {
       this->Controller->Receive(&this->RankStates[source - 1], 1, source, LAGRANGIAN_RANG_FLAG_TAG);
     }
-    return this->RankStates.data();
   }
 
-  // Return true if all other ranks have the argument flag,
-  // false otherwise
-  bool LookForSameFlags(int flag)
+  void RankSendStatus(int status)
   {
-    this->UpdateAndGetFlags();
-    for (int i = 0; i < this->NRank; i++)
+    // Send an updated status if it has changed
+    if (status != this->CurrentStatus)
     {
-      if (this->RankStates[i] != flag)
-      {
-        return false;
-      }
+      this->CurrentStatus = status;
+      std::shared_ptr<vtkMPICommunicator::Request> sendRequest(new vtkMPICommunicator::Request);
+      this->Controller->NoBlockSend(
+        &this->CurrentStatus, 1, 0, LAGRANGIAN_RANG_FLAG_TAG, *sendRequest);
+      this->SendRequests.emplace_back(sendRequest);
     }
-    return true;
   }
 
-  // Return true if any of the other rank have the argument flag
-  // false otherwise
-  bool LookForAnyFlag(int flag)
+  void MasterSendGlobalStatus()
   {
-    this->UpdateAndGetFlags();
-    for (int i = 0; i < this->NRank; i++)
+    // no active particles - send terminate instruction to other ranks
+    for (int p = 1; p < this->Controller->GetNumberOfProcesses(); ++p)
     {
-      if (this->RankStates[i] == flag)
+      std::shared_ptr<vtkMPICommunicator::Request> sendRequest(new vtkMPICommunicator::Request);
+      this->Controller->NoBlockSend(
+        &this->GlobalStatus, 1, p, LAGRANGIAN_PARTICLE_CONTROL_TAG, *sendRequest);
+      this->SendRequests.emplace_back(sendRequest);
+    }
+  }
+
+  void RankReceiveGlobalStatus()
+  {
+    // check for change in globalStatus from master
+    int probe, source;
+    while (this->Controller->Iprobe(0, LAGRANGIAN_PARTICLE_CONTROL_TAG, &probe, &source) && probe)
+    {
+      this->Controller->Receive(&this->GlobalStatus, 1, source, LAGRANGIAN_PARTICLE_CONTROL_TAG);
+    }
+  }
+
+  int GetGlobalStatus(int status)
+  {
+    if (this->Controller->GetLocalProcessId() == 0)
+    {
+      this->CurrentStatus = status;
+
+      // master process - receive any updated counters from other ranks
+      this->MasterUpdateRankStatus();
+
+      // determine globalStatus across all partitions
+      this->GlobalStatus = this->CurrentStatus;
+      for (auto state : this->RankStates)
       {
-        return true;
+        this->GlobalStatus = this->GlobalStatus || state;
+      }
+
+      // if everything has finished send message to all ranks
+      if (this->GlobalStatus == 0)
+      {
+        this->MasterSendGlobalStatus();
       }
     }
-    return false;
+    else
+    {
+      // check for update to global status
+      this->RankReceiveGlobalStatus();
+
+      // send status to master
+      this->RankSendStatus(status);
+    }
+
+    return this->GlobalStatus;
   }
 
 private:
   vtkMPIController* Controller;
-  int NRank;
-  int* SentFlag;
+  int GlobalStatus;
+  int CurrentStatus; // current status of rank
   std::vector<int> RankStates;
-  std::vector<vtkMPICommunicator::Request*> SendRequests;
-};
-
-// Class used by non master ranks to communicate with master rank
-class RankFlagManager
-{
-public:
-  RankFlagManager(vtkMPIController* controller)
-  {
-    this->Controller = controller;
-
-    // Initialize flags
-    this->LastFlag = VTK_PLAGRANGIAN_WORKING_FLAG;
-    this->SentFlag = nullptr;
-    this->SendRequest = nullptr;
-  }
-
-  ~RankFlagManager()
-  {
-    delete this->SendRequest;
-    delete this->SentFlag;
-  }
-
-  // Send a flag to master
-  void SendFlag(char flag)
-  {
-    delete this->SentFlag;
-    this->SentFlag = new int;
-    *this->SentFlag = flag;
-    if (this->SendRequest)
-    {
-      this->SendRequest->Wait();
-      delete this->SendRequest;
-    }
-    this->SendRequest = new vtkMPICommunicator::Request;
-    this->Controller->NoBlockSend(
-      this->SentFlag, 1, 0, LAGRANGIAN_RANG_FLAG_TAG, *this->SendRequest);
-  }
-
-  // Receive flag from master if any and return it
-  int UpdateAndGetFlag()
-  {
-    int probe;
-    while (this->Controller->Iprobe(0, LAGRANGIAN_RANG_FLAG_TAG, &probe, nullptr) && probe)
-    {
-      this->Controller->Receive(&this->LastFlag, 1, 0, LAGRANGIAN_RANG_FLAG_TAG);
-    }
-    return this->LastFlag;
-  }
-
-private:
-  vtkMPIController* Controller;
-  int* SentFlag;
-  int LastFlag;
-  vtkMPICommunicator::Request* SendRequest;
+  std::vector<std::shared_ptr<vtkMPICommunicator::Request>> SendRequests;
 };
 
 vtkStandardNewMacro(vtkPLagrangianParticleTracker);
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPLagrangianParticleTracker::vtkPLagrangianParticleTracker()
   : Controller(vtkMPIController::SafeDownCast(vtkMultiProcessController::GetGlobalController()))
   , StreamManager(nullptr)
-  , MFlagManager(nullptr)
-  , RFlagManager(nullptr)
+  , TransferredParticleIdManager(nullptr)
+  , FeedManager(nullptr)
 {
   // To get a correct progress update
   if (this->Controller && this->Controller->GetNumberOfProcesses() > 1)
@@ -513,15 +567,15 @@ vtkPLagrangianParticleTracker::vtkPLagrangianParticleTracker()
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPLagrangianParticleTracker::~vtkPLagrangianParticleTracker()
 {
-  delete RFlagManager;
-  delete MFlagManager;
   delete StreamManager;
+  delete TransferredParticleIdManager;
+  delete FeedManager;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPLagrangianParticleTracker::RequestUpdateExtent(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -557,7 +611,7 @@ int vtkPLagrangianParticleTracker::RequestUpdateExtent(vtkInformation* vtkNotUse
   return 1;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLagrangianParticleTracker::GenerateParticles(const vtkBoundingBox* bounds,
   vtkDataSet* seeds, vtkDataArray* initialVelocities, vtkDataArray* initialIntegrationTimes,
   vtkPointData* seedData, int nVar, std::queue<vtkLagrangianParticle*>& particles)
@@ -568,9 +622,9 @@ void vtkPLagrangianParticleTracker::GenerateParticles(const vtkBoundingBox* boun
     this->ParticleCounter = this->Controller->GetLocalProcessId();
 
     // delete potential remaining managers
-    delete RFlagManager;
-    delete MFlagManager;
     delete StreamManager;
+    delete TransferredParticleIdManager;
+    delete FeedManager;
 
     // Reduce SeedData Arrays
     int nArrays = seedData->GetNumberOfArrays();
@@ -778,20 +832,8 @@ void vtkPLagrangianParticleTracker::GenerateParticles(const vtkBoundingBox* boun
     // Create managers
     this->StreamManager =
       new ParticleStreamManager(this->Controller, seedData, this->IntegrationModel, bounds);
-    if (this->Controller->GetLocalProcessId() == 0)
-    {
-      this->MFlagManager = new MasterFlagManager(this->Controller);
-    }
-    else
-    {
-      this->RFlagManager = new RankFlagManager(this->Controller);
-    }
-
-    // Create and set a dummy particle so FindInLocators can use caching.
-    std::unique_ptr<vtkLagrangianThreadedData> dummyData(new vtkLagrangianThreadedData);
-    vtkLagrangianParticle dummyParticle(
-      0, 0, 0, 0, 0, nullptr, this->IntegrationModel->GetWeightsSize(), 0);
-    dummyParticle.SetThreadedData(dummyData.get());
+    this->TransferredParticleIdManager = new ParticleIdManager(this->Controller);
+    this->FeedManager = new ParticleFeedManager(this->Controller);
 
     // Generate particle and distribute the ones not in domain to other nodes
     for (vtkIdType i = 0; i < seeds->GetNumberOfPoints(); i++)
@@ -802,12 +844,12 @@ void vtkPLagrangianParticleTracker::GenerateParticles(const vtkBoundingBox* boun
         initialIntegrationTimes ? initialIntegrationTimes->GetTuple1(i) : 0;
       vtkIdType particleId = this->GetNewParticleId();
       vtkLagrangianParticle* particle = new vtkLagrangianParticle(nVar, particleId, particleId, i,
-        initialIntegrationTime, seedData, this->IntegrationModel->GetWeightsSize(),
-        this->IntegrationModel->GetNumberOfTrackedUserData());
+        initialIntegrationTime, seedData, this->IntegrationModel->GetNumberOfTrackedUserData());
       memcpy(particle->GetPosition(), position, 3 * sizeof(double));
       initialVelocities->GetTuple(i, particle->GetVelocity());
+      particle->SetThreadedData(this->SerialThreadedData);
       this->IntegrationModel->InitializeParticle(particle);
-      if (this->IntegrationModel->FindInLocators(particle->GetPosition(), &dummyParticle))
+      if (this->IntegrationModel->FindInLocators(particle->GetPosition(), particle))
       {
         particles.push(particle);
       }
@@ -827,7 +869,7 @@ void vtkPLagrangianParticleTracker::GenerateParticles(const vtkBoundingBox* boun
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLagrangianParticleTracker::GetParticleFeed(
   std::queue<vtkLagrangianParticle*>& particleQueue)
 {
@@ -836,98 +878,26 @@ void vtkPLagrangianParticleTracker::GetParticleFeed(
     return;
   }
 
-  // Receive particles first
-  this->ReceiveParticles(particleQueue);
+  // local parition status 0 = parition inactive,  1 = active
+  int status;
 
-  // Particle queue is still empty
-  if (particleQueue.empty())
+  do
   {
-    if (this->Controller->GetLocalProcessId() == 0)
-    {
-      bool finished = false;
-      do
-      {
-        // We are master, with no more particle, wait for all ranks to be empty
-        if (this->MFlagManager->LookForSameFlags(VTK_PLAGRANGIAN_EMPTY_FLAG))
-        {
-          // check for new particle
-          this->ReceiveParticles(particleQueue);
+    // receive particles from other partitions
+    this->ReceiveParticles(particleQueue);
 
-          // Still empty
-          if (particleQueue.empty())
-          {
-            // Everybody empty now, inform ranks
-            this->MFlagManager->SendFlag(VTK_PLAGRANGIAN_EMPTY_FLAG);
-            finished = false;
-            bool working = false;
-            while (!finished && !working)
-            {
-              // Wait for rank to answer finished or working
-              working = this->MFlagManager->LookForAnyFlag(VTK_PLAGRANGIAN_WORKING_FLAG);
-              finished = this->MFlagManager->LookForSameFlags(VTK_PLAGRANGIAN_FINISHED_FLAG);
-              if (working)
-              {
-                // A rank received a particle in the meantime and is working,
-                // resume the wait
-                this->MFlagManager->SendFlag(VTK_PLAGRANGIAN_WORKING_FLAG);
-              }
-              if (finished)
-              {
-                // Nobody is working anymore, send finished flag and finish ourself
-                this->MFlagManager->SendFlag(VTK_PLAGRANGIAN_FINISHED_FLAG);
-              }
-            }
-          }
-        }
-        // Receive Particles before looking at flags
-        this->ReceiveParticles(particleQueue);
-      } while (particleQueue.empty() && !finished);
-    }
-    else
-    {
-      // We are a rank with no more particle, send empty flag
-      this->RFlagManager->SendFlag(VTK_PLAGRANGIAN_EMPTY_FLAG);
-      bool finished = false;
-      do
-      {
-        // Wait for master inform us everybody is empty
-        bool allEmpty = (this->RFlagManager->UpdateAndGetFlag() == VTK_PLAGRANGIAN_EMPTY_FLAG);
+    // check for receipt of sent particles
+    this->ReceiveTransferredParticleIds();
 
-        // Char for new particles
-        this->ReceiveParticles(particleQueue);
-        if (!particleQueue.empty())
-        {
-          // Received a particle, keep on working
-          this->RFlagManager->SendFlag(VTK_PLAGRANGIAN_WORKING_FLAG);
-        }
-        else if (allEmpty)
-        {
-          // Nobody has a particle anymore, send finished flag
-          this->RFlagManager->SendFlag(VTK_PLAGRANGIAN_FINISHED_FLAG);
-          bool working = false;
-          while (!finished && !working)
-          {
-            // Wait for master to send finished flag
-            int flag = this->RFlagManager->UpdateAndGetFlag();
-            if (flag == VTK_PLAGRANGIAN_FINISHED_FLAG)
-            {
-              // we are finished now
-              finished = true;
-            }
-            else if (flag == VTK_PLAGRANGIAN_WORKING_FLAG)
-            {
-              // Another rank is working, resume the wait
-              this->RFlagManager->SendFlag(VTK_PLAGRANGIAN_EMPTY_FLAG);
-              working = true;
-            }
-          }
-        }
-      } while (particleQueue.empty() && !finished);
-    }
-  }
+    // determine local status - active if queue is busy or we are waiting for receipt of sent
+    // pariticles
+    status = !particleQueue.empty() ||
+      this->StreamManager->GetSendCounter() !=
+        this->TransferredParticleIdManager->GetReceivedCounter();
+  } while (this->FeedManager->GetGlobalStatus(status) && particleQueue.empty());
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPLagrangianParticleTracker::Integrate(vtkInitialValueProblemSolver* integrator,
   vtkLagrangianParticle* particle, std::queue<vtkLagrangianParticle*>& particleQueue,
   vtkPolyData* particlePathsOutput, vtkPolyLine* particlePath, vtkDataObject* interactionOutput)
@@ -962,20 +932,39 @@ int vtkPLagrangianParticleTracker::Integrate(vtkInitialValueProblemSolver* integ
   return ret;
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkPLagrangianParticleTracker::ReceiveTransferredParticleIds()
+{
+  vtkIdType id;
+  bool valid;
+  while (this->TransferredParticleIdManager->ReceiveParticleIdIfAny(id, valid))
+  {
+    if (valid)
+    {
+      // Delete transferred particle without calling
+      // ParticleAboutToBeDeleted
+      auto iter = this->OutOfDomainParticleMap.find(id);
+      if (iter != this->OutOfDomainParticleMap.end())
+      {
+        iter->second->SetTermination(vtkLagrangianParticle::PARTICLE_TERMINATION_TRANSFERRED);
+        this->Superclass::DeleteParticle(iter->second);
+        this->OutOfDomainParticleMap.erase(iter);
+      }
+    }
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkPLagrangianParticleTracker::ReceiveParticles(
   std::queue<vtkLagrangianParticle*>& particleQueue)
 {
   vtkLagrangianParticle* receivedParticle;
+  int source = -1;
 
-  // Create and set a dummy particle so FindInLocators can use caching.
-  std::unique_ptr<vtkLagrangianThreadedData> dummyData(new vtkLagrangianThreadedData);
-  vtkLagrangianParticle dummyParticle(
-    0, 0, 0, 0, 0, nullptr, this->IntegrationModel->GetWeightsSize(), 0);
-  dummyParticle.SetThreadedData(dummyData.get());
-
-  while (this->StreamManager->ReceiveParticleIfAny(receivedParticle))
+  while (this->StreamManager->ReceiveParticleIfAny(receivedParticle, source))
   {
+    receivedParticle->SetThreadedData(this->SerialThreadedData);
+
     // Check for manual shift
     if (receivedParticle->GetPManualShift())
     {
@@ -983,7 +972,13 @@ void vtkPLagrangianParticleTracker::ReceiveParticles(
       receivedParticle->SetPManualShift(false);
     }
     // Receive all particles
-    if (this->IntegrationModel->FindInLocators(receivedParticle->GetPosition(), &dummyParticle))
+    bool valid =
+      this->IntegrationModel->FindInLocators(receivedParticle->GetPosition(), receivedParticle);
+
+    // Inform source rank that it was received
+    this->TransferredParticleIdManager->SendParticleId(receivedParticle->GetId(), valid, source);
+
+    if (valid)
     {
       particleQueue.push(receivedParticle);
     }
@@ -994,43 +989,52 @@ void vtkPLagrangianParticleTracker::ReceiveParticles(
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPLagrangianParticleTracker::FinalizeOutputs(
   vtkPolyData* particlePathsOutput, vtkDataObject* interactionOutput)
 {
-  if (this->GenerateParticlePathsOutput && this->Controller &&
-    this->Controller->GetNumberOfProcesses() > 1)
+  if (this->Controller && this->Controller->GetNumberOfProcesses() > 1)
   {
-    // Construct array with all non outofdomains ids and terminations
-    vtkNew<vtkLongLongArray> idTermination;
-    vtkNew<vtkLongLongArray> allIdTermination;
-    idTermination->Allocate(particlePathsOutput->GetNumberOfCells());
-    idTermination->SetNumberOfComponents(2);
-    vtkIntArray* terminations =
-      vtkIntArray::SafeDownCast(particlePathsOutput->GetCellData()->GetArray("Termination"));
-    vtkLongLongArray* ids =
-      vtkLongLongArray::SafeDownCast(particlePathsOutput->GetCellData()->GetArray("Id"));
-    for (int i = 0; i < particlePathsOutput->GetNumberOfCells(); i++)
+    // Cleanly delete remaining out of domain particles
+    for (auto iter : this->OutOfDomainParticleMap)
     {
-      if (terminations->GetValue(i) != vtkLagrangianParticle::PARTICLE_TERMINATION_OUT_OF_DOMAIN)
-      {
-        idTermination->InsertNextTuple2(ids->GetValue(i), terminations->GetValue(i));
-      }
+      this->Superclass::DeleteParticle(iter.second);
     }
-    idTermination->Squeeze();
+    this->OutOfDomainParticleMap.clear();
 
-    // AllGather it
-    this->Controller->AllGatherV(idTermination, allIdTermination);
-
-    // Modify current terminations
-    for (vtkIdType i = 0; i < allIdTermination->GetNumberOfTuples(); i++)
+    if (this->GenerateParticlePathsOutput)
     {
-      vtkIdType id = allIdTermination->GetTuple2(i)[0];
-      for (vtkIdType j = 0; j < particlePathsOutput->GetNumberOfCells(); j++)
+      // Construct array with all non outofdomains ids and terminations
+      vtkNew<vtkLongLongArray> idTermination;
+      vtkNew<vtkLongLongArray> allIdTermination;
+      idTermination->Allocate(particlePathsOutput->GetNumberOfCells());
+      idTermination->SetNumberOfComponents(2);
+      vtkIntArray* terminations =
+        vtkIntArray::SafeDownCast(particlePathsOutput->GetCellData()->GetArray("Termination"));
+      vtkLongLongArray* ids =
+        vtkLongLongArray::SafeDownCast(particlePathsOutput->GetCellData()->GetArray("Id"));
+      for (int i = 0; i < particlePathsOutput->GetNumberOfCells(); i++)
       {
-        if (ids->GetValue(j) == id)
+        if (terminations->GetValue(i) != vtkLagrangianParticle::PARTICLE_TERMINATION_OUT_OF_DOMAIN)
         {
-          terminations->SetTuple1(j, allIdTermination->GetTuple2(i)[1]);
+          idTermination->InsertNextTuple2(ids->GetValue(i), terminations->GetValue(i));
+        }
+      }
+      idTermination->Squeeze();
+
+      // AllGather it
+      this->Controller->AllGatherV(idTermination, allIdTermination);
+
+      // Modify current terminations
+      for (vtkIdType i = 0; i < allIdTermination->GetNumberOfTuples(); i++)
+      {
+        vtkIdType id = allIdTermination->GetTuple2(i)[0];
+        for (vtkIdType j = 0; j < particlePathsOutput->GetNumberOfCells(); j++)
+        {
+          if (ids->GetValue(j) == id)
+          {
+            terminations->SetTuple1(j, allIdTermination->GetTuple2(i)[1]);
+          }
         }
       }
     }
@@ -1038,7 +1042,7 @@ bool vtkPLagrangianParticleTracker::FinalizeOutputs(
   return this->Superclass::FinalizeOutputs(particlePathsOutput, interactionOutput);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkPLagrangianParticleTracker::UpdateSurfaceCacheIfNeeded(vtkDataObject*& surfaces)
 {
   if (this->Controller && this->Controller->GetNumberOfProcesses() > 1)
@@ -1067,7 +1071,7 @@ bool vtkPLagrangianParticleTracker::UpdateSurfaceCacheIfNeeded(vtkDataObject*& s
     // In Parallel, reduce surfaces on rank 0, which then broadcast them to all ranks.
 
     // Recover all surfaces on rank 0
-    std::vector<vtkSmartPointer<vtkDataObject> > allSurfaces;
+    std::vector<vtkSmartPointer<vtkDataObject>> allSurfaces;
     this->Controller->Gather(surfaces, allSurfaces, 0);
 
     // Manager dataset case
@@ -1138,7 +1142,7 @@ bool vtkPLagrangianParticleTracker::UpdateSurfaceCacheIfNeeded(vtkDataObject*& s
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkPLagrangianParticleTracker::GetNewParticleId()
 {
   if (this->Controller && this->Controller->GetNumberOfProcesses() > 1)
@@ -1150,8 +1154,23 @@ vtkIdType vtkPLagrangianParticleTracker::GetNewParticleId()
   return this->Superclass::GetNewParticleId();
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPLagrangianParticleTracker::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
+void vtkPLagrangianParticleTracker::DeleteParticle(vtkLagrangianParticle* particle)
+{
+  if (particle->GetTermination() != vtkLagrangianParticle::PARTICLE_TERMINATION_OUT_OF_DOMAIN)
+  {
+    this->Superclass::DeleteParticle(particle);
+  }
+  else
+  {
+    // store the particle to be deleted later
+    std::lock_guard<std::mutex> guard(this->OutOfDomainParticleMapMutex);
+    this->OutOfDomainParticleMap[particle->GetId()] = particle;
+  }
 }

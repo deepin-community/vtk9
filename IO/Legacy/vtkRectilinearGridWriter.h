@@ -38,15 +38,15 @@ public:
   vtkTypeMacro(vtkRectilinearGridWriter, vtkDataWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkRectilinearGrid* GetInput();
   vtkRectilinearGrid* GetInput(int port);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * When WriteExtent is on, vtkStructuredPointsWriter writes
    * data extent in the output file. Otherwise, it writes dimensions.
@@ -57,14 +57,14 @@ public:
   vtkSetMacro(WriteExtent, bool);
   vtkGetMacro(WriteExtent, bool);
   vtkBooleanMacro(WriteExtent, bool);
-  //@}
+  ///@}
 
 protected:
   vtkRectilinearGridWriter()
     : WriteExtent(false)
   {
   }
-  ~vtkRectilinearGridWriter() override {}
+  ~vtkRectilinearGridWriter() override = default;
 
   void WriteData() override;
 

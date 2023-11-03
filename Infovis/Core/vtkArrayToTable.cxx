@@ -19,6 +19,9 @@
 
 =========================================================================*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkArrayToTable.h"
 #include "vtkArrayData.h"
 #include "vtkCharArray.h"
@@ -123,11 +126,11 @@ static bool ConvertMatrix(vtkArray* Array, vtkTable* Output)
   return true;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkStandardNewMacro(vtkArrayToTable);
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkArrayToTable::vtkArrayToTable()
 {
@@ -135,11 +138,11 @@ vtkArrayToTable::vtkArrayToTable()
   this->SetNumberOfOutputPorts(1);
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 vtkArrayToTable::~vtkArrayToTable() = default;
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 void vtkArrayToTable::PrintSelf(ostream& os, vtkIndent indent)
 {
@@ -158,7 +161,7 @@ int vtkArrayToTable::FillInputPortInformation(int port, vtkInformation* info)
   return 0;
 }
 
-// ----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 int vtkArrayToTable::RequestData(
   vtkInformation*, vtkInformationVector** inputVector, vtkInformationVector* outputVector)

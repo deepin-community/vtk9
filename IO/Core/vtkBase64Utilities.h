@@ -30,6 +30,7 @@ class VTKIOCORE_EXPORT vtkBase64Utilities : public vtkObject
 public:
   static vtkBase64Utilities* New();
   vtkTypeMacro(vtkBase64Utilities, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * Encode 3 bytes into 4 bytes
@@ -85,8 +86,8 @@ public:
     const unsigned char* input, size_t inputLen, unsigned char* output, size_t outputLen);
 
 protected:
-  vtkBase64Utilities() {}
-  ~vtkBase64Utilities() override {}
+  vtkBase64Utilities() = default;
+  ~vtkBase64Utilities() override = default;
 
 private:
   vtkBase64Utilities(const vtkBase64Utilities&) = delete;
@@ -94,4 +95,3 @@ private:
 };
 
 #endif
-// VTK-HeaderTest-Exclude: vtkBase64Utilities.h

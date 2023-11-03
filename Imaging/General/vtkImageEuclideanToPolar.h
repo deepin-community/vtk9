@@ -33,7 +33,7 @@ public:
   vtkTypeMacro(vtkImageEuclideanToPolar, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Theta is an angle. Maximum specifies when it maps back to 0.
    * ThetaMaximum defaults to 255 instead of 2PI, because unsigned char
@@ -41,11 +41,11 @@ public:
    */
   vtkSetMacro(ThetaMaximum, double);
   vtkGetMacro(ThetaMaximum, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageEuclideanToPolar();
-  ~vtkImageEuclideanToPolar() override {}
+  ~vtkImageEuclideanToPolar() override = default;
 
   double ThetaMaximum;
 

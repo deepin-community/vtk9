@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkFrustumSelector.h"
 
 #include "vtkCell.h"
@@ -27,6 +31,8 @@
 #include "vtkSMPTools.h"
 #include "vtkSelectionNode.h"
 #include "vtkSignedCharArray.h"
+#include "vtkVector.h"
+#include "vtkVectorOperators.h"
 #include "vtkVoxel.h"
 
 #include <vector>
@@ -35,7 +41,7 @@
 
 namespace
 {
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void ComputePlane(
   int idx, double v0[3], double v1[3], double v2[3], vtkPoints* points, vtkDoubleArray* norms)
 {
@@ -58,8 +64,8 @@ void ComputePlane(
   norms->SetTuple(idx, n);
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class ComputeCellsInFrustumFunctor
 {
 public:
@@ -279,7 +285,7 @@ public:
         case VTK_LINE:
         case VTK_POLY_LINE:
         {
-          break;
+          return this->FrustumClipPolyline(nedges, vlist, bounds);
         }
         default:
         {
@@ -466,6 +472,95 @@ public:
     }
   }
 
+  //--------------------------------------------------------------------------
+  // Tests edge segments against the frustum.
+  // If there is no intersection, returns 0
+  // If there is an intersection, returns 1
+  // This is accomplished using Cyrus-Beck clipping.
+  int FrustumClipPolyline(int nverts, double* ivlist, double* bounds)
+  {
+    if (nverts < 1)
+    {
+      return 0;
+    }
+    vtkVector3d p0(ivlist[0], ivlist[1], ivlist[2]);
+    if (nverts < 2)
+    {
+      return this->ComputePlaneEndpointCode(p0) == 0;
+    }
+    // Compute the L1 "diameter" of the bounding box (used to test for degeneracy)
+    // We know bounds is valid at this point, so diam >= 0
+    const double diam = bounds[1] - bounds[0] + bounds[3] - bounds[2] + bounds[5] - bounds[4];
+    const double epsilon = 1e-6 * diam;
+    const double epsilon2 = 1e-10 * diam * diam;
+    vtkVector3d normal, basePoint;
+    vtkVector3d p1;
+    bool in = false;
+    for (int ii = 1; ii < nverts; ++ii, p0 = p1)
+    {
+      p1 = vtkVector3d(ivlist[3 * ii], ivlist[3 * ii + 1], ivlist[3 * ii + 2]);
+      vtkVector3d lineVec = p1 - p0;
+      if (lineVec.SquaredNorm() < epsilon2)
+      {
+        // Skip short edges; they would make denom == 0.0 and thus have no effect.
+        continue;
+      }
+      double tmin = 0.0;
+      double tmax = 1.0;
+      bool mayOverlap = true;
+      for (int pp = 0; mayOverlap && (pp < MAXPLANE); ++pp)
+      {
+        this->Frustum->GetNormals()->GetTuple(pp, normal.GetData());
+        this->Frustum->GetPoints()->GetPoint(pp, basePoint.GetData());
+        vtkVector3d db = p0 - basePoint; // Vector from the plane's base point to p0 on the line.
+        double numer = db.Dot(normal);
+        double denom = lineVec.Dot(normal);
+        double t;
+        if (std::abs(denom) <= epsilon)
+        {
+          if (numer > 0)
+          {
+            mayOverlap = false;
+          }
+        }
+        else
+        {
+          t = -numer / denom;
+          if (denom < 0.0 && t > tmin)
+          {
+            tmin = t;
+          }
+          else if (denom > 0.0 && t < tmax)
+          {
+            tmax = t;
+          }
+        }
+      }
+      if (mayOverlap)
+      {
+        in |= (tmin <= tmax);
+        if (in)
+        {
+          break;
+        }
+      }
+    }
+    return in ? 1 : 0;
+  }
+
+  int ComputePlaneEndpointCode(const vtkVector3d& vertex)
+  {
+    int code = 0;
+    vtkVector3d normal, basePoint;
+    for (int pp = 0; pp < MAXPLANE; ++pp)
+    {
+      this->Frustum->GetNormals()->GetTuple(pp, normal.GetData());
+      this->Frustum->GetPoints()->GetPoint(pp, basePoint.GetData());
+      code |= ((vertex - basePoint).Dot(normal) >= 0.0) ? (1 << pp) : 0;
+    }
+    return code;
+  }
+
   vtkPlanes* Frustum;
   vtkDataSet* Input;
   vtkSignedCharArray* Array;
@@ -473,11 +568,11 @@ public:
 };
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkFrustumSelector);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFrustumSelector::vtkFrustumSelector(vtkPlanes* f)
 {
   this->Frustum = f;
@@ -499,16 +594,16 @@ vtkFrustumSelector::vtkFrustumSelector(vtkPlanes* f)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkFrustumSelector::~vtkFrustumSelector() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPlanes* vtkFrustumSelector::GetFrustum()
 {
   return this->Frustum;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFrustumSelector::SetFrustum(vtkPlanes* f)
 {
   if (this->Frustum != f)
@@ -518,7 +613,7 @@ void vtkFrustumSelector::SetFrustum(vtkPlanes* f)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Overload standard modified time function. If implicit function is modified,
 // then this object is modified as well.
 vtkMTimeType vtkFrustumSelector::GetMTime()
@@ -535,7 +630,7 @@ vtkMTimeType vtkFrustumSelector::GetMTime()
   return mTime;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFrustumSelector::CreateFrustum(double verts[32])
 {
   vtkNew<vtkPoints> points;
@@ -562,7 +657,7 @@ void vtkFrustumSelector::CreateFrustum(double verts[32])
   this->Frustum->SetNormals(norms);
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFrustumSelector::Initialize(vtkSelectionNode* node)
 {
   this->Superclass::Initialize(node);
@@ -579,7 +674,7 @@ void vtkFrustumSelector::Initialize(vtkSelectionNode* node)
   }
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkFrustumSelector::ComputeSelectedElements(
   vtkDataObject* input, vtkSignedCharArray* insidednessArray)
 {
@@ -608,7 +703,7 @@ bool vtkFrustumSelector::ComputeSelectedElements(
   return true;
 }
 
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFrustumSelector::ComputeSelectedPoints(vtkDataSet* input, vtkSignedCharArray* pointSelected)
 {
   vtkIdType numPts = input->GetNumberOfPoints();
@@ -639,7 +734,7 @@ void vtkFrustumSelector::ComputeSelectedPoints(vtkDataSet* input, vtkSignedCharA
     }
   });
 }
-//--------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkFrustumSelector::ComputeSelectedCells(vtkDataSet* input, vtkSignedCharArray* cellSelected)
 {
   vtkIdType numCells = input->GetNumberOfCells();

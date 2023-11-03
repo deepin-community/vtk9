@@ -24,7 +24,7 @@
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Helper function for the buffer_shared() check: get the pointer and
 // size (in bytes) of the buffer of the provided object.  A return
 // value of zero indicates that an exception was raised.
@@ -32,7 +32,6 @@ static void* buffer_pointer_and_size(PyObject* o, Py_ssize_t* size)
 {
   void* ptr = nullptr;
 
-#if PY_VERSION_HEX >= 0x02060000
   // New buffer protocol
   Py_buffer view = VTK_PYBUFFER_INITIALIZER;
   if (PyObject_CheckBuffer(o))
@@ -58,7 +57,6 @@ static void* buffer_pointer_and_size(PyObject* o, Py_ssize_t* size)
       return ptr;
     }
   }
-#endif
 
 #ifndef VTK_PY3K
   // Old buffer protocol
@@ -86,7 +84,7 @@ static void* buffer_pointer_and_size(PyObject* o, Py_ssize_t* size)
   return nullptr;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static PyObject* PyVTKExtras_buffer_shared(PyObject*, PyObject* args)
 {
   PyObject* ob[2] = { nullptr, nullptr };
@@ -118,7 +116,7 @@ static PyObject* PyVTKExtras_buffer_shared(PyObject*, PyObject* args)
   return nullptr;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 static PyMethodDef PyVTKExtras_Methods[] = {
   { "buffer_shared", PyVTKExtras_buffer_shared, METH_VARARGS,
     "Check if two objects share the same buffer, meaning that they"
@@ -127,7 +125,7 @@ static PyMethodDef PyVTKExtras_Methods[] = {
   { nullptr, nullptr, 0, nullptr }
 };
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Exported method called by vtkCommonCorePythonInit
 void PyVTKAddFile_PyVTKExtras(PyObject* dict)
 {

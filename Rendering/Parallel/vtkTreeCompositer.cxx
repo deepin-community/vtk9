@@ -43,20 +43,19 @@
 #include "vtkFloatArray.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkToolkits.h"
 #include "vtkUnsignedCharArray.h"
 
 vtkStandardNewMacro(vtkTreeCompositer);
 
-//-------------------------------------------------------------------------
-vtkTreeCompositer::vtkTreeCompositer() {}
+//------------------------------------------------------------------------------
+vtkTreeCompositer::vtkTreeCompositer() = default;
 
-//-------------------------------------------------------------------------
-vtkTreeCompositer::~vtkTreeCompositer() {}
+//------------------------------------------------------------------------------
+vtkTreeCompositer::~vtkTreeCompositer() = default;
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Jim's composite stuff
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Results are put in the local data.
 void vtkCompositeImagePair(
   vtkFloatArray* localZ, vtkDataArray* localP, vtkFloatArray* remoteZ, vtkDataArray* remoteP)

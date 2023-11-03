@@ -29,10 +29,11 @@
 #include "vtkObject.h"
 #include "vtkRenderingSceneGraphModule.h" // For export macro
 #include "vtkWeakPointer.h"               //avoid ref loop to parent
+#include <list>                           // for ivar
+#include <map>                            // for ivar
 
 class vtkCollection;
 class vtkViewNodeFactory;
-class vtkViewNodeCollection;
 
 class VTKRENDERINGSCENEGRAPH_EXPORT vtkViewNode : public vtkObject
 {
@@ -40,12 +41,12 @@ public:
   vtkTypeMacro(vtkViewNode, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * This is the VTK class that this node stands in for.
    */
   vtkGetObjectMacro(Renderable, vtkObject);
-  //@}
+  ///@}
 
   /**
    * Builds myself.
@@ -67,30 +68,29 @@ public:
    */
   virtual void Invalidate(bool /*prepass*/) {}
 
-  //@{
+  ///@{
   /**
    * Access the node that owns this one.
    */
   virtual void SetParent(vtkViewNode*);
   virtual vtkViewNode* GetParent();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Access nodes that this one owns.
    */
-  virtual void SetChildren(vtkViewNodeCollection*);
-  vtkGetObjectMacro(Children, vtkViewNodeCollection);
-  //@}
+  virtual std::list<vtkViewNode*> const& GetChildren() { return this->Children; }
+  ///@}
 
-  //@{
+  ///@{
   /**
    * A factory that creates particular subclasses for different
    * rendering back ends.
    */
   virtual void SetMyFactory(vtkViewNodeFactory*);
   vtkGetObjectMacro(MyFactory, vtkViewNodeFactory);
-  //@}
+  ///@}
 
   /**
    * Returns the view node that corresponding to the provided object
@@ -143,25 +143,24 @@ protected:
 
   static const char* operation_type_strings[];
 
-  void Apply(int operation, bool prepass);
+  virtual void Apply(int operation, bool prepass);
 
-  //@{
+  ///@{
   /**
    * convenience method to add node or nodes
    * if missing from our current list
    */
   void AddMissingNode(vtkObject* obj);
   void AddMissingNodes(vtkCollection* col);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Called first before adding missing nodes.
    * Keeps track of the nodes that should be in the collection
    */
   void PrepareNodes();
-  vtkCollection* PreparedNodes;
-  //@}
+  ///@}
 
   /**
    * Called after PrepareNodes and AddMissingNodes
@@ -176,10 +175,13 @@ protected:
 
   vtkObject* Renderable;
   vtkWeakPointer<vtkViewNode> Parent;
-  vtkViewNodeCollection* Children;
+  std::list<vtkViewNode*> Children;
   vtkViewNodeFactory* MyFactory;
-
+  std::map<vtkObject*, vtkViewNode*> Renderables;
   friend class vtkViewNodeFactory;
+
+  // used in the prepare/add/remove opertions
+  bool Used;
 
 private:
   vtkViewNode(const vtkViewNode&) = delete;

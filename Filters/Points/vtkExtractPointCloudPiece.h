@@ -33,16 +33,16 @@ class vtkIntArray;
 class VTKFILTERSPOINTS_EXPORT vtkExtractPointCloudPiece : public vtkPolyDataAlgorithm
 {
 public:
-  //@{
+  ///@{
   /**
    * Standard methods for instantiation, printing, and type information.
    */
   static vtkExtractPointCloudPiece* New();
   vtkTypeMacro(vtkExtractPointCloudPiece, vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on or off modulo sampling of the points. By default this is on and the
    * points in a given piece will be reordered in an attempt to reduce spatial
@@ -51,11 +51,11 @@ public:
   vtkSetMacro(ModuloOrdering, bool);
   vtkGetMacro(ModuloOrdering, bool);
   vtkBooleanMacro(ModuloOrdering, bool);
-  //@}
+  ///@}
 
 protected:
   vtkExtractPointCloudPiece();
-  ~vtkExtractPointCloudPiece() override {}
+  ~vtkExtractPointCloudPiece() override = default;
 
   // Usual data generation method
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;

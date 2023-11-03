@@ -25,7 +25,7 @@
 
 vtkObjectFactoryNewMacro(vtkPolyDataMapper);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPolyDataMapper::vtkPolyDataMapper()
 {
   this->Piece = 0;
@@ -36,7 +36,7 @@ vtkPolyDataMapper::vtkPolyDataMapper()
   this->SeamlessV = false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::Render(vtkRenderer* ren, vtkActor* act)
 {
   if (this->Static)
@@ -66,20 +66,20 @@ void vtkPolyDataMapper::Render(vtkRenderer* ren, vtkActor* act)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::SetInputData(vtkPolyData* input)
 {
   this->SetInputDataInternal(0, input);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Specify the input data or filter.
 vtkPolyData* vtkPolyDataMapper::GetInput()
 {
   return vtkPolyData::SafeDownCast(this->GetExecutive()->GetInputData(0, 0));
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkPolyDataMapper::ProcessRequest(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector*)
 {
@@ -96,7 +96,7 @@ vtkTypeBool vtkPolyDataMapper::ProcessRequest(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Get the bounds for the input of this mapper as
 // (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
 double* vtkPolyDataMapper::GetBounds()
@@ -132,11 +132,16 @@ double* vtkPolyDataMapper::GetBounds()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::ComputeBounds()
 {
   vtkPolyData* input = this->GetInput();
-  if (input)
+  if (input && input->GetNumberOfCells())
+  {
+    input->GetCellsBounds(this->Bounds);
+  }
+  // We prefer cells bounds but if polydata has no cell defined, use classic bounds instead.
+  else if (input)
   {
     input->GetBounds(this->Bounds);
   }
@@ -146,7 +151,7 @@ void vtkPolyDataMapper::ComputeBounds()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::ShallowCopy(vtkAbstractMapper* mapper)
 {
   vtkPolyDataMapper* m = vtkPolyDataMapper::SafeDownCast(mapper);
@@ -164,7 +169,7 @@ void vtkPolyDataMapper::ShallowCopy(vtkAbstractMapper* mapper)
   this->vtkMapper::ShallowCopy(mapper);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::MapDataArrayToVertexAttribute(const char* vtkNotUsed(vertexAttributeName),
   const char* vtkNotUsed(dataArrayName), int vtkNotUsed(fieldAssociation),
   int vtkNotUsed(componentno))
@@ -172,7 +177,7 @@ void vtkPolyDataMapper::MapDataArrayToVertexAttribute(const char* vtkNotUsed(ver
   vtkErrorMacro("Not implemented at this level...");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::MapDataArrayToMultiTextureAttribute(const char* vtkNotUsed(tname),
   const char* vtkNotUsed(dataArrayName), int vtkNotUsed(fieldAssociation),
   int vtkNotUsed(componentno))
@@ -180,19 +185,19 @@ void vtkPolyDataMapper::MapDataArrayToMultiTextureAttribute(const char* vtkNotUs
   vtkErrorMacro("Not implemented at this level...");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::RemoveVertexAttributeMapping(const char* vtkNotUsed(vertexAttributeName))
 {
   vtkErrorMacro("Not implemented at this level...");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::RemoveAllVertexAttributeMappings()
 {
   vtkErrorMacro("Not implemented at this level...");
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -203,14 +208,14 @@ void vtkPolyDataMapper::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Number of sub pieces: " << this->NumberOfSubPieces << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPolyDataMapper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkPolyData");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::Update(int port)
 {
   if (this->Static)
@@ -220,7 +225,7 @@ void vtkPolyDataMapper::Update(int port)
   this->Superclass::Update(port);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPolyDataMapper::Update()
 {
   if (this->Static)
@@ -230,7 +235,7 @@ void vtkPolyDataMapper::Update()
   this->Superclass::Update();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkPolyDataMapper::Update(int port, vtkInformationVector* requests)
 {
   if (this->Static)
@@ -240,7 +245,7 @@ vtkTypeBool vtkPolyDataMapper::Update(int port, vtkInformationVector* requests)
   return this->Superclass::Update(port, requests);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkTypeBool vtkPolyDataMapper::Update(vtkInformation* requests)
 {
   if (this->Static)

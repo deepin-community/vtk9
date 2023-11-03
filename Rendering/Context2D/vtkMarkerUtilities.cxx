@@ -18,14 +18,15 @@
 #include "vtkImageData.h"
 
 #include <algorithm>
+#include <cmath>
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMarkerUtilities::vtkMarkerUtilities() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkMarkerUtilities::~vtkMarkerUtilities() = default;
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMarkerUtilities::GenerateMarker(vtkImageData* data, int style, int width)
 {
   if (!data)
@@ -179,7 +180,7 @@ void vtkMarkerUtilities::GenerateMarker(vtkImageData* data, int style, int width
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMarkerUtilities::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

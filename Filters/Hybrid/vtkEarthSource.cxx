@@ -50,6 +50,7 @@ void vtkEarthSource::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Outline: " << (this->Outline ? "On\n" : "Off\n");
 }
 
+// NOLINTNEXTLINE(bugprone-suspicious-include)
 #include "vtkEarthSourceData.cxx"
 
 int vtkEarthSource::RequestData(vtkInformation* vtkNotUsed(request),
@@ -92,7 +93,7 @@ int vtkEarthSource::RequestData(vtkInformation* vtkNotUsed(request),
   // Create points
   //
   offset = 0;
-  while (1)
+  while (true)
   {
     // read a polygon
     npts = vtkEarthData[offset++];

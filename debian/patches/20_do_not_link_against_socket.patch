@@ -1,10 +1,8 @@
 Description: Do not try linking with -lsocket
 
-Index: VTK-9.0.1/Common/System/vtkTestSocketFeatures.cmake
-===================================================================
---- VTK-9.0.1.orig/Common/System/vtkTestSocketFeatures.cmake
-+++ VTK-9.0.1/Common/System/vtkTestSocketFeatures.cmake
-@@ -6,9 +6,6 @@ check_library_exists("socket" getsocknam
+--- vtk9.orig/Common/System/vtkTestSocketFeatures.cmake
++++ vtk9/Common/System/vtkTestSocketFeatures.cmake
+@@ -6,9 +6,6 @@
  
  if(NOT DEFINED VTK_HAVE_GETSOCKNAME_WITH_SOCKLEN_T)
    set(VTK_GETSOCKNAME_LIBS)

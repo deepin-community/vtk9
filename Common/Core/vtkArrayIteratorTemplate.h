@@ -29,6 +29,7 @@
 #include "vtkArrayIterator.h"
 #include "vtkCommonCoreModule.h" // For export macro
 
+#include "vtkCompiler.h"      // for VTK_USE_EXTERN_TEMPLATE
 #include "vtkStdString.h"     // For template instantiation
 #include "vtkUnicodeString.h" // For template instantiation
 #include "vtkVariant.h"       // For template instantiation
@@ -75,17 +76,17 @@ public:
   /**
    * Must be called only after Initialize.
    */
-  vtkIdType GetNumberOfTuples();
+  vtkIdType GetNumberOfTuples() const;
 
   /**
    * Must be called only after Initialize.
    */
-  vtkIdType GetNumberOfValues();
+  vtkIdType GetNumberOfValues() const;
 
   /**
    * Must be called only after Initialize.
    */
-  int GetNumberOfComponents();
+  int GetNumberOfComponents() const;
 
   /**
    * Get the data type from the underlying array.
@@ -126,7 +127,8 @@ private:
 #endif
 vtkInstantiateTemplateMacro(extern template class VTKCOMMONCORE_EXPORT vtkArrayIteratorTemplate);
 extern template class VTKCOMMONCORE_EXPORT vtkArrayIteratorTemplate<vtkStdString>;
-extern template class VTKCOMMONCORE_EXPORT vtkArrayIteratorTemplate<vtkUnicodeString>;
+extern template class VTK_DEPRECATED_IN_9_1_0("Use vtkArrayIteratorTemplate<vtkStdString>")
+  VTKCOMMONCORE_EXPORT vtkArrayIteratorTemplate<vtkUnicodeString>;
 extern template class VTKCOMMONCORE_EXPORT vtkArrayIteratorTemplate<vtkVariant>;
 #ifdef _MSC_VER
 #pragma warning(pop)

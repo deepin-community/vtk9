@@ -164,7 +164,7 @@ public:
 
 vtkStandardNewMacro(vtkOpenGLGlyph3DMapper);
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with scaling on, scaling mode is by scalar value,
 // scale factor = 1.0, the range is (0,1), orient geometry is on, and
 // orientation is by vector. Clamping and indexing are turned off. No
@@ -175,7 +175,7 @@ vtkOpenGLGlyph3DMapper::vtkOpenGLGlyph3DMapper()
   this->ColorMapper = vtkOpenGLGlyph3DMappervtkColorMapper::New();
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOpenGLGlyph3DMapper::~vtkOpenGLGlyph3DMapper()
 {
   this->ColorMapper->Delete();
@@ -184,7 +184,7 @@ vtkOpenGLGlyph3DMapper::~vtkOpenGLGlyph3DMapper()
   this->GlyphValues = nullptr;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Send mapper ivars to sub-mapper.
 // \pre mapper_exists: mapper!=0
@@ -196,8 +196,10 @@ void vtkOpenGLGlyph3DMapper::CopyInformationToSubMapper(vtkOpenGLGlyph3DHelper* 
   // not used
   mapper->SetClippingPlanes(this->ClippingPlanes);
 
-  mapper->SetResolveCoincidentTopology(this->GetResolveCoincidentTopology());
-  mapper->SetResolveCoincidentTopologyZShift(this->GetResolveCoincidentTopologyZShift());
+  vtkOpenGLGlyph3DHelper::SetResolveCoincidentTopology(
+    vtkOpenGLGlyph3DMapper::GetResolveCoincidentTopology());
+  vtkOpenGLGlyph3DHelper::SetResolveCoincidentTopologyZShift(
+    vtkOpenGLGlyph3DMapper::GetResolveCoincidentTopologyZShift());
 
   double f, u;
   this->GetRelativeCoincidentTopologyPolygonOffsetParameters(f, u);
@@ -208,8 +210,8 @@ void vtkOpenGLGlyph3DMapper::CopyInformationToSubMapper(vtkOpenGLGlyph3DHelper* 
   mapper->SetRelativeCoincidentTopologyPointOffsetParameter(u);
 
   // ResolveCoincidentTopologyPolygonOffsetParameters is static
-  mapper->SetResolveCoincidentTopologyPolygonOffsetFaces(
-    this->GetResolveCoincidentTopologyPolygonOffsetFaces());
+  vtkOpenGLGlyph3DHelper::SetResolveCoincidentTopologyPolygonOffsetFaces(
+    vtkOpenGLGlyph3DMapper::GetResolveCoincidentTopologyPolygonOffsetFaces());
 
   if (static_cast<vtkIdType>(this->LODs.size()) > this->GetMaxNumberOfLOD())
   {
@@ -228,7 +230,7 @@ void vtkOpenGLGlyph3DMapper::SetupColorMapper()
   this->ColorMapper->ShallowCopy(this);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Method initiates the mapping process. Generally sent by the actor
 // as each frame is rendered.
@@ -387,7 +389,7 @@ void vtkOpenGLGlyph3DMapper::Render(vtkRenderer* ren, vtkActor* actor)
   this->UpdateProgress(1.0);
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DMapper::Render(vtkRenderer* ren, vtkActor* actor, vtkDataSet* dataset)
 {
   vtkIdType numPts = dataset->GetNumberOfPoints();
@@ -606,7 +608,7 @@ void vtkOpenGLGlyph3DMapper::Render(vtkRenderer* ren, vtkActor* actor, vtkDataSe
   vtkOpenGLCheckErrorMacro("failed after Render");
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DMapper::RebuildStructures(
   vtkOpenGLGlyph3DMapper::vtkOpenGLGlyph3DMapperSubArray* subarray, vtkIdType numPts,
   vtkActor* actor, vtkDataSet* dataset, vtkBitArray* maskArray)
@@ -952,7 +954,7 @@ void vtkOpenGLGlyph3DMapper::RebuildStructures(
   subarray->BuildTime.Modified();
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Release any graphics resources that are being consumed by this mapper.
 void vtkOpenGLGlyph3DMapper::ReleaseGraphicsResources(vtkWindow* window)
@@ -977,7 +979,7 @@ void vtkOpenGLGlyph3DMapper::ReleaseGraphicsResources(vtkWindow* window)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkIdType vtkOpenGLGlyph3DMapper::GetMaxNumberOfLOD()
 {
 #ifndef GL_ES_VERSION_3_0
@@ -999,13 +1001,13 @@ vtkIdType vtkOpenGLGlyph3DMapper::GetMaxNumberOfLOD()
 #endif
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DMapper::SetNumberOfLOD(vtkIdType nb)
 {
   this->LODs.resize(nb, { 0.f, 0.f });
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DMapper::SetLODDistanceAndTargetReduction(
   vtkIdType index, float distance, float targetReduction)
 {
@@ -1016,7 +1018,7 @@ void vtkOpenGLGlyph3DMapper::SetLODDistanceAndTargetReduction(
   }
 }
 
-// ----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkOpenGLGlyph3DMapper::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

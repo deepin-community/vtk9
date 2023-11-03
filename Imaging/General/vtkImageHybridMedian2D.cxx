@@ -25,7 +25,13 @@
 
 vtkStandardNewMacro(vtkImageHybridMedian2D);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkImageHybridMedian2D::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+}
+
+//------------------------------------------------------------------------------
 vtkImageHybridMedian2D::vtkImageHybridMedian2D()
 {
   this->KernelSize[0] = 5;

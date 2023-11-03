@@ -18,6 +18,9 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkDelimitedTextReader.h"
 #include "vtkCommand.h"
 #include "vtkDataSetAttributes.h"
@@ -56,6 +59,7 @@
 namespace
 {
 
+// FIXME(#18327): Port away from `vtkUnicodeString`.
 class DelimitedTextIterator : public vtkTextCodec::OutputIterator
 {
 public:
@@ -65,11 +69,11 @@ public:
   typedef value_type* pointer;
   typedef value_type& reference;
 
-  DelimitedTextIterator(const vtkIdType max_records, const vtkUnicodeString& record_delimiters,
+  DelimitedTextIterator(vtkIdType max_records, const vtkUnicodeString& record_delimiters,
     const vtkUnicodeString& field_delimiters, const vtkUnicodeString& string_delimiters,
     const vtkUnicodeString& whitespace, const vtkUnicodeString& escape, bool have_headers,
     bool unicode_array_output, bool merg_cons_delimiters, bool use_string_delimeter,
-    vtkTable* const output_table)
+    vtkTable* output_table)
     : MaxRecords(max_records)
     , MaxRecordIndex(have_headers ? max_records + 1 : max_records)
     , RecordDelimiters(record_delimiters.begin(), record_delimiters.end())
@@ -105,10 +109,6 @@ public:
     }
   }
 
-  DelimitedTextIterator& operator++(int) override { return *this; }
-
-  DelimitedTextIterator& operator*() override { return *this; }
-
   // Handle windows files that do not have a carriage return line feed on the last line of the file
   // ...
   void ReachedEndOfInput()
@@ -125,7 +125,7 @@ public:
     }
   }
 
-  DelimitedTextIterator& operator=(const vtkUnicodeString::value_type value) override
+  DelimitedTextIterator& operator=(const vtkTypeUInt32& value) override
   {
     // If we've already read our maximum number of records, we're done ...
     if (this->MaxRecords && this->CurrentRecordIndex == this->MaxRecordIndex)

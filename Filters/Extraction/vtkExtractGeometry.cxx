@@ -34,7 +34,7 @@
 vtkStandardNewMacro(vtkExtractGeometry);
 vtkCxxSetObjectMacro(vtkExtractGeometry, ImplicitFunction, vtkImplicitFunction);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Construct object with ExtractInside turned on.
 vtkExtractGeometry::vtkExtractGeometry(vtkImplicitFunction* f)
 {
@@ -49,7 +49,7 @@ vtkExtractGeometry::vtkExtractGeometry(vtkImplicitFunction* f)
   this->ExtractOnlyBoundaryCells = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkExtractGeometry::~vtkExtractGeometry()
 {
   this->SetImplicitFunction(nullptr);
@@ -71,7 +71,7 @@ vtkMTimeType vtkExtractGeometry::GetMTime()
   return mTime;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractGeometry::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -83,9 +83,6 @@ int vtkExtractGeometry::RequestData(
   vtkDataSet* input = vtkDataSet::SafeDownCast(inInfo->Get(vtkDataObject::DATA_OBJECT()));
   vtkUnstructuredGrid* output =
     vtkUnstructuredGrid::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-
-  // May be nullptr, check before dereferencing.
-  vtkUnstructuredGrid* gridInput = vtkUnstructuredGrid::SafeDownCast(input);
 
   if (!this->GetExtractInside() && this->GetExtractOnlyBoundaryCells() &&
     this->GetExtractBoundaryCells() &&
@@ -115,6 +112,7 @@ int vtkExtractGeometry::RequestData(
   double multiplier;
   vtkPoints* newPts;
   vtkIdList* newCellPts;
+  vtkIdList* faces;
   vtkPointData* pd = input->GetPointData();
   vtkCellData* cd = input->GetCellData();
   vtkPointData* outputPD = output->GetPointData();
@@ -278,10 +276,14 @@ int vtkExtractGeometry::RequestData(
     if (extraction_condition)
     {
       // special handling for polyhedron cells
-      if (gridInput && cellType == VTK_POLYHEDRON)
+      if (cellType == VTK_POLYHEDRON)
       {
         newCellPts->Reset();
-        gridInput->GetFaceStream(cellIter->GetCellId(), newCellPts);
+        faces = cellIter->GetFaces();
+        for (i = 0; i < faces->GetNumberOfIds(); ++i)
+        {
+          newCellPts->InsertNextId(faces->GetId(i));
+        }
         vtkUnstructuredGrid::ConvertFaceStreamPointIds(newCellPts, pointMap);
       }
       newCellId = output->InsertNextCell(cellType, newCellPts);
@@ -306,14 +308,14 @@ int vtkExtractGeometry::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkExtractGeometry::FillInputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkExtractGeometry::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

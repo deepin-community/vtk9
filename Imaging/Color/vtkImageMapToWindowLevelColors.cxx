@@ -22,6 +22,8 @@
 #include "vtkPointData.h"
 #include "vtkScalarsToColors.h"
 
+#include <cmath>
+
 vtkStandardNewMacro(vtkImageMapToWindowLevelColors);
 
 // Constructor sets default values
@@ -33,7 +35,7 @@ vtkImageMapToWindowLevelColors::vtkImageMapToWindowLevelColors()
 
 vtkImageMapToWindowLevelColors::~vtkImageMapToWindowLevelColors() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method checks to see if we can simply reference the input data
 int vtkImageMapToWindowLevelColors::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
@@ -69,13 +71,14 @@ int vtkImageMapToWindowLevelColors::RequestData(
       this->DataWasPassed = 0;
     }
 
+    // NOLINTNEXTLINE(bugprone-parent-virtual-call)
     return this->vtkThreadedImageAlgorithm::RequestData(request, inputVector, outputVector);
   }
 
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkImageMapToWindowLevelColors::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -236,7 +239,7 @@ void vtkImageMapToWindowLevelClamps(vtkImageData* data, double w, double l, T& l
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This non-templated function executes the filter for any type of data.
 template <class T>
 void vtkImageMapToWindowLevelColorsExecute(vtkImageMapToWindowLevelColors* self,
@@ -386,7 +389,7 @@ void vtkImageMapToWindowLevelColorsExecute(vtkImageMapToWindowLevelColors* self,
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is passed a input and output data, and executes the filter
 // algorithm to fill the output from the input.
 

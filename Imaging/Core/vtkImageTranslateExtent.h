@@ -33,17 +33,17 @@ public:
   vtkTypeMacro(vtkImageTranslateExtent, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Delta to change "WholeExtent". -1 changes 0->10 to -1->9.
    */
   vtkSetVector3Macro(Translation, int);
   vtkGetVector3Macro(Translation, int);
-  //@}
+  ///@}
 
 protected:
   vtkImageTranslateExtent();
-  ~vtkImageTranslateExtent() override {}
+  ~vtkImageTranslateExtent() override = default;
 
   int Translation[3];
 

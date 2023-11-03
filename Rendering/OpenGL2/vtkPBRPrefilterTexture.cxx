@@ -44,12 +44,11 @@ vtkPBRPrefilterTexture::~vtkPBRPrefilterTexture()
 void vtkPBRPrefilterTexture::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-  os << indent << "PrefilterSize: " << this->PrefilterSize << "\n";
-  os << indent << "PrefilterLevels: " << this->PrefilterLevels << "\n";
-  os << indent << "PrefilterSamples: " << this->PrefilterSamples << endl;
+  os << indent << "PrefilterLevels: " << this->PrefilterLevels << endl;
+  os << indent << "PrefilterSize: " << this->PrefilterSize << endl;
 }
 
-// ---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Release the graphics resources used by this texture.
 void vtkPBRPrefilterTexture::ReleaseGraphicsResources(vtkWindow* win)
 {
@@ -75,6 +74,7 @@ void vtkPBRPrefilterTexture::Load(vtkRenderer* ren)
   }
 
   this->InputTexture->Render(ren);
+  this->PrefilterSize = this->InputTexture->GetTextureObject()->GetHeight();
 
   if (this->GetMTime() > this->LoadTime.GetMTime() ||
     this->InputTexture->GetMTime() > this->LoadTime.GetMTime())
@@ -110,41 +110,81 @@ void vtkPBRPrefilterTexture::Load(vtkRenderer* ren)
     vtkShaderProgram::Substitute(FSSource, "//VTK::FSQ::Decl",
       "//VTK::TEXTUREINPUT::Decl\n"
       "uniform float roughness;\n"
+      "uniform int nbSamples;\n"
       "const float PI = 3.14159265359;\n"
-      "vec3 GetSampleColor(vec3 dir)\n"
-      "{\n"
-      "  //VTK::SAMPLING::Decl\n"
-      "  //VTK::COLORSPACE::Decl\n"
-      "}\n"
-      "float RadicalInverse_VdC(uint bits)\n"
-      "{\n"
-      "  bits = (bits << 16u) | (bits >> 16u);\n"
-      "  bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);\n"
-      "  bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);\n"
-      "  bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);\n"
-      "  bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);\n"
-      "  return float(bits) * 2.3283064365386963e-10; // / 0x100000000\n"
-      "}\n"
-      "vec2 Hammersley(uint i, uint N)\n"
-      "{\n"
-      "  return vec2(float(i)/float(N), RadicalInverse_VdC(i));\n"
-      "}\n"
-      "vec3 ImportanceSampleGGX(vec2 rd, vec3 N, float roughness)\n"
-      "{\n"
-      "  float a = roughness*roughness;\n"
-      "  float phi = 2.0 * PI * rd.x;\n"
-      "  float cosTheta = sqrt((1.0 - rd.y) / (1.0 + (a*a - 1.0) * rd.y));\n"
-      "  float sinTheta = sqrt(1.0 - cosTheta*cosTheta);\n"
-      "  vec3 H;\n"
-      "  H.x = cos(phi) * sinTheta;\n"
-      "  H.y = sin(phi) * sinTheta;\n"
-      "  H.z = cosTheta;\n"
-      "  vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);\n"
-      "  vec3 tangent = normalize(cross(up, N));\n"
-      "  vec3 bitangent = cross(N, tangent);\n"
-      "  vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;\n"
-      "  return normalize(sampleVec);\n"
-      "}\n");
+      // The solid angle of the texel = 4*PI/(6*w*h)
+      // We remove the 4, simplification with saSample
+      "const float saTexel  = PI / (6.0 * " +
+        std::to_string(this->PrefilterSize * this->PrefilterSize) +
+        ");\n"
+        "vec3 GetSampleColor(vec3 dir, float mipLevel)\n"
+        "{\n"
+        "  //VTK::SAMPLING::Decl\n"
+        "  //VTK::COLORSPACE::Decl\n"
+        "}\n"
+        "float RadicalInverse_VdC(uint bits)\n"
+        "{\n"
+        "  bits = (bits << 16u) | (bits >> 16u);\n"
+        "  bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);\n"
+        "  bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);\n"
+        "  bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);\n"
+        "  bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);\n"
+        "  return float(bits) * 2.3283064365386963e-10; // / 0x100000000\n"
+        "}\n"
+        "vec2 Hammersley(uint i, uint N)\n"
+        "{\n"
+        "  return vec2(float(i)/float(N), RadicalInverse_VdC(i));\n"
+        "}\n"
+        "vec3 ImportanceSampleGGX(vec2 rd, vec3 N, float roughness)\n"
+        "{\n"
+        "  float a = roughness*roughness;\n"
+        "  float phi = 2.0 * PI * rd.x;\n"
+        "  float cosTheta = sqrt((1.0 - rd.y) / (1.0 + (a*a - 1.0) * rd.y));\n"
+        "  float sinTheta = sqrt(1.0 - cosTheta*cosTheta);\n"
+        "  vec3 H;\n"
+        "  H.x = cos(phi) * sinTheta;\n"
+        "  H.y = sin(phi) * sinTheta;\n"
+        "  H.z = cosTheta;\n"
+        "  vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);\n"
+        "  vec3 tangent = normalize(cross(up, N));\n"
+        "  vec3 bitangent = cross(N, tangent);\n"
+        "  vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;\n"
+        "  return normalize(sampleVec);\n"
+        "}\n"
+        "// Normal Distribution\n"
+        "float D_GGX(float NdH, float roughness)\n"
+        "{\n"
+        "    float alpha = roughness * roughness;\n"
+        "    float alpha2 = alpha * alpha;\n"
+        "    float denom = NdH * NdH * (alpha2 - 1.0) + 1.0;\n"
+        "    return alpha2 / (PI * denom * denom); \n"
+        "}\n"
+        "void AccumulateColorAndWeight(inout vec3 p, inout float w, vec2 rd, vec3 n, float "
+        "roughness)\n"
+        "{\n"
+        "  vec3 h = ImportanceSampleGGX(rd, n, roughness);\n"
+        "  float NdH = max(dot(n,h), 0.0);\n"
+        "  // Should be HdV here, but we assume V = N\n"
+        "  vec3 l = normalize(2.0 * NdH * h - n);\n"
+        "  float NdL = max(dot(n, l), 0.0);\n"
+        "  if (NdL > 0.0)\n"
+        "  {\n"
+        "    // sample from the environment's mip level based on roughness/pdf\n"
+        "    float D = D_GGX(NdH, roughness);\n"
+        // The pdf of the ggx distribution with importance sampling
+        // pdf = (D * NdH) / (VdH * 4). Here NdH = VdH as we assume V=N
+        // we removed the 4, simplification with saTexel
+        "    float pdf = D;\n"
+        // The solid angle of the sample
+        "    float saSample = 1.0 / ( nbSamples * pdf);\n"
+        // miplevel = 0.5 * (log2(K) + log2(saSample) - log2(saTexel))
+        // K=4 so log2(K)=2
+        "    float mipLevel = roughness == 0.0 ? 0.0 : 0.5 * (2.0 + log2(saSample) - "
+        "log2(saTexel));\n"
+        "    p += GetSampleColor(l, mipLevel) * NdL;\n"
+        "    w += NdL;\n"
+        "  }\n"
+        "}\n");
 
     if (this->ConvertToLinear)
     {
@@ -162,7 +202,7 @@ void vtkPBRPrefilterTexture::Load(vtkRenderer* ren)
         FSSource, "//VTK::TEXTUREINPUT::Decl", "uniform samplerCube inputTex;");
 
       vtkShaderProgram::Substitute(
-        FSSource, "//VTK::SAMPLING::Decl", "vec3 col = texture(inputTex, dir).rgb;");
+        FSSource, "//VTK::SAMPLING::Decl", "vec3 col = textureLod(inputTex, dir, mipLevel).rgb;\n");
     }
     else
     {
@@ -174,7 +214,7 @@ void vtkPBRPrefilterTexture::Load(vtkRenderer* ren)
         "  float theta = atan(dir.z, dir.x);\n"
         "  float phi = asin(dir.y);\n"
         "  vec2 p = vec2(theta * 0.1591 + 0.5, phi * 0.3183 + 0.5);\n"
-        "  vec3 col = texture(inputTex, p).rgb;\n");
+        "  vec3 col = textureLod(inputTex, p, mipLevel).rgb;\n");
     }
 
     std::stringstream fsImpl;
@@ -197,43 +237,16 @@ void vtkPBRPrefilterTexture::Load(vtkRenderer* ren)
          "  float w_ny = 0.0;\n"
          "  float w_pz = 0.0;\n"
          "  float w_nz = 0.0;\n"
-         "  for (uint i = 0u; i < "
-      << this->PrefilterSamples
-      << "u; i++)\n"
+         "  uint nbSamplesU = uint(nbSamples);\n"
+         "  for (uint i = 0u; i < nbSamplesU; i++)\n"
          "  {\n"
-         "    vec2 rd = Hammersley(i, "
-      << this->PrefilterSamples
-      << "u);\n"
-         "    vec3 h_px = ImportanceSampleGGX(rd, n_px, roughness);\n"
-         "    vec3 h_nx = ImportanceSampleGGX(rd, n_nx, roughness);\n"
-         "    vec3 h_py = ImportanceSampleGGX(rd, n_py, roughness);\n"
-         "    vec3 h_ny = ImportanceSampleGGX(rd, n_ny, roughness);\n"
-         "    vec3 h_pz = ImportanceSampleGGX(rd, n_pz, roughness);\n"
-         "    vec3 h_nz = ImportanceSampleGGX(rd, n_nz, roughness);\n"
-         "    vec3 l_px = normalize(2.0 * dot(n_px, h_px) * h_px - n_px);\n"
-         "    vec3 l_nx = normalize(2.0 * dot(n_nx, h_nx) * h_nx - n_nx);\n"
-         "    vec3 l_py = normalize(2.0 * dot(n_py, h_py) * h_py - n_py);\n"
-         "    vec3 l_ny = normalize(2.0 * dot(n_ny, h_ny) * h_ny - n_ny);\n"
-         "    vec3 l_pz = normalize(2.0 * dot(n_pz, h_pz) * h_pz - n_pz);\n"
-         "    vec3 l_nz = normalize(2.0 * dot(n_nz, h_nz) * h_nz - n_nz);\n"
-         "    float d_px = max(dot(n_px, l_px), 0.0);\n"
-         "    float d_nx = max(dot(n_nx, l_nx), 0.0);\n"
-         "    float d_py = max(dot(n_py, l_py), 0.0);\n"
-         "    float d_ny = max(dot(n_ny, l_ny), 0.0);\n"
-         "    float d_pz = max(dot(n_pz, l_pz), 0.0);\n"
-         "    float d_nz = max(dot(n_nz, l_nz), 0.0);\n"
-         "    p_px += GetSampleColor(l_px) * d_px;\n"
-         "    p_nx += GetSampleColor(l_nx) * d_nx;\n"
-         "    p_py += GetSampleColor(l_py) * d_py;\n"
-         "    p_ny += GetSampleColor(l_ny) * d_ny;\n"
-         "    p_pz += GetSampleColor(l_pz) * d_pz;\n"
-         "    p_nz += GetSampleColor(l_nz) * d_nz;\n"
-         "    w_px += d_px;\n"
-         "    w_nx += d_nx;\n"
-         "    w_py += d_py;\n"
-         "    w_ny += d_ny;\n"
-         "    w_pz += d_pz;\n"
-         "    w_nz += d_nz;\n"
+         "    vec2 rd = Hammersley(i, nbSamplesU);\n"
+         "    AccumulateColorAndWeight(p_px, w_px, rd, n_px, roughness);\n"
+         "    AccumulateColorAndWeight(p_nx, w_nx, rd, n_nx, roughness);\n"
+         "    AccumulateColorAndWeight(p_py, w_py, rd, n_py, roughness);\n"
+         "    AccumulateColorAndWeight(p_ny, w_ny, rd, n_ny, roughness);\n"
+         "    AccumulateColorAndWeight(p_pz, w_pz, rd, n_pz, roughness);\n"
+         "    AccumulateColorAndWeight(p_nz, w_nz, rd, n_nz, roughness);\n"
          "  }\n"
          "  gl_FragData[0] = vec4(p_px / w_px, 1.0);\n"
          "  gl_FragData[1] = vec4(p_nx / w_nx, 1.0);\n"
@@ -249,10 +262,16 @@ void vtkPBRPrefilterTexture::Load(vtkRenderer* ren)
 
     if (!quadHelper.Program || !quadHelper.Program->GetCompiled())
     {
-      vtkErrorMacro("Couldn't build the shader program for irradiance.");
+      vtkErrorMacro("Couldn't build the shader program for prefilter texture.");
     }
     else
     {
+      if (!this->InputTexture->GetInterpolate() || !this->InputTexture->GetMipmap())
+      {
+        vtkWarningMacro("The input texture of vtkPBRPrefilterTexture should have mipmap and "
+                        "interpolate set to ON.");
+      }
+
       this->InputTexture->GetTextureObject()->Activate();
       quadHelper.Program->SetUniformi("inputTex", this->InputTexture->GetTextureUnit());
 
@@ -274,8 +293,15 @@ void vtkPBRPrefilterTexture::Load(vtkRenderer* ren)
         unsigned currentSize = this->PrefilterSize >> mip;
         fbo->Start(currentSize, currentSize);
 
-        float roughness = static_cast<float>(mip) / static_cast<float>(this->PrefilterLevels - 1);
+        float roughness = static_cast<float>(mip) / static_cast<float>(this->PrefilterLevels);
         quadHelper.Program->SetUniformf("roughness", roughness);
+
+        // Heuristic to choose the number of samples according to the roughness
+        const float a = 0.65;
+        const float b = 1.0 - a;
+        int nbSamples = roughness * this->PrefilterMaxSamples / (a * roughness + b) + 1;
+
+        quadHelper.Program->SetUniformi("nbSamples", nbSamples);
 
         quadHelper.Render();
       }

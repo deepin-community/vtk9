@@ -28,13 +28,13 @@
 
 vtkStandardNewMacro(vtkMergeArrays);
 
-//----------------------------------------------------------------------------
-vtkMergeArrays::vtkMergeArrays() {}
+//------------------------------------------------------------------------------
+vtkMergeArrays::vtkMergeArrays() = default;
 
-//----------------------------------------------------------------------------
-vtkMergeArrays::~vtkMergeArrays() {}
+//------------------------------------------------------------------------------
+vtkMergeArrays::~vtkMergeArrays() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkMergeArrays::GetOutputArrayName(
   vtkFieldData* arrays, const char* arrayName, int inputIndex, std::string& outputArrayName)
 {
@@ -46,7 +46,7 @@ bool vtkMergeArrays::GetOutputArrayName(
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMergeArrays::MergeArrays(int inputIndex, vtkFieldData* inputFD, vtkFieldData* outputFD)
 {
   if (inputFD == nullptr || outputFD == nullptr)
@@ -81,9 +81,14 @@ void vtkMergeArrays::MergeArrays(int inputIndex, vtkFieldData* inputFD, vtkField
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMergeArrays::MergeDataObjectFields(vtkDataObject* input, int idx, vtkDataObject* output)
 {
+  if (!input || !output)
+  {
+    return 0;
+  }
+
   int checks[vtkDataObject::NUMBER_OF_ATTRIBUTE_TYPES];
   for (int attr = 0; attr < vtkDataObject::NUMBER_OF_ATTRIBUTE_TYPES; attr++)
   {
@@ -109,14 +114,14 @@ int vtkMergeArrays::MergeDataObjectFields(vtkDataObject* input, int idx, vtkData
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMergeArrays::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_IS_REPEATABLE(), 1);
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkMergeArrays::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -184,7 +189,7 @@ int vtkMergeArrays::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMergeArrays::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

@@ -13,7 +13,7 @@ following should be fixed first:
   - A better solution than `-undefined dynamic_lookup` for macOS. VTK has
     [an issue][VTK dynamic Python lookup issue] filed for this already.
 
-[VTK dynamic Python lookup issue]: https://gitlab.kitware.com/vtk/vtk/issues/17214
+[VTK dynamic Python lookup issue]: https://gitlab.kitware.com/vtk/vtk/-/issues/17214
 #]==]
 
 if (NOT DEFINED VTK_PYTHON_VERSION)
@@ -24,12 +24,18 @@ if (NOT DEFINED VTK_PYTHON_VERSION)
       STRINGS "2;3")
 endif ()
 
+if (VTK_PYTHON_VERSION STREQUAL "2")
+  message(DEPRECATION
+    "Python2 support is deprecated and will be removed in a future release. "
+    "Please migrate to a supported version of Python.")
+endif ()
+
 # VTK only supports a single Python version at a time, so make artifact finding
 # interactive.
 set("Python${VTK_PYTHON_VERSION}_ARTIFACTS_INTERACTIVE" ON)
 
 if (VTK_PYTHON_VERSION STREQUAL "2")
-  set(vtk_python_min_version "2.6")
+  set(vtk_python_min_version "2.7")
   set(vtk_python_version_support "2.7")
   if (VTK_REMOVE_LEGACY)
     set(vtk_python_min_version "${vtk_python_version_support}")
@@ -41,8 +47,8 @@ if (VTK_PYTHON_VERSION STREQUAL "2")
     OPTIONAL_COMPONENTS Development.Embed
     FORWARD_VERSION_REQ MINOR)
 elseif (VTK_PYTHON_VERSION STREQUAL "3")
-  set(vtk_python_min_version "3.2")
-  set(vtk_python_version_support "3.3")
+  set(vtk_python_min_version "3.4")
+  set(vtk_python_version_support "3.6")
   if (VTK_REMOVE_LEGACY)
     set(vtk_python_min_version "${vtk_python_version_support}")
   endif ()
@@ -63,6 +69,8 @@ set(vtk_python_version "${Python${VTK_PYTHON_VERSION}_VERSION}")
 set(vtk_python_version_pair "${Python${VTK_PYTHON_VERSION}_VERSION_MAJOR}.${Python${VTK_PYTHON_VERSION}_VERSION_MINOR}")
 
 set_property(GLOBAL PROPERTY _vtk_python_soabi "${Python${VTK_PYTHON_VERSION}_SOABI}")
+set_property(GLOBAL PROPERTY _vtk_python_version_major "${Python${VTK_PYTHON_VERSION}_VERSION_MAJOR}")
+set_property(GLOBAL PROPERTY _vtk_python_version_minor "${Python${VTK_PYTHON_VERSION}_VERSION_MINOR}")
 
 # Check deprecated versions of Python
 if (NOT VTK_LEGACY_SILENT AND vtk_python_version VERSION_LESS vtk_python_version_support)
@@ -104,7 +112,7 @@ endif ()
 # For static builds, since vtkPythonInterpreter cannot work off the library
 # location, but instead has to use the executable location, it needs to know the
 # library dir explicitly.
-if (NOT VTK_BUILD_SHARED_LIBS)
+if (NOT BUILD_SHARED_LIBS)
   set(VTK_PYTHON_SITE_PACKAGES_SUFFIX_FIXED "${VTK_INSTALL_PYTHON_MODULES_DIR}")
 else ()
   set(VTK_PYTHON_SITE_PACKAGES_SUFFIX_FIXED "${VTK_PYTHON_SITE_PACKAGES_SUFFIX}")
@@ -156,10 +164,10 @@ if (VTK_PYTHON_OPTIONAL_LINK AND TARGET "${vtk_python_embed_target}")
     # The linker is allowed to skip libraries not used by the end result. This
     # can exclude the `libpython` DT_NEEDED entry at the final executable if it
     # itself does not actually use any libpython symbols.
-    "$<$<AND:${is_exe},$<PLATFORM_ID:Linux>>:LINKER:--no-as-needed>"
+    "$<$<AND:${should_use},$<PLATFORM_ID:Linux>>:LINKER:--no-as-needed>"
     # Due to the above making the symbols actually available, we can ignore
     # unresolved symbols in the shared libraries that are being linked to.
-    "$<$<AND:${is_exe},$<PLATFORM_ID:Linux>>:LINKER:--unresolved-symbols=ignore-in-shared-libs>")
+    "$<$<AND:${should_use},$<PLATFORM_ID:Linux>>:LINKER:--unresolved-symbols=ignore-in-shared-libs>")
 
   # Use the `PythonX::Module` target from FindPython.
   vtk_module_link(VTK::Python
@@ -172,10 +180,10 @@ if (VTK_PYTHON_OPTIONAL_LINK AND TARGET "${vtk_python_embed_target}")
   # flags.
   target_link_libraries(PythonUsed
     INTERFACE
-      "$<LINK_ONLY:$<${is_exe}:${vtk_python_embed_target}>>")
+      "$<LINK_ONLY:$<${should_use}:${vtk_python_embed_target}>>")
   target_link_options(PythonUsed
     INTERFACE
-      "$<$<AND:${is_exe},${needs_flags}>:${platform_flags}>")
+      "$<$<AND:${should_use},${needs_flags}>:${platform_flags}>")
   _vtk_module_set_module_property(VTK::Python APPEND
     PROPERTY  "forward_link"
     VALUE     VTK::PythonUsed)

@@ -34,23 +34,23 @@ T vtkMAX(T a, T b)
 
 using namespace xdmf2;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmfDocument::vtkXdmfDocument()
 {
-  this->ActiveDomain = 0;
+  this->ActiveDomain = nullptr;
   this->ActiveDomainIndex = -1;
-  this->LastReadContents = 0;
+  this->LastReadContents = nullptr;
   this->LastReadContentsLength = 0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmfDocument::~vtkXdmfDocument()
 {
   delete this->ActiveDomain;
   delete[] this->LastReadContents;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfDocument::Parse(const char* xmffilename)
 {
   if (!xmffilename)
@@ -65,10 +65,10 @@ bool vtkXdmfDocument::Parse(const char* xmffilename)
 
   this->ActiveDomainIndex = -1;
   delete this->ActiveDomain;
-  this->ActiveDomain = 0;
+  this->ActiveDomain = nullptr;
 
   delete[] this->LastReadContents;
-  this->LastReadContents = 0;
+  this->LastReadContents = nullptr;
   this->LastReadContentsLength = 0;
   this->LastReadFilename = std::string();
 
@@ -91,7 +91,7 @@ bool vtkXdmfDocument::Parse(const char* xmffilename)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfDocument::ParseString(const char* xmfdata, size_t length)
 {
   if (!xmfdata || !length)
@@ -107,7 +107,7 @@ bool vtkXdmfDocument::ParseString(const char* xmfdata, size_t length)
 
   this->ActiveDomainIndex = -1;
   delete this->ActiveDomain;
-  this->ActiveDomain = 0;
+  this->ActiveDomain = nullptr;
 
   delete this->LastReadContents;
   this->LastReadContentsLength = 0;
@@ -119,11 +119,11 @@ bool vtkXdmfDocument::ParseString(const char* xmfdata, size_t length)
   memcpy(this->LastReadContents, xmfdata, length);
   this->LastReadContents[length] = 0;
 
-  this->XMLDOM.SetInputFileName(0);
+  this->XMLDOM.SetInputFileName(nullptr);
   if (!this->XMLDOM.Parse(this->LastReadContents))
   {
     delete this->LastReadContents;
-    this->LastReadContents = 0;
+    this->LastReadContents = nullptr;
     this->LastReadContentsLength = 0;
     return false;
   }
@@ -132,7 +132,7 @@ bool vtkXdmfDocument::ParseString(const char* xmfdata, size_t length)
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmfDocument::UpdateDomains()
 {
   this->Domains.clear();
@@ -142,7 +142,7 @@ void vtkXdmfDocument::UpdateDomains()
     XdmfConstString domainName = this->XMLDOM.Get(domain, "Name");
     if (domainName)
     {
-      this->Domains.push_back(domainName);
+      this->Domains.emplace_back(domainName);
     }
     else
     {
@@ -154,7 +154,7 @@ void vtkXdmfDocument::UpdateDomains()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfDocument::SetActiveDomain(const char* domainname)
 {
   for (int cc = 0; cc < static_cast<int>(this->Domains.size()); cc++)
@@ -167,7 +167,7 @@ bool vtkXdmfDocument::SetActiveDomain(const char* domainname)
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfDocument::SetActiveDomain(int index)
 {
   if (this->ActiveDomainIndex == index)
@@ -177,7 +177,7 @@ bool vtkXdmfDocument::SetActiveDomain(int index)
 
   this->ActiveDomainIndex = -1;
   delete this->ActiveDomain;
-  this->ActiveDomain = 0;
+  this->ActiveDomain = nullptr;
 
   vtkXdmfDomain* domain = new vtkXdmfDomain(&this->XMLDOM, index);
   if (!domain->IsValid())
@@ -193,10 +193,10 @@ bool vtkXdmfDocument::SetActiveDomain(int index)
 //*****************************************************************************
 // vtkXdmfDomain
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmfDomain::vtkXdmfDomain(XdmfDOM* xmlDom, int domain_index)
 {
-  this->XMLDOM = 0;
+  this->XMLDOM = nullptr;
   this->XMFGrids = nullptr;
   this->NumberOfGrids = 0;
   this->SIL = vtkMutableDirectedGraph::New();
@@ -242,23 +242,23 @@ vtkXdmfDomain::vtkXdmfDomain(XdmfDOM* xmlDom, int domain_index)
   this->CollectMetaData();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkXdmfDomain::~vtkXdmfDomain()
 {
   // free the XdmfGrid allocated.
   delete[] this->XMFGrids;
   this->XMFGrids = nullptr;
   this->SIL->Delete();
-  this->SIL = 0;
+  this->SIL = nullptr;
   this->SILBuilder->Delete();
-  this->SILBuilder = 0;
+  this->SILBuilder = nullptr;
   delete this->PointArrays;
   delete this->CellArrays;
   delete this->Grids;
   delete this->Sets;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 XdmfGrid* vtkXdmfDomain::GetGrid(XdmfInt64 cc)
 {
   if (cc >= 0 && cc < this->NumberOfGrids)
@@ -268,7 +268,7 @@ XdmfGrid* vtkXdmfDomain::GetGrid(XdmfInt64 cc)
   return nullptr;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmfDomain::GetVTKDataType()
 {
   if (this->NumberOfGrids > 1)
@@ -282,7 +282,7 @@ int vtkXdmfDomain::GetVTKDataType()
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmfDomain::GetVTKDataType(XdmfGrid* xmfGrid)
 {
   XdmfInt32 gridType = xmfGrid->GetGridType();
@@ -323,7 +323,7 @@ int vtkXdmfDomain::GetVTKDataType(XdmfGrid* xmfGrid)
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmfDomain::GetIndexForTime(double time)
 {
   std::map<XdmfFloat64, int>::const_iterator iter = this->TimeSteps.find(time);
@@ -355,7 +355,7 @@ int vtkXdmfDomain::GetIndexForTime(double time)
   return counter;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 XdmfGrid* vtkXdmfDomain::GetGrid(XdmfGrid* xmfGrid, double time)
 {
   XdmfInt32 gridType = xmfGrid->GetGridType();
@@ -389,7 +389,7 @@ XdmfGrid* vtkXdmfDomain::GetGrid(XdmfGrid* xmfGrid, double time)
   return xmfGrid;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfDomain::IsStructured(XdmfGrid* xmfGrid)
 {
   switch (this->GetVTKDataType(xmfGrid))
@@ -404,7 +404,7 @@ bool vtkXdmfDomain::IsStructured(XdmfGrid* xmfGrid)
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfDomain::GetWholeExtent(XdmfGrid* xmfGrid, int extents[6])
 {
   extents[0] = extents[2] = extents[4] = 0;
@@ -432,7 +432,7 @@ bool vtkXdmfDomain::GetWholeExtent(XdmfGrid* xmfGrid, int extents[6])
   return true;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfDomain::GetOriginAndSpacing(XdmfGrid* xmfGrid, double origin[3], double spacing[3])
 {
   if (xmfGrid->GetTopology()->GetTopologyType() != XDMF_2DCORECTMESH &&
@@ -477,7 +477,7 @@ bool vtkXdmfDomain::GetOriginAndSpacing(XdmfGrid* xmfGrid, double origin[3], dou
   return false;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkXdmfDomain::GetDataDimensionality(XdmfGrid* xmfGrid)
 {
   if (!xmfGrid || !xmfGrid->IsUniform())
@@ -525,7 +525,7 @@ int vtkXdmfDomain::GetDataDimensionality(XdmfGrid* xmfGrid)
   return -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmfDomain::CollectMetaData()
 {
   this->SILBuilder->Initialize();
@@ -583,7 +583,7 @@ void vtkXdmfDomain::CollectMetaData()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmfDomain::CollectMetaData(XdmfGrid* xmfGrid, vtkIdType silParent)
 {
   if (!xmfGrid)
@@ -608,7 +608,7 @@ void vtkXdmfDomain::CollectMetaData(XdmfGrid* xmfGrid, vtkIdType silParent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmfDomain::CollectNonLeafMetaData(XdmfGrid* xmfGrid, vtkIdType silParent)
 {
   vtkIdType silVertex = -1;
@@ -653,7 +653,7 @@ void vtkXdmfDomain::CollectNonLeafMetaData(XdmfGrid* xmfGrid, vtkIdType silParen
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkXdmfDomain::CollectLeafMetaData(XdmfGrid* xmfGrid, vtkIdType silParent)
 {
   vtkIdType silVertex = -1;
@@ -743,7 +743,7 @@ void vtkXdmfDomain::CollectLeafMetaData(XdmfGrid* xmfGrid, vtkIdType silParent)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkXdmfDomain::UpdateGridAttributeInSIL(XdmfAttribute* xmfAttribute, vtkIdType silVertex)
 {
   // Check if the grid centered attribute is an single component integeral
@@ -814,5 +814,5 @@ bool vtkXdmfDomain::UpdateGridAttributeInSIL(XdmfAttribute* xmfAttribute, vtkIdT
   return true;
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------

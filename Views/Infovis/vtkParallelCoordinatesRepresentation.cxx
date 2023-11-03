@@ -18,6 +18,9 @@ PURPOSE.  See the above copyright notice for more information.
   the U.S. Government retains certain rights in this software.
   -------------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkParallelCoordinatesRepresentation.h"
 
 #include "vtkAbstractArray.h"
@@ -163,9 +166,9 @@ void vtkParallelCoordinatesRepresentationBuildLinePoints(iterT* it, vtkIdTypeArr
 class vtkParallelCoordinatesRepresentation::Internals
 {
 public:
-  std::vector<vtkSmartPointer<vtkPolyData> > SelectionData;
-  std::vector<vtkSmartPointer<vtkPolyDataMapper2D> > SelectionMappers;
-  std::vector<vtkSmartPointer<vtkActor2D> > SelectionActors;
+  std::vector<vtkSmartPointer<vtkPolyData>> SelectionData;
+  std::vector<vtkSmartPointer<vtkPolyDataMapper2D>> SelectionMappers;
+  std::vector<vtkSmartPointer<vtkActor2D>> SelectionActors;
   static const double Colors[10][3];
   static const unsigned int NumberOfColors = 10;
   double* GetColor(unsigned int idx)
@@ -285,6 +288,21 @@ vtkParallelCoordinatesRepresentation::~vtkParallelCoordinatesRepresentation()
   delete[] this->Xs;
 
   this->SetInternalHoverText(nullptr);
+}
+
+//------------------------------------------------------------------------------
+std::string vtkParallelCoordinatesRepresentation::GetHoverString(vtkView* view, int x, int y)
+{
+  // FIXME(#18327): Migrate to processing here rather than working on
+  // `vtkUnicodeString`.
+  std::string result;
+  const char* text = GetHoverText(view, x, y);
+  if (text != nullptr)
+  {
+    result = text;
+  }
+
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -976,7 +994,7 @@ int vtkParallelCoordinatesRepresentation::AllocatePolyData(vtkPolyData* polyData
 
       // prepare the cell array. might as well initialize it now and only
       // recompute it when something actually changes.
-      vtkIdType* ptIds = new vtkIdType[4];
+      vtkIdType ptIds[4];
 
       quads->InitTraversal();
       for (int i = 0; i < numQuads; i++)
@@ -987,7 +1005,6 @@ int vtkParallelCoordinatesRepresentation::AllocatePolyData(vtkPolyData* polyData
         }
         quads->InsertNextCell(4, ptIds);
       }
-      delete[] ptIds;
     }
   }
   else

@@ -15,7 +15,10 @@
 #include "vtkBorderRepresentation.h"
 #include "vtkActor2D.h"
 #include "vtkCellArray.h"
+#include "vtkFeatureEdges.h"
+#include "vtkMath.h"
 #include "vtkObjectFactory.h"
+#include "vtkPointData.h"
 #include "vtkPoints.h"
 #include "vtkPolyData.h"
 #include "vtkPolyDataMapper2D.h"
@@ -30,29 +33,20 @@
 
 vtkStandardNewMacro(vtkBorderRepresentation);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBorderRepresentation::vtkBorderRepresentation()
 {
   this->InteractionState = vtkBorderRepresentation::Outside;
 
-  this->ShowVerticalBorder = BORDER_ON;
-  this->ShowHorizontalBorder = BORDER_ON;
-  this->ProportionalResize = 0;
-  this->Tolerance = 3;
-  this->SelectionPoint[0] = this->SelectionPoint[1] = 0.0;
-
   // Initial positioning information
   this->Negotiated = 0;
-  this->PositionCoordinate = vtkCoordinate::New();
   this->PositionCoordinate->SetCoordinateSystemToNormalizedViewport();
   this->PositionCoordinate->SetValue(0.05, 0.05);
-  this->Position2Coordinate = vtkCoordinate::New();
   this->Position2Coordinate->SetCoordinateSystemToNormalizedViewport();
   this->Position2Coordinate->SetValue(0.1, 0.1); // may be updated by the subclass
   this->Position2Coordinate->SetReferenceCoordinate(this->PositionCoordinate);
 
   // Create the geometry in canonical coordinates
-  this->BWPoints = vtkPoints::New();
   this->BWPoints->SetDataTypeToDouble();
   this->BWPoints->SetNumberOfPoints(4);
   this->BWPoints->SetPoint(0, 0.0, 0.0, 0.0); // may be updated by the subclass
@@ -60,7 +54,7 @@ vtkBorderRepresentation::vtkBorderRepresentation()
   this->BWPoints->SetPoint(2, 1.0, 1.0, 0.0);
   this->BWPoints->SetPoint(3, 0.0, 1.0, 0.0);
 
-  vtkCellArray* outline = vtkCellArray::New();
+  vtkNew<vtkCellArray> outline;
   outline->InsertNextCell(5);
   outline->InsertCellPoint(0);
   outline->InsertCellPoint(1);
@@ -68,58 +62,152 @@ vtkBorderRepresentation::vtkBorderRepresentation()
   outline->InsertCellPoint(3);
   outline->InsertCellPoint(0);
 
-  this->BWPolyData = vtkPolyData::New();
   this->BWPolyData->SetPoints(this->BWPoints);
   this->BWPolyData->SetLines(outline);
-  outline->Delete();
 
-  this->BWTransform = vtkTransform::New();
-  this->BWTransformFilter = vtkTransformPolyDataFilter::New();
   this->BWTransformFilter->SetTransform(this->BWTransform);
   this->BWTransformFilter->SetInputData(this->BWPolyData);
 
-  this->BWMapper = vtkPolyDataMapper2D::New();
-  this->BWMapper->SetInputConnection(this->BWTransformFilter->GetOutputPort());
-  this->BWActor = vtkActor2D::New();
-  this->BWActor->SetMapper(this->BWMapper);
+  // In order to link a different property for the border
+  // and the inner polygon, we create 2 new polydata that will
+  // share the points of the input poly data
+  // Beware that this will break the pipeline, so we need to
+  // Call update manually on BWTransformFilter
 
-  this->BorderProperty = vtkProperty2D::New();
-  this->BWActor->SetProperty(this->BorderProperty);
+  // Edges
+  this->BWMapperEdges->SetInputData(this->PolyDataEdges);
+  this->BWActorEdges->SetMapper(this->BWMapperEdges);
+  this->BorderProperty->SetColor(this->BorderColor);
+  this->BorderProperty->SetLineWidth(this->BorderThickness);
+  this->BorderProperty->SetPointSize(1.5f);
+  this->BWActorEdges->SetProperty(this->BorderProperty);
 
-  this->MinimumSize[0] = 1;
-  this->MinimumSize[1] = 1;
-  this->MaximumSize[0] = 100000;
-  this->MaximumSize[1] = 100000;
-
-  this->Moving = 0;
+  // Inner polygon
+  this->BWMapperPolygon->SetInputData(this->PolyDataPolygon);
+  this->BWActorPolygon->SetMapper(this->BWMapperPolygon);
+  this->PolygonProperty->SetColor(this->PolygonColor);
+  this->PolygonProperty->SetOpacity(this->PolygonOpacity);
+  this->PolygonProperty->SetPointSize(0.f);
+  this->BWActorPolygon->SetProperty(this->PolygonProperty);
 }
 
-//-------------------------------------------------------------------------
-vtkBorderRepresentation::~vtkBorderRepresentation()
+//------------------------------------------------------------------------------
+vtkBorderRepresentation::~vtkBorderRepresentation() = default;
+
+//------------------------------------------------------------------------------
+void vtkBorderRepresentation::ComputeRoundCorners()
 {
-  this->PositionCoordinate->Delete();
-  this->Position2Coordinate->Delete();
+  vtkCellArray* lines = this->BWPolyData->GetLines();
 
-  this->BWPoints->Delete();
-  this->BWTransform->Delete();
-  this->BWTransformFilter->Delete();
-  this->BWPolyData->Delete();
-  this->BWMapper->Delete();
-  this->BWActor->Delete();
-  this->BorderProperty->Delete();
+  // Link the pipeline manually as we need two properties for the border
+  // and for the inner polygon
+  this->BWTransformFilter->Update();
+
+  // Create round corners after the transform as we do not want to scale the corners
+  vtkPolyData* pd = this->BWTransformFilter->GetOutput();
+  vtkNew<vtkPoints> pdPoints;
+  pdPoints->DeepCopy(pd->GetPoints());
+
+  if (lines->GetNumberOfCells() != 1 || this->CornerResolution == 0)
+  {
+    // All borders are not shown, we cannot compute
+    // round corners
+    this->PolyDataEdges->SetPoints(pdPoints);
+    this->PolyDataEdges->SetLines(lines);
+
+    this->PolyDataPolygon->SetPoints(pdPoints);
+    this->PolyDataPolygon->SetPolys(lines);
+
+    return;
+  }
+
+  // Get the bottom left corner point
+  double p0[3];
+  pdPoints->GetPoint(0, p0);
+
+  // And the top right corner point
+  double p1[3];
+  pdPoints->GetPoint(2, p1);
+
+  // Scale the maximum radius by radius strength
+  double radius = this->CornerRadiusStrength * std::min(p1[0] - p0[0], p1[1] - p0[1]) / 2.0;
+
+  // Add 2 points of each side of each corners to start and end the
+  // curve of the round corner. With the previous 4 points, the number of
+  // points is now 12
+  pdPoints->SetNumberOfPoints(12);
+  // Bottom-left corner
+  pdPoints->SetPoint(4, p0[0], p0[1] + radius, 0.0);
+  pdPoints->SetPoint(5, p0[0] + radius, p0[1], 0.0);
+  // Bottom-right corner
+  pdPoints->SetPoint(6, p1[0] - radius, p0[1], 0.0);
+  pdPoints->SetPoint(7, p1[0], p0[1] + radius, 0.0);
+  // Top-right corner
+  pdPoints->SetPoint(8, p1[0], p1[1] - radius, 0.0);
+  pdPoints->SetPoint(9, p1[0] - radius, p1[1], 0.0);
+  // Top-left corner
+  pdPoints->SetPoint(10, p0[0] + radius, p1[1], 0.0);
+  pdPoints->SetPoint(11, p0[0], p1[1] - radius, 0.0);
+
+  // Create polygon with only one cell
+  vtkNew<vtkCellArray> polys;
+  polys->InsertNextCell(4 * this->CornerResolution + 1);
+
+  // Compute bottom-left corner
+  this->ComputeOneRoundCorner(polys, pdPoints, radius, 5, 4, vtkMath::Pi());
+  // Compute bottom-right corner
+  this->ComputeOneRoundCorner(polys, pdPoints, radius, 6, 7, 3.0 * vtkMath::Pi() / 2.0);
+  // Compute top-right corner
+  this->ComputeOneRoundCorner(polys, pdPoints, radius, 9, 8, 0.0);
+  // Compute top-left corner
+  this->ComputeOneRoundCorner(polys, pdPoints, radius, 10, 11, vtkMath::Pi() / 2.0);
+
+  // Don't forget to link the last point
+  polys->InsertCellPoint(12);
+
+  this->PolyDataEdges->SetPoints(pdPoints);
+  this->PolyDataEdges->SetVerts(polys);
+  this->PolyDataEdges->SetLines(polys);
+
+  this->PolyDataPolygon->SetPoints(pdPoints);
+  this->PolyDataPolygon->SetPolys(polys);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkBorderRepresentation::ComputeOneRoundCorner(vtkCellArray* polys, vtkPoints* points,
+  const double radius, vtkIdType idCenterX, vtkIdType idCenterY, const double startAngle)
+{
+  double xPoint[3], yPoint[3];
+  points->GetPoint(idCenterX, xPoint);
+  points->GetPoint(idCenterY, yPoint);
+  double center[2] = { xPoint[0], yPoint[1] };
+
+  // Angle step in radians
+  double angleStep = vtkMath::Pi() / (2.0 * this->CornerResolution);
+  double angle = startAngle;
+
+  for (int i = 0; i < this->CornerResolution; ++i)
+  {
+    double x = center[0] + radius * cos(angle);
+    double y = center[1] + radius * sin(angle);
+    vtkIdType id = points->InsertNextPoint(x, y, 0.0);
+    polys->InsertCellPoint(id);
+    angle += angleStep;
+  }
+}
+
+//------------------------------------------------------------------------------
 vtkMTimeType vtkBorderRepresentation::GetMTime()
 {
   vtkMTimeType mTime = this->Superclass::GetMTime();
   mTime = std::max(mTime, this->PositionCoordinate->GetMTime());
   mTime = std::max(mTime, this->Position2Coordinate->GetMTime());
   mTime = std::max(mTime, this->BorderProperty->GetMTime());
+  mTime = std::max(mTime, this->PolygonProperty->GetMTime());
   return mTime;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::SetShowBorder(int border)
 {
   this->SetShowVerticalBorder(border);
@@ -127,33 +215,33 @@ void vtkBorderRepresentation::SetShowBorder(int border)
   this->UpdateShowBorder();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBorderRepresentation::GetShowBorderMinValue()
 {
   return BORDER_OFF;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBorderRepresentation::GetShowBorderMaxValue()
 {
   return BORDER_ACTIVE;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBorderRepresentation::GetShowBorder()
 {
   return this->GetShowVerticalBorder() != BORDER_OFF ? this->GetShowVerticalBorder()
                                                      : this->GetShowHorizontalBorder();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::StartWidgetInteraction(double eventPos[2])
 {
   this->StartEventPosition[0] = eventPos[0];
   this->StartEventPosition[1] = eventPos[1];
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::WidgetInteraction(double eventPos[2])
 {
   double XF = eventPos[0];
@@ -273,6 +361,86 @@ void vtkBorderRepresentation::WidgetInteraction(double eventPos[2])
       break;
   }
 
+  // Enforce bounds to keep the widget on screen and bigger than minimum size
+  if (!this->ProportionalResize && this->EnforceNormalizedViewportBounds)
+  {
+    switch (this->InteractionState)
+    {
+      case vtkBorderRepresentation::AdjustingP0:
+        par1[0] = std::min(
+          std::max(par1[0] /*+ delX*/, 0.0), par2[0] - this->MinimumNormalizedViewportSize[0]);
+        par1[1] = std::min(
+          std::max(par1[1] /*+ delY*/, 0.0), par2[1] - this->MinimumNormalizedViewportSize[1]);
+        break;
+      case vtkBorderRepresentation::AdjustingP1:
+        par2[0] = std::min(
+          std::max(par2[0] /*+ delX2*/, par1[0] + this->MinimumNormalizedViewportSize[0]), 1.0);
+        par1[1] = std::min(
+          std::max(par1[1] /*+ delY2*/, 0.0), par2[1] - this->MinimumNormalizedViewportSize[1]);
+        break;
+      case vtkBorderRepresentation::AdjustingP2:
+        par2[0] = std::min(
+          std::max(par2[0] /*+ delX*/, par1[0] + this->MinimumNormalizedViewportSize[0]), 1.0);
+        par2[1] = std::min(
+          std::max(par2[1] /*+ delY*/, par1[1] + this->MinimumNormalizedViewportSize[1]), 1.0);
+        break;
+      case vtkBorderRepresentation::AdjustingP3:
+        par1[0] = std::min(
+          std::max(par1[0] /*+ delX2*/, 0.0), par2[0] - this->MinimumNormalizedViewportSize[0]);
+        par2[1] = std::min(
+          std::max(par2[1] /*+ delY2*/, par1[1] + this->MinimumNormalizedViewportSize[1]), 1.0);
+        break;
+      case vtkBorderRepresentation::AdjustingE0:
+        par1[1] = std::min(
+          std::max(par1[1] /*+ delY*/, 0.0), par2[1] - this->MinimumNormalizedViewportSize[1]);
+        break;
+      case vtkBorderRepresentation::AdjustingE1:
+        par2[0] = std::min(
+          std::max(par2[0] /*+ delX*/, par1[0] + this->MinimumNormalizedViewportSize[0]), 1.0);
+        break;
+      case vtkBorderRepresentation::AdjustingE2:
+        par2[1] = std::min(
+          std::max(par2[1] /*+ delY*/, par1[1] + this->MinimumNormalizedViewportSize[1]), 1.0);
+        break;
+      case vtkBorderRepresentation::AdjustingE3:
+        par1[0] = std::min(
+          std::max(par1[0] /*+ delX*/, 0.0), par2[0] - this->MinimumNormalizedViewportSize[0]);
+        break;
+      case vtkBorderRepresentation::Inside:
+        if (this->Moving)
+        {
+          // Keep border from moving off normalized screen
+          if (par1[0] < 0.0)
+          {
+            double delta = -par1[0];
+            par1[0] += delta;
+            par2[0] += delta;
+          }
+          if (par1[1] < 0.0)
+          {
+            double delta = -par1[1];
+            par1[1] += delta;
+            par2[1] += delta;
+          }
+          if (par2[0] > 1.0)
+          {
+            double delta = par2[0] - 1.0;
+            par1[0] -= delta;
+            par2[0] -= delta;
+          }
+          if (par2[1] > 1.0)
+          {
+            double delta = par2[1] - 1.0;
+            par1[1] -= delta;
+            par2[1] -= delta;
+          }
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   // Modify the representation
   if (par2[0] > par1[0] && par2[1] > par1[1])
   {
@@ -286,7 +454,7 @@ void vtkBorderRepresentation::WidgetInteraction(double eventPos[2])
   this->BuildRepresentation();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::NegotiateLayout()
 {
   double size[2];
@@ -299,7 +467,7 @@ void vtkBorderRepresentation::NegotiateLayout()
   this->BWPoints->SetPoint(3, 0.0, size[1], 0.0);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBorderRepresentation::ComputeInteractionState(int X, int Y, int vtkNotUsed(modify))
 {
   int* pos1 = this->PositionCoordinate->GetComputedDisplayValue(this->Renderer);
@@ -383,7 +551,7 @@ int vtkBorderRepresentation::ComputeInteractionState(int X, int Y, int vtkNotUse
   return this->InteractionState;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::UpdateShowBorder()
 {
   enum
@@ -440,7 +608,7 @@ void vtkBorderRepresentation::UpdateShowBorder()
   bool visible = (newBorder != NoBorder);
   if (currentBorder != newBorder && visible)
   {
-    vtkCellArray* outline = vtkCellArray::New();
+    vtkNew<vtkCellArray> outline;
     switch (newBorder)
     {
       case AllBorders:
@@ -471,14 +639,27 @@ void vtkBorderRepresentation::UpdateShowBorder()
         break;
     }
     this->BWPolyData->SetLines(outline);
-    outline->Delete();
     this->BWPolyData->Modified();
     this->Modified();
+    this->ComputeRoundCorners();
   }
-  this->BWActor->SetVisibility(visible);
+  this->BWActorEdges->SetVisibility(visible);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkBorderRepresentation::SetBWActorDisplayOverlay(bool enable)
+{
+  if (this->BWActorEdges)
+  {
+    this->BWActorEdges->SetVisibility(enable);
+  }
+  if (this->BWActorPolygon)
+  {
+    this->BWActorPolygon->SetVisibility(enable);
+  }
+}
+
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::BuildRepresentation()
 {
   if (this->Renderer &&
@@ -511,73 +692,128 @@ void vtkBorderRepresentation::BuildRepresentation()
     double sx = (pos2[0] - pos1[0]) / size[0];
     double sy = (pos2[1] - pos1[1]) / size[1];
 
+    sx = (sx < this->MinimumSize[0] ? this->MinimumSize[0]
+                                    : (sx > this->MaximumSize[0] ? this->MaximumSize[0] : sx));
+    sy = (sy < this->MinimumSize[1] ? this->MinimumSize[1]
+                                    : (sy > this->MaximumSize[1] ? this->MaximumSize[1] : sy));
+
     this->BWTransform->Identity();
     this->BWTransform->Translate(tx, ty, 0.0);
     this->BWTransform->Scale(sx, sy, 1);
+
+    // Compute round corners after the transform has been set
+    // Only if the polydata contains a unique cell (ie. all borders
+    // are visible)
+    this->ComputeRoundCorners();
+
+    // Modify border properties
+    this->BorderProperty->SetColor(this->BorderColor);
+    this->BorderProperty->SetLineWidth(this->BorderThickness);
+
+    // In order to fill the holes in the corners
+    // We use a little trick : we render the points with
+    // a point size that fill the holes
+    double pointSize = this->BorderThickness;
+    this->BorderProperty->SetPointSize(std::max(0.0, pointSize - 1.0));
+
+    // And polygon properties
+    this->PolygonProperty->SetColor(this->PolygonColor);
+    this->PolygonProperty->SetOpacity(this->PolygonOpacity);
 
     this->BuildTime.Modified();
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::GetActors2D(vtkPropCollection* pc)
 {
-  pc->AddItem(this->BWActor);
+  pc->AddItem(this->BWActorEdges);
+  pc->AddItem(this->BWActorPolygon);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::ReleaseGraphicsResources(vtkWindow* w)
 {
-  this->BWActor->ReleaseGraphicsResources(w);
+  this->BWActorEdges->ReleaseGraphicsResources(w);
+  this->BWActorPolygon->ReleaseGraphicsResources(w);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBorderRepresentation::RenderOverlay(vtkViewport* w)
 {
   this->BuildRepresentation();
-  if (!this->BWActor->GetVisibility())
+  if (!this->BWActorEdges->GetVisibility())
   {
     return 0;
   }
-  return this->BWActor->RenderOverlay(w);
+  return this->BWActorEdges->RenderOverlay(w) && this->BWActorPolygon->RenderOverlay(w);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBorderRepresentation::RenderOpaqueGeometry(vtkViewport* w)
 {
   this->BuildRepresentation();
-  if (!this->BWActor->GetVisibility())
+  if (!this->BWActorEdges->GetVisibility())
   {
     return 0;
   }
-  return this->BWActor->RenderOpaqueGeometry(w);
+  return this->BWActorEdges->RenderOpaqueGeometry(w) &&
+    this->BWActorPolygon->RenderOpaqueGeometry(w);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBorderRepresentation::RenderTranslucentPolygonalGeometry(vtkViewport* w)
 {
   this->BuildRepresentation();
-  if (!this->BWActor->GetVisibility())
+  if (!this->BWActorEdges->GetVisibility())
   {
     return 0;
   }
-  return this->BWActor->RenderTranslucentPolygonalGeometry(w);
+  return this->BWActorEdges->RenderTranslucentPolygonalGeometry(w) &&
+    this->BWActorPolygon->RenderTranslucentPolygonalGeometry(w);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Description:
 // Does this prop have some translucent polygonal geometry?
 vtkTypeBool vtkBorderRepresentation::HasTranslucentPolygonalGeometry()
 {
   this->BuildRepresentation();
-  if (!this->BWActor->GetVisibility())
+  if (!this->BWActorEdges->GetVisibility())
   {
     return 0;
   }
-  return this->BWActor->HasTranslucentPolygonalGeometry();
+  return this->BWActorEdges->HasTranslucentPolygonalGeometry() &&
+    this->BWActorPolygon->HasTranslucentPolygonalGeometry();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkBorderRepresentation::SetPolygonRGBA(double rgba[4])
+{
+  this->SetPolygonRGBA(rgba[0], rgba[1], rgba[2], rgba[3]);
+}
+
+//------------------------------------------------------------------------------
+void vtkBorderRepresentation::SetPolygonRGBA(double r, double g, double b, double a)
+{
+  this->SetPolygonColor(r, g, b);
+  this->SetPolygonOpacity(a);
+}
+
+//------------------------------------------------------------------------------
+void vtkBorderRepresentation::GetPolygonRGBA(double rgba[4])
+{
+  this->GetPolygonRGBA(rgba[0], rgba[1], rgba[2], rgba[3]);
+}
+
+//------------------------------------------------------------------------------
+void vtkBorderRepresentation::GetPolygonRGBA(double& r, double& g, double& b, double& a)
+{
+  this->GetPolygonColor(r, g, b);
+  a = this->GetPolygonOpacity();
+}
+
+//------------------------------------------------------------------------------
 void vtkBorderRepresentation::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -585,48 +821,72 @@ void vtkBorderRepresentation::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "Show Vertical Border: ";
   if (this->ShowVerticalBorder == BORDER_OFF)
   {
-    os << "Off\n";
+    os << "Off" << endl;
   }
   else if (this->ShowVerticalBorder == BORDER_ON)
   {
-    os << "On\n";
+    os << "On" << endl;
   }
   else // if ( this->ShowVerticalBorder == BORDER_ACTIVE)
   {
-    os << "Active\n";
+    os << "Active" << endl;
   }
 
   os << indent << "Show Horizontal Border: ";
   if (this->ShowHorizontalBorder == BORDER_OFF)
   {
-    os << "Off\n";
+    os << "Off" << endl;
   }
   else if (this->ShowHorizontalBorder == BORDER_ON)
   {
-    os << "On\n";
+    os << "On" << endl;
   }
   else // if ( this->ShowHorizontalBorder == BORDER_ACTIVE)
   {
-    os << "Active\n";
+    os << "Active" << endl;
   }
 
   if (this->BorderProperty)
   {
-    os << indent << "Border Property:\n";
+    os << indent << "Border Property:" << endl;
     this->BorderProperty->PrintSelf(os, indent.GetNextIndent());
   }
   else
   {
-    os << indent << "Border Property: (none)\n";
+    os << indent << "Border Property: (none)" << endl;
   }
 
-  os << indent << "Proportional Resize: " << (this->ProportionalResize ? "On\n" : "Off\n");
+  if (this->PolygonProperty)
+  {
+    os << indent << "Polygon Property:" << endl;
+    this->PolygonProperty->PrintSelf(os, indent.GetNextIndent());
+  }
+  else
+  {
+    os << indent << "Polygon Property: (none)" << endl;
+  }
+
+  os << indent << "Enforce Normalized Viewport Bounds: "
+     << (this->EnforceNormalizedViewportBounds ? "On\n" : "Off\n");
+  os << indent << "Proportional Resize: " << (this->ProportionalResize ? "On" : "Off") << endl;
+  os << indent << "Minimum Normalized Viewport Size: " << this->MinimumNormalizedViewportSize[0]
+     << " " << this->MinimumNormalizedViewportSize[1] << endl;
   os << indent << "Minimum Size: " << this->MinimumSize[0] << " " << this->MinimumSize[1] << endl;
   os << indent << "Maximum Size: " << this->MaximumSize[0] << " " << this->MaximumSize[1] << endl;
 
-  os << indent << "Moving: " << (this->Moving ? "On\n" : "Off\n");
-  os << indent << "Tolerance: " << this->Tolerance << "\n";
+  os << indent << "Moving: " << (this->Moving ? "On" : "Off") << endl;
+  os << indent << "Tolerance: " << this->Tolerance << endl;
 
   os << indent << "Selection Point: (" << this->SelectionPoint[0] << "," << this->SelectionPoint[1]
-     << "}\n";
+     << "}" << endl;
+
+  os << indent << "BorderColor: (" << this->BorderColor[0] << ", " << this->BorderColor[1] << ", "
+     << this->BorderColor[2] << ")" << endl;
+  os << indent << "BorderThickness: " << this->BorderThickness << endl;
+  os << indent << "CornerRadiusStrength: " << this->CornerRadiusStrength << endl;
+  os << indent << "CornerResolution: " << this->CornerResolution << endl;
+
+  os << indent << "PolygonColor: (" << this->PolygonColor[0] << ", " << this->PolygonColor[1]
+     << ", " << this->PolygonColor[2] << ")" << endl;
+  os << indent << "PolygonOpacity: " << this->PolygonOpacity << endl;
 }

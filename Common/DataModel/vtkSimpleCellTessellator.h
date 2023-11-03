@@ -29,9 +29,9 @@
  * repeats until the error metric is satisfied. Since the algorithm is based
  * on edge subdivision it inherently avoid T-junctions.
  *
- * A significant issue addressed by this algorithm is to insure face
+ * A significant issue addressed by this algorithm is to ensure face
  * compatibility across neighboring cells. That is, diagonals due to face
- * triangulation must match to insure that the mesh is compatible. The
+ * triangulation must match to ensure that the mesh is compatible. The
  * algorithm employs a precomputed table to accelerate the tessellation
  * process. The table was generated with the help of vtkOrderedTriangulator
  * the basic idea is that the choice of diagonal is made only by considering the
@@ -72,12 +72,12 @@ public:
   vtkTypeMacro(vtkSimpleCellTessellator, vtkGenericCellTessellator);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the higher order cell in order to access the evaluation function.
    */
   vtkGetObjectMacro(GenericCell, vtkGenericAdaptorCell);
-  //@}
+  ///@}
 
   /**
    * Tessellate a face of a 3D `cell'. The face is specified by the
@@ -295,14 +295,14 @@ protected:
    */
   vtkGenericAttributeCollection* AttributeCollection;
 
-  //@{
+  ///@{
   /**
    * To avoid New/Delete
    */
   vtkDoubleArray* TessellatePoints; // Allow to use GetPointer
   vtkCellArray* TessellateCellArray;
   vtkPointData* TessellatePointData;
-  //@}
+  ///@}
 
   int FindEdgeReferenceCount(double p1[3], double p2[3], vtkIdType& e1, vtkIdType& e2);
 

@@ -28,6 +28,7 @@
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #define VTK_WINDOWS_FULL
 #include "vtkWindows.h"
+#include "vtksys/Encoding.hxx"
 #else
 #include <arpa/inet.h>
 #include <cerrno>
@@ -92,24 +93,35 @@
 #if defined(_WIN32) && !defined(__CYGWIN__)
 static const char* wsaStrerror(int wsaeid)
 {
-  static char buf[256] = { '\0' };
-  int ok;
-  ok = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, wsaeid, 0, buf, 256, 0);
+  wchar_t wbuf[256];
+  int ok = FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, 0, wsaeid, 0, wbuf, sizeof(wbuf), 0);
   if (!ok)
   {
-    return 0;
+    return nullptr;
   }
+
+  std::string result = vtksys::Encoding::ToNarrow(wbuf);
+  size_t count = result.length();
+
+  static char buf[256];
+  if (count >= sizeof(buf))
+  {
+    count = sizeof(buf) - 1;
+  }
+  strncpy(buf, result.c_str(), count);
+  buf[count + 1] = '\0';
+
   return buf;
 }
 #endif
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSocket::vtkSocket()
 {
   this->SocketDescriptor = -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkSocket::~vtkSocket()
 {
   if (this->SocketDescriptor != -1)
@@ -119,7 +131,7 @@ vtkSocket::~vtkSocket()
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::CreateSocket()
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -148,14 +160,14 @@ int vtkSocket::CreateSocket()
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocket::CloseSocket()
 {
   this->CloseSocket(this->SocketDescriptor);
   this->SocketDescriptor = -1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::BindSocket(int socketdescriptor, int port)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -196,7 +208,7 @@ int vtkSocket::BindSocket(int socketdescriptor, int port)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Accept(int socketdescriptor)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -221,7 +233,7 @@ int vtkSocket::Accept(int socketdescriptor)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Listen(int socketdescriptor)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -246,7 +258,7 @@ int vtkSocket::Listen(int socketdescriptor)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::SelectSocket(int socketdescriptor, unsigned long msec)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -305,7 +317,7 @@ int vtkSocket::SelectSocket(int socketdescriptor, unsigned long msec)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::SelectSockets(
   const int* sockets_to_select, int size, unsigned long msec, int* selected_index)
 {
@@ -381,7 +393,7 @@ int vtkSocket::SelectSockets(
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Connect(int socketdescriptor, const char* hostName, int port)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -457,7 +469,7 @@ int vtkSocket::Connect(int socketdescriptor, const char* hostName, int port)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::GetPort(int sock)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -484,7 +496,7 @@ int vtkSocket::GetPort(int sock)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocket::CloseSocket(int socketdescriptor)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -505,7 +517,7 @@ void vtkSocket::CloseSocket(int socketdescriptor)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Send(const void* data, int length)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -543,7 +555,7 @@ int vtkSocket::Send(const void* data, int length)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkSocket::Receive(void* data, int length, int readFully /*=1*/)
 {
 #ifndef VTK_SOCKET_FAKE_API
@@ -598,7 +610,7 @@ int vtkSocket::Receive(void* data, int length, int readFully /*=1*/)
 #endif
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkSocket::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

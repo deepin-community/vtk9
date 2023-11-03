@@ -23,19 +23,27 @@
 
 vtkStandardNewMacro(vtkGenericOutlineFilter);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void vtkGenericOutlineFilter::PrintSelf(ostream& os, vtkIndent indent)
+{
+  this->Superclass::PrintSelf(os, indent);
+  os << indent << "OutlineSource:\n";
+  this->OutlineSource->PrintSelf(os, indent.GetNextIndent());
+}
+
+//------------------------------------------------------------------------------
 vtkGenericOutlineFilter::vtkGenericOutlineFilter()
 {
   this->OutlineSource = vtkOutlineSource::New();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGenericOutlineFilter::~vtkGenericOutlineFilter()
 {
   this->OutlineSource->Delete();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericOutlineFilter::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -63,7 +71,7 @@ int vtkGenericOutlineFilter::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericOutlineFilter::RequestInformation(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -84,7 +92,7 @@ int vtkGenericOutlineFilter::RequestInformation(
   return result;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGenericOutlineFilter::FillInputPortInformation(int port, vtkInformation* info)
 {
   if (!this->Superclass::FillInputPortInformation(port, info))

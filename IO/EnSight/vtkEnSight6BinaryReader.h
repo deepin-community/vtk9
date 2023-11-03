@@ -88,6 +88,12 @@ protected:
     vtkMultiBlockDataSet* output, int measured = 0) override;
 
   /**
+   * Not implemented, always return 0;
+   */
+  int ReadAsymmetricTensorsPerNode(const char* fileName, const char* description, int timeStep,
+    vtkMultiBlockDataSet* output) override;
+
+  /**
    * Read tensors per node for this dataset.  If an error occurred, 0 is
    * returned; otherwise 1.
    */
@@ -107,6 +113,12 @@ protected:
    * returned; otherwise 1.
    */
   int ReadVectorsPerElement(const char* fileName, const char* description, int timeStep,
+    vtkMultiBlockDataSet* output) override;
+
+  /**
+   * Not implemented, always return 0;
+   */
+  int ReadAsymmetricTensorsPerElement(const char* fileName, const char* description, int timeStep,
     vtkMultiBlockDataSet* output) override;
 
   /**
@@ -155,14 +167,14 @@ protected:
    */
   int ReadFloatArray(float* result, int numFloats);
 
-  //@{
+  ///@{
   /**
    * Read to the next time step in the geometry file.
    */
   int SkipTimeStep();
   int SkipStructuredGrid(char line[256]);
   int SkipUnstructuredGrid(char line[256]);
-  //@}
+  ///@}
 
   // global list of points for the unstructured parts of the model
   int NumberOfUnstructuredPoints;

@@ -22,7 +22,6 @@
 
 #include "PyVTKNamespace.h"
 #include "PyVTKObject.h"
-#include "PyVTKReference.h"
 #include "PyVTKSpecialObject.h"
 #include "vtkPython.h"
 #include "vtkPythonCompatibility.h"
@@ -50,6 +49,12 @@ extern "C" void vtkPythonUtilDelete();
 class VTKWRAPPINGPYTHONCORE_EXPORT vtkPythonUtil
 {
 public:
+  /**
+   * Initialize the Python wrappers.  This can be called multiple times,
+   * only the first call will have any effect.
+   */
+  static void Initialize();
+
   /**
    * If the name is templated or mangled, converts it into
    * a python-printable name.
@@ -86,7 +91,7 @@ public:
    * the python error indicator will be set.
    * Special behavior: Py_None is converted to NULL without no error.
    */
-  static vtkObjectBase* GetPointerFromObject(PyObject* obj, const char* classname);
+  static vtkObjectBase* GetPointerFromObject(PyObject* obj, const char* result_type);
 
   /**
    * Convert a vtkObjectBase to a PyVTKObject.  This will first check to
@@ -110,7 +115,7 @@ public:
    * This methods do not change the reference counts of either the
    * vtkObjectBase or the PyVTKObject.
    */
-  static void AddObjectToMap(PyObject* obj, vtkObjectBase* anInstance);
+  static void AddObjectToMap(PyObject* obj, vtkObjectBase* ptr);
 
   /**
    * Remove a PyVTKObject from the internal mapping.  No reference
@@ -155,7 +160,7 @@ public:
    * Add a wrapped C++ namespace as a python module object.  This allows
    * the namespace to be retrieved and added to as necessary.
    */
-  static void AddNamespaceToMap(PyObject* o);
+  static void AddNamespaceToMap(PyObject* module);
 
   /**
    * Remove a wrapped C++ namespace from consideration.  This is called
@@ -171,7 +176,7 @@ public:
   /**
    * Add a wrapped C++ enum as a python type object.
    */
-  static void AddEnumToMap(PyTypeObject* o, const char* name);
+  static void AddEnumToMap(PyTypeObject* enumtype, const char* name);
 
   /**
    * Return an enum type object, or NULL if it doesn't exist.
@@ -226,7 +231,7 @@ public:
    */
   static Py_hash_t VariantHash(const vtkVariant* variant);
 
-  //@{
+  ///@{
   /**
    * Register a vtkPythonCommand. Registering vtkPythonCommand instances ensures
    * that when the interpreter is destroyed (and Py_AtExit() gets called), the
@@ -235,7 +240,7 @@ public:
    */
   static void RegisterPythonCommand(vtkPythonCommand*);
   static void UnRegisterPythonCommand(vtkPythonCommand*);
-  //@}
+  ///@}
 
 private:
   vtkPythonUtil();

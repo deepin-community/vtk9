@@ -14,6 +14,10 @@
 =========================================================================*/
 #include <algorithm>
 
+// uncomment the following line to add a lot of debugging
+// code to the sorting process
+// #define MB_DEBUG
+
 #include "vtkBlockSortHelper.h"
 #include "vtkBoundingBox.h"
 #include "vtkCompositeDataIterator.h"
@@ -25,8 +29,22 @@
 #include "vtkObjectFactory.h"
 #include "vtkOpenGLGPUVolumeRayCastMapper.h"
 #include "vtkPerlinNoise.h"
+#include "vtkRectilinearGrid.h"
 #include "vtkRenderWindow.h"
 #include "vtkSmartVolumeMapper.h"
+
+#include "vtkCubeSource.h"
+#include "vtkPolyDataMapper.h"
+#include "vtkProperty.h"
+
+namespace vtkBlockSortHelper
+{
+template <>
+inline void GetBounds(vtkSmartVolumeMapper* first, double bds[6])
+{
+  first->GetInput()->GetBounds(bds);
+}
+}
 
 //------------------------------------------------------------------------------
 vtkStandardNewMacro(vtkMultiBlockVolumeMapper);
@@ -39,13 +57,30 @@ vtkMultiBlockVolumeMapper::vtkMultiBlockVolumeMapper()
   , VectorMode(vtkSmartVolumeMapper::DISABLED)
   , VectorComponent(0)
   , RequestedRenderMode(vtkSmartVolumeMapper::DefaultRenderMode)
+  , Transfer2DYAxisArray(nullptr)
 {
+#ifdef MB_DEBUG
+  this->DebugWin = vtkRenderWindow::New();
+  this->DebugRen = vtkRenderer::New();
+  this->DebugWin->AddRenderer(this->DebugRen);
+#else
+  this->DebugWin = nullptr;
+  this->DebugRen = nullptr;
+#endif
 }
 
 //------------------------------------------------------------------------------
 vtkMultiBlockVolumeMapper::~vtkMultiBlockVolumeMapper()
 {
   this->ClearMappers();
+  if (this->DebugRen)
+  {
+    this->DebugRen->Delete();
+  }
+  if (this->DebugWin)
+  {
+    this->DebugWin->Delete();
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -61,12 +96,12 @@ void vtkMultiBlockVolumeMapper::Render(vtkRenderer* ren, vtkVolume* vol)
 
   this->SortMappers(ren, vol->GetMatrix());
 
-  MapperVec::const_iterator end = this->Mappers.end();
-  for (MapperVec::const_iterator it = this->Mappers.begin(); it != end; ++it)
+  MapperVec::iterator end = this->Mappers.end();
+  for (MapperVec::iterator it = this->Mappers.begin(); it != end; ++it)
   {
     if (this->FallBackMapper)
     {
-      vtkImageData* image = (*it)->GetInput();
+      vtkImageData* image = vtkImageData::SafeDownCast((*it)->GetInput());
       image->Modified();
       this->FallBackMapper->SetInputData(image);
       this->FallBackMapper->Render(ren, vol);
@@ -75,13 +110,46 @@ void vtkMultiBlockVolumeMapper::Render(vtkRenderer* ren, vtkVolume* vol)
 
     (*it)->Render(ren, vol);
   }
+
+#ifdef MB_DEBUG
+  this->DebugRen->RemoveAllViewProps();
+  unsigned int count = 0;
+  for (MapperVec::const_iterator it = this->Mappers.begin(); it != end; ++it)
+  {
+    double* bnds = (*it)->GetInput()->GetBounds();
+    // vtkErrorMacro("Count: " << count << " bnds " << bnds[0] << " " << bnds[1] << " " << bnds[2]
+    // << " " << bnds[3]
+    //   << " " << bnds[4] << " " << bnds[5]);
+    double rgb[3];
+    rgb[0] = (count % 4) * 85 / 255.0;
+    rgb[1] = ((count / 4) % 4) * 85 / 255.0;
+    rgb[2] = (count / 16) * 85 / 255.0;
+    vtkNew<vtkActor> act;
+    act->GetProperty()->SetColor(rgb);
+    act->GetProperty()->SetDiffuse(0);
+    act->GetProperty()->SetAmbient(1);
+    vtkNew<vtkCubeSource> cube;
+    cube->SetBounds(bnds);
+    vtkNew<vtkPolyDataMapper> mapper;
+    mapper->SetInputConnection(cube->GetOutputPort());
+    act->SetMapper(mapper);
+    this->DebugRen->AddActor(act);
+    count++;
+  }
+
+  this->DebugRen->GetActiveCamera()->ShallowCopy(ren->GetActiveCamera());
+  this->DebugWin->SetSize(ren->GetVTKWindow()->GetSize());
+  this->DebugWin->MakeCurrent();
+  this->DebugWin->Render();
+  ren->GetVTKWindow()->MakeCurrent();
+#endif
 }
 
 //------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SortMappers(vtkRenderer* ren, vtkMatrix4x4* volumeMat)
 {
   vtkBlockSortHelper::BackToFront<vtkVolumeMapper> sortMappers(ren, volumeMat);
-  std::sort(this->Mappers.begin(), this->Mappers.end(), sortMappers);
+  vtkBlockSortHelper::Sort(this->Mappers.begin(), this->Mappers.end(), sortMappers);
 }
 
 //------------------------------------------------------------------------------
@@ -160,6 +228,12 @@ void vtkMultiBlockVolumeMapper::LoadDataSet(vtkRenderer* ren, vtkVolume* vol)
     mapper->SetInputData(inputImage);
     this->Mappers.push_back(mapper);
   }
+  else if (auto inputRectGrid = vtkRectilinearGrid::SafeDownCast(input))
+  {
+    vtkSmartVolumeMapper* mapper = this->CreateMapper();
+    mapper->SetInputData(inputRectGrid);
+    this->Mappers.push_back(mapper);
+  }
   else
   {
     vtkErrorMacro(
@@ -180,10 +254,11 @@ void vtkMultiBlockVolumeMapper::CreateMappers(
   while (!it->IsDoneWithTraversal())
   {
     vtkImageData* currentIm = vtkImageData::SafeDownCast(it->GetCurrentDataObject());
-    if (!warnedOnce && !currentIm)
+    vtkRectilinearGrid* currentRect = vtkRectilinearGrid::SafeDownCast(it->GetCurrentDataObject());
+    if (!warnedOnce && !currentIm && !currentRect)
     {
       vtkErrorMacro("At least one block in the data object is not of type"
-                    " vtkImageData.  These blocks will be ignored.");
+                    " vtkImageData or vtkRectilinearGrid.  These blocks will be ignored.");
       warnedOnce = true;
       it->GoToNextItem();
       continue;
@@ -192,9 +267,18 @@ void vtkMultiBlockVolumeMapper::CreateMappers(
     vtkSmartVolumeMapper* mapper = this->CreateMapper();
     this->Mappers.push_back(mapper);
 
-    vtkImageData* im = vtkImageData::New();
-    im->ShallowCopy(currentIm);
-    mapper->SetInputData(im);
+    if (currentIm)
+    {
+      vtkNew<vtkImageData> im;
+      im->ShallowCopy(currentIm);
+      mapper->SetInputData(im);
+    }
+    else if (currentRect)
+    {
+      vtkNew<vtkRectilinearGrid> rg;
+      rg->ShallowCopy(currentRect);
+      mapper->SetInputData(rg);
+    }
 
     // Try allocating GPU memory only while succeeding
     if (allBlocksLoaded)
@@ -202,7 +286,7 @@ void vtkMultiBlockVolumeMapper::CreateMappers(
       vtkOpenGLGPUVolumeRayCastMapper* glMapper =
         vtkOpenGLGPUVolumeRayCastMapper::SafeDownCast(mapper->GetGPUMapper());
 
-      if (glMapper)
+      if (glMapper && currentIm)
       {
         vtkImageData* imageInternal = vtkImageData::New();
         imageInternal->ShallowCopy(currentIm);
@@ -217,7 +301,6 @@ void vtkMultiBlockVolumeMapper::CreateMappers(
         imageInternal->Delete();
       }
     }
-    im->Delete();
     it->GoToNextItem();
   }
   it->Delete();
@@ -250,6 +333,7 @@ vtkSmartVolumeMapper* vtkMultiBlockVolumeMapper::CreateMapper()
   mapper->SetCropping(this->GetCropping());
   mapper->SetCroppingRegionFlags(this->GetCroppingRegionFlags());
   mapper->SetCroppingRegionPlanes(this->GetCroppingRegionPlanes());
+  mapper->SetTransfer2DYAxisArray(this->Transfer2DYAxisArray);
 
   vtkOpenGLGPUVolumeRayCastMapper* glMapper =
     vtkOpenGLGPUVolumeRayCastMapper::SafeDownCast(mapper->GetGPUMapper());
@@ -357,7 +441,7 @@ void vtkMultiBlockVolumeMapper::SetArrayAccessMode(int accessMode)
   Superclass::SetArrayAccessMode(accessMode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SetBlendMode(int mode)
 {
   MapperVec::const_iterator end = this->Mappers.end();
@@ -368,7 +452,7 @@ void vtkMultiBlockVolumeMapper::SetBlendMode(int mode)
   Superclass::SetBlendMode(mode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SetCropping(vtkTypeBool mode)
 {
   MapperVec::const_iterator end = this->Mappers.end();
@@ -379,7 +463,7 @@ void vtkMultiBlockVolumeMapper::SetCropping(vtkTypeBool mode)
   Superclass::SetCropping(mode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SetCroppingRegionFlags(int mode)
 {
   MapperVec::const_iterator end = this->Mappers.end();
@@ -390,7 +474,7 @@ void vtkMultiBlockVolumeMapper::SetCroppingRegionFlags(int mode)
   Superclass::SetCroppingRegionFlags(mode);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SetCroppingRegionPlanes(const double* planes)
 {
   MapperVec::const_iterator end = this->Mappers.end();
@@ -402,7 +486,7 @@ void vtkMultiBlockVolumeMapper::SetCroppingRegionPlanes(const double* planes)
   Superclass::SetCroppingRegionPlanes(planes);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SetCroppingRegionPlanes(
   double arg1, double arg2, double arg3, double arg4, double arg5, double arg6)
 {
@@ -414,7 +498,7 @@ void vtkMultiBlockVolumeMapper::SetCroppingRegionPlanes(
   Superclass::SetCroppingRegionPlanes(arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SetVectorMode(int mode)
 {
   if (this->VectorMode != mode)
@@ -429,7 +513,7 @@ void vtkMultiBlockVolumeMapper::SetVectorMode(int mode)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SetVectorComponent(int component)
 {
   if (this->VectorComponent != component)
@@ -444,7 +528,7 @@ void vtkMultiBlockVolumeMapper::SetVectorComponent(int component)
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkMultiBlockVolumeMapper::SetRequestedRenderMode(int mode)
 {
   if (this->RequestedRenderMode != mode)
@@ -456,4 +540,39 @@ void vtkMultiBlockVolumeMapper::SetRequestedRenderMode(int mode)
     this->RequestedRenderMode = mode;
     this->Modified();
   }
+}
+
+//------------------------------------------------------------------------------
+void vtkMultiBlockVolumeMapper::SetTransfer2DYAxisArray(const char* a)
+{
+  if (this->Transfer2DYAxisArray == nullptr && a == nullptr)
+  {
+    return;
+  }
+  if (this->Transfer2DYAxisArray && a && (!strcmp(this->Transfer2DYAxisArray, a)))
+  {
+    return;
+  }
+  delete[] this->Transfer2DYAxisArray;
+  if (a)
+  {
+    size_t n = strlen(a) + 1;
+    char* cp1 = new char[n];
+    const char* cp2 = (a);
+    this->Transfer2DYAxisArray = cp1;
+    do
+    {
+      *cp1++ = *cp2++;
+    } while (--n);
+  }
+  else
+  {
+    this->Transfer2DYAxisArray = nullptr;
+  }
+  MapperVec::const_iterator end = this->Mappers.end();
+  for (MapperVec::const_iterator it = this->Mappers.begin(); it != end; ++it)
+  {
+    (*it)->SetTransfer2DYAxisArray(a);
+  }
+  this->Modified();
 }

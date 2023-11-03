@@ -107,8 +107,16 @@ public:
   virtual vtkCellIterator* NewCellIterator();
 
   /**
-   * Get cell with cellId such that: 0 <= cellId < NumberOfCells.
-   * THIS METHOD IS NOT THREAD SAFE.
+   * Get cell with cellId such that: 0 <= cellId < NumberOfCells. The returned
+   * vtkCell is an object owned by this instance, hence the return value must not
+   * be deleted by the caller.
+   *
+   * @warning Repeat calls to this function for different face ids will change
+   * the data stored in the internal member object whose pointer is returned by
+   * this function.
+   *
+   * @warning THIS METHOD IS NOT THREAD SAFE. For a thread-safe version, please use
+   * void GetCell(vtkIdType cellId, vtkGenericCell* cell).
    */
   virtual vtkCell* GetCell(vtkIdType cellId) = 0;
   virtual vtkCell* GetCell(int vtkNotUsed(i), int vtkNotUsed(j), int vtkNotUsed(k))
@@ -182,7 +190,7 @@ public:
    */
   virtual void GetCellNeighbors(vtkIdType cellId, vtkIdList* ptIds, vtkIdList* cellIds);
 
-  //@{
+  ///@{
   /**
    * Locate the closest point to the global coordinate x. Return the
    * point id. If point id < 0; then no point found. (This may arise
@@ -199,7 +207,7 @@ public:
     return this->FindPoint(xyz);
   }
   virtual vtkIdType FindPoint(double x[3]) = 0;
-  //@}
+  ///@}
 
   /**
    * Locate cell based on global coordinate x and tolerance
@@ -352,13 +360,13 @@ public:
    */
   int GetDataObjectType() override { return VTK_DATA_SET; }
 
-  //@{
+  ///@{
   /**
    * Shallow and Deep copy.
    */
   void ShallowCopy(vtkDataObject* src) override;
   void DeepCopy(vtkDataObject* src) override;
-  //@}
+  ///@}
 
   enum FieldDataType
   {
@@ -377,7 +385,7 @@ public:
    */
   int CheckAttributes();
 
-  //@{
+  ///@{
   /**
    * Normally called by pipeline executives or algorithms only. This method
    * computes the ghost arrays for a given dataset. The zeroExt argument
@@ -385,15 +393,15 @@ public:
    */
   virtual void GenerateGhostArray(int zeroExt[6]) { this->GenerateGhostArray(zeroExt, false); }
   virtual void GenerateGhostArray(int zeroExt[6], bool cellOnly);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Retrieve an instance of this class from an information object.
    */
   static vtkDataSet* GetData(vtkInformation* info);
   static vtkDataSet* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
   /**
    * Returns the attributes of the data object as a vtkFieldData.
@@ -423,13 +431,13 @@ public:
    * 0 otherwise. Blanking is supported only for vtkStructuredGrid
    * and vtkUniformGrid
    */
-  virtual bool HasAnyBlankCells() { return 0; }
+  virtual bool HasAnyBlankCells() { return false; }
   /**
    * Returns 1 if there are any blanking points
    * 0 otherwise. Blanking is supported only for vtkStructuredGrid
    * and vtkUniformGrid
    */
-  virtual bool HasAnyBlankPoints() { return 0; }
+  virtual bool HasAnyBlankPoints() { return false; }
 
   /**
    * Gets the array that defines the ghost type of each point.
@@ -491,7 +499,7 @@ protected:
   // Time at which scalar range is computed
   vtkTimeStamp ScalarRangeComputeTime;
 
-  //@{
+  ///@{
   /**
    * These arrays pointers are caches used to avoid a string comparison (when
    * getting ghost arrays using GetArray(name))
@@ -500,7 +508,7 @@ protected:
   vtkUnsignedCharArray* CellGhostArray;
   bool PointGhostArrayCached;
   bool CellGhostArrayCached;
-  //@}
+  ///@}
 
 private:
   void InternalDataSetCopy(vtkDataSet* src);

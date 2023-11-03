@@ -38,8 +38,8 @@ class vtkOpenGLImageAlgorithmCallback
 public:
   virtual void InitializeShaderUniforms(vtkShaderProgram* /* program */) {}
   virtual void UpdateShaderUniforms(vtkShaderProgram* /* program */, int /* zExtent */) {}
-  virtual ~vtkOpenGLImageAlgorithmCallback() {}
-  vtkOpenGLImageAlgorithmCallback() {}
+  virtual ~vtkOpenGLImageAlgorithmCallback() = default;
+  vtkOpenGLImageAlgorithmCallback() = default;
 
 private:
   vtkOpenGLImageAlgorithmCallback(const vtkOpenGLImageAlgorithmCallback&) = delete;
@@ -75,5 +75,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkOpenGLImageAlgorithmHelper.h

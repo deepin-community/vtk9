@@ -35,9 +35,8 @@
 
 vtkStandardNewMacro(vtkBiDimensionalRepresentation2D);
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBiDimensionalRepresentation2D::vtkBiDimensionalRepresentation2D()
-  : vtkBiDimensionalRepresentation()
 {
   // Create the geometry for the two axes
   this->LineCells = vtkCellArray::New();
@@ -74,7 +73,7 @@ vtkBiDimensionalRepresentation2D::vtkBiDimensionalRepresentation2D()
   this->TextActor->SetMapper(this->TextMapper);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkBiDimensionalRepresentation2D::~vtkBiDimensionalRepresentation2D()
 {
   this->LineCells->Delete();
@@ -89,7 +88,7 @@ vtkBiDimensionalRepresentation2D::~vtkBiDimensionalRepresentation2D()
   this->TextActor->Delete();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBiDimensionalRepresentation2D::ComputeInteractionState(int X, int Y, int modify)
 {
   this->Modifier = modify;
@@ -291,7 +290,7 @@ int vtkBiDimensionalRepresentation2D::ComputeInteractionState(int X, int Y, int 
   return this->InteractionState;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::StartWidgetDefinition(double e[2])
 {
   double pos[3];
@@ -309,7 +308,7 @@ void vtkBiDimensionalRepresentation2D::StartWidgetDefinition(double e[2])
   this->StartEventPosition[2] = pos[2];
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::Point2WidgetInteraction(double e[2])
 {
   double pos[3], p1[3];
@@ -326,7 +325,7 @@ void vtkBiDimensionalRepresentation2D::Point2WidgetInteraction(double e[2])
   this->SetPoint2DisplayPosition(pos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is called when Point3 is to be manipulated. Note that Point3
 // and Point4 are constrained relative to Line1. As a result, manipulating P3
 // results in manipulating P4.
@@ -369,7 +368,7 @@ void vtkBiDimensionalRepresentation2D::Point3WidgetInteraction(double e[2])
   this->SetPoint4WorldPosition(p4);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::StartWidgetManipulation(double e[2])
 {
   this->StartEventPosition[0] = e[0];
@@ -407,7 +406,7 @@ void vtkBiDimensionalRepresentation2D::StartWidgetManipulation(double e[2])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This handles all the nasty special cases when the length of the arms of the
 // bidimensional widget become zero. Basically the method prevents the arms
 // from getting too short.
@@ -470,7 +469,7 @@ void vtkBiDimensionalRepresentation2D::ProjectOrthogonalPoint(
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method is tricky because it is constrained by Line1 and Line2.
 // This method is invoked after all four points have been placed.
 void vtkBiDimensionalRepresentation2D::WidgetInteraction(double e[2])
@@ -600,7 +599,7 @@ void vtkBiDimensionalRepresentation2D::WidgetInteraction(double e[2])
   } // near P4
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::BuildRepresentation()
 {
   if (this->GetMTime() > this->BuildTime ||
@@ -741,25 +740,25 @@ void vtkBiDimensionalRepresentation2D::BuildRepresentation()
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 char* vtkBiDimensionalRepresentation2D::GetLabelText()
 {
   return this->TextMapper->GetInput();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double* vtkBiDimensionalRepresentation2D::GetLabelPosition()
 {
   return this->TextActor->GetPosition();
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::GetLabelPosition(double pos[3])
 {
   this->TextActor->GetPositionCoordinate()->GetValue(pos);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::GetWorldLabelPosition(double pos[3])
 {
   double viewportPos[3], worldPos[4];
@@ -788,14 +787,14 @@ void vtkBiDimensionalRepresentation2D::GetWorldLabelPosition(double pos[3])
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::ReleaseGraphicsResources(vtkWindow* w)
 {
   this->LineActor->ReleaseGraphicsResources(w);
   this->TextActor->ReleaseGraphicsResources(w);
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBiDimensionalRepresentation2D::RenderOverlay(vtkViewport* viewport)
 {
   this->BuildRepresentation();
@@ -808,7 +807,7 @@ int vtkBiDimensionalRepresentation2D::RenderOverlay(vtkViewport* viewport)
   return count;
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::Highlight(int highlightOn)
 {
   if (highlightOn)
@@ -821,7 +820,7 @@ void vtkBiDimensionalRepresentation2D::Highlight(int highlightOn)
   }
 }
 
-//----------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkBiDimensionalRepresentation2D::PrintSelf(ostream& os, vtkIndent indent)
 {
   // Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h

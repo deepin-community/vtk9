@@ -26,12 +26,11 @@
 #include "vtkRenderWindow.h"
 #include "vtkRenderer.h"
 #include "vtkRendererNode.h"
-#include "vtkViewNodeCollection.h"
 
 //============================================================================
 vtkStandardNewMacro(vtkRendererNode);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkRendererNode::vtkRendererNode()
 {
   this->Size[0] = 0;
@@ -44,16 +43,16 @@ vtkRendererNode::vtkRendererNode()
   this->Scale[1] = 1;
 }
 
-//----------------------------------------------------------------------------
-vtkRendererNode::~vtkRendererNode() {}
+//------------------------------------------------------------------------------
+vtkRendererNode::~vtkRendererNode() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRendererNode::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkRendererNode::Build(bool prepass)
 {
   if (prepass)
@@ -68,6 +67,13 @@ void vtkRendererNode::Build(bool prepass)
     this->AddMissingNodes(mine->GetLights());
     this->AddMissingNodes(mine->GetActors());
     this->AddMissingNodes(mine->GetVolumes());
+
+    // make sure we have a camera setup
+    if (!mine->IsActiveCameraCreated())
+    {
+      mine->GetActiveCamera();
+      mine->ResetCamera();
+    }
     this->AddMissingNode(mine->GetActiveCamera());
     this->RemoveUnusedNodes();
   }

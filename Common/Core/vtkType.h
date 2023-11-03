@@ -15,7 +15,9 @@
 #ifndef vtkType_h
 #define vtkType_h
 
-#include "vtkConfigure.h"
+#include "vtkCompiler.h" // for VTK_USE_EXTERN_TEMPLATE
+#include "vtkLegacy.h"   // For VTK_LEGACY_REMOVE
+#include "vtkOptions.h"  // for VTK_USE_64BIT_IDS and VTK_USE_64BIT_TIMESTAMPS
 #include "vtk_kwiml.h"
 
 #define VTK_SIZEOF_CHAR KWIML_ABI_SIZEOF_CHAR
@@ -60,16 +62,6 @@
 
 #define VTK_LONG_LONG 16
 #define VTK_UNSIGNED_LONG_LONG 17
-
-#if !defined(VTK_LEGACY_REMOVE)
-
-/* Legacy.  This type is never enabled.  */
-#define VTK___INT64 18
-
-/* Legacy.  This type is never enabled.  */
-#define VTK_UNSIGNED___INT64 19
-
-#endif
 
 /* These types are required by vtkVariant and vtkVariantArray */
 #define VTK_VARIANT 20
@@ -123,6 +115,14 @@
 #define VTK_PARTITIONED_DATA_SET_COLLECTION 38
 #define VTK_UNIFORM_HYPER_TREE_GRID 39
 #define VTK_EXPLICIT_STRUCTURED_GRID 40
+#define VTK_DATA_OBJECT_TREE 41
+#define VTK_ABSTRACT_ELECTRONIC_DATA 42
+#define VTK_OPEN_QUBE_ELECTRONIC_DATA 43
+#define VTK_ANNOTATION 44
+#define VTK_ANNOTATION_LAYERS 45
+#define VTK_BSP_CUTS 46
+#define VTK_GEO_JSON_FEATURE 47
+#define VTK_IMAGE_STENCIL_DATA 48
 
 /*--------------------------------------------------------------------------*/
 /* Define a casting macro for use by the constants below.  */
@@ -179,15 +179,9 @@ typedef signed char vtkTypeInt8;
 #define VTK_TYPE_UINT8 VTK_UNSIGNED_CHAR
 #define VTK_TYPE_UINT8_MIN VTK_UNSIGNED_CHAR_MIN
 #define VTK_TYPE_UINT8_MAX VTK_UNSIGNED_CHAR_MAX
-#if VTK_TYPE_CHAR_IS_SIGNED
-#define VTK_TYPE_INT8 VTK_CHAR
-#define VTK_TYPE_INT8_MIN VTK_CHAR_MIN
-#define VTK_TYPE_INT8_MAX VTK_CHAR_MAX
-#else
 #define VTK_TYPE_INT8 VTK_SIGNED_CHAR
 #define VTK_TYPE_INT8_MIN VTK_SIGNED_CHAR_MIN
 #define VTK_TYPE_INT8_MAX VTK_SIGNED_CHAR_MAX
-#endif
 #else
 #error "No native data type can represent an 8-bit integer."
 #endif

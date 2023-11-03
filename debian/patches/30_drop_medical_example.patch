@@ -1,9 +1,9 @@
 Description: Drop medical examples
 Last-Update: 2020-10-21
 
---- vtk9-9.0.1+dfsg1.orig/Examples/CMakeLists.txt
-+++ vtk9-9.0.1+dfsg1/Examples/CMakeLists.txt
-@@ -55,7 +55,7 @@ else ()
+--- vtk9.orig/Examples/CMakeLists.txt
++++ vtk9/Examples/CMakeLists.txt
+@@ -56,7 +56,7 @@
    add_example(IO/Cxx)
    add_example(ImageProcessing/Cxx)
    add_example(Infovis/Cxx)

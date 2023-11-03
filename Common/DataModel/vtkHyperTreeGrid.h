@@ -64,7 +64,6 @@
 
 #include "vtkNew.h"          // vtkSmartPointer
 #include "vtkSmartPointer.h" // vtkSmartPointer
-// #include "vtkPointData.h" // vtkPointData
 
 #include <cassert> // std::assert
 #include <map>     // std::map
@@ -90,7 +89,7 @@ class vtkIdTypeArray;
 class vtkLine;
 class vtkPixel;
 class vtkPoints;
-class vtkPointData;
+class vtkCellData;
 class vtkUnsignedCharArray;
 
 class VTKCOMMONDATAMODEL_EXPORT vtkHyperTreeGrid : public vtkDataObject
@@ -142,7 +141,7 @@ public:
   // RectilinearGrid common API
   // --------------------------------------------------------------------------
 
-  //@{
+  ///@{
   /**
    * Set/Get sizes of this rectilinear grid dataset
    */
@@ -150,9 +149,9 @@ public:
   void SetDimensions(const int dims[3]);
   void SetDimensions(unsigned int i, unsigned int j, unsigned int k);
   void SetDimensions(int i, int j, int k);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get dimensions of this rectilinear grid dataset.
    * The dimensions correspond to the number of points
@@ -161,9 +160,9 @@ public:
   // JB Dommage, car vtkGetVectorMacro(Dimensions,int,3); not const function
   void GetDimensions(int dim[3]) const;
   void GetDimensions(unsigned int dim[3]) const;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Different ways to set the extent of the data array.  The extent
    * should be set before the "Scalars" are set or allocated.
@@ -173,9 +172,9 @@ public:
   void SetExtent(const int extent[6]);
   void SetExtent(int x1, int x2, int y1, int y2, int z1, int z2);
   vtkGetVector6Macro(Extent, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * JB Get grid sizes of this structured cells dataset.
    * Valeurs deduites a partir de Dimensions/Extent
@@ -184,19 +183,19 @@ public:
   const unsigned int* GetCellDims() const VTK_SIZEHINT(3);
   void GetCellDims(int cellDims[3]) const;
   void GetCellDims(unsigned int cellDims[3]) const;
-  //@}
+  ///@}
 
   // --------------------------------------------------------------------------
 
-  //@{
+  ///@{
   /**
    * JB Get the dimensionality of the grid deduite a partir
    * de Dimensions/Extent.
    */
   unsigned int GetDimension() const { return this->Dimension; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * JB retourne l'indice de la dimension valide.
    */
@@ -205,9 +204,9 @@ public:
     assert("pre: valid_dim" && this->GetDimension() == 1);
     axis = this->Axis[0];
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * JB Retourne l'indice des deux dimensions valides.
    */
@@ -217,22 +216,22 @@ public:
     axis1 = this->Axis[0];
     axis2 = this->Axis[1];
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * JB Get the axis information (used for CopyStructure)
    */
   const unsigned int* GetAxes() const { return this->Axis; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * The number of children each node can have.
    */
   // vtkGetMacro(NumberOfChildren, unsigned int); not const
   unsigned int GetNumberOfChildren() const { return this->NumberOfChildren; }
-  //@}
+  ///@}
 
   /**
    * Get the number or trees available along the 3 axis.
@@ -245,7 +244,7 @@ public:
    */
   // JB ?? virtual void GetNumberOfTreesPerDimension(unsigned int dimsOut[3]);
 
-  //@{
+  ///@{
   /**
    * Specify whether indexing mode of grid root cells must be transposed to
    * x-axis first, z-axis last, instead of the default z-axis first, k-axis last
@@ -254,32 +253,32 @@ public:
   vtkGetMacro(TransposedRootIndexing, bool);
   void SetIndexingModeToKJI() { this->SetTransposedRootIndexing(false); }
   void SetIndexingModeToIJK() { this->SetTransposedRootIndexing(true); }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the orientation of 1D or 2D grids:
-   * . in 1D: 0, 1, 2 = aligned along X, Y, Z axis
-   * . in 2D: 0, 1, 2 = normal to X, Y, Z axis
+   * - in 1D: 0, 1, 2 = aligned along X, Y, Z axis
+   * - in 2D: 0, 1, 2 = normal to X, Y, Z axis
    * NB: Not used in 3D
    */
   unsigned int GetOrientation() const { return this->Orientation; }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Get the state of frozen
    */
   vtkGetMacro(FreezeState, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the subdivision factor in the grid refinement scheme
    */
   void SetBranchFactor(unsigned int);
   unsigned int GetBranchFactor() const { return this->BranchFactor; }
-  //@}
+  ///@}
 
   /**
    * Return the maximum number of trees in the level 0 grid.
@@ -290,6 +289,11 @@ public:
    * Get the number of vertices in the primal tree grid.
    */
   vtkIdType GetNumberOfVertices();
+
+  /**
+   * Get the number of non empty trees in this grid.
+   */
+  vtkIdType GetNumberOfNonEmptyTrees();
 
   /**
    * Get the number of leaves in the primal tree grid.
@@ -306,83 +310,83 @@ public:
    */
   unsigned int GetNumberOfLevels();
 
-  //@{
+  ///@{
   /**
    * Set/Get the grid coordinates in the x-direction.
    */
   virtual void SetXCoordinates(vtkDataArray*);
   vtkGetObjectMacro(XCoordinates, vtkDataArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the grid coordinates in the y-direction.
    */
   virtual void SetYCoordinates(vtkDataArray*);
   vtkGetObjectMacro(YCoordinates, vtkDataArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the grid coordinates in the z-direction.
    */
   virtual void SetZCoordinates(vtkDataArray*);
   vtkGetObjectMacro(ZCoordinates, vtkDataArray);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * JB Augented services on Coordinates.
    */
   virtual void CopyCoordinates(const vtkHyperTreeGrid* output);
   virtual void SetFixedCoordinates(unsigned int axis, double value);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the blanking mask of primal leaf cells
    */
   void SetMask(vtkBitArray*);
   vtkGetObjectMacro(Mask, vtkBitArray);
-  //@}
+  ///@}
 
   /**
    * Determine whether blanking mask is empty or not
    */
   bool HasMask();
 
-  //@{
+  ///@{
   /**
    * Set/Get presence or absence of interface
    */
   vtkSetMacro(HasInterface, bool);
   vtkGetMacro(HasInterface, bool);
   vtkBooleanMacro(HasInterface, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get names of interface normal vectors arrays
    */
   vtkSetStringMacro(InterfaceNormalsName);
   vtkGetStringMacro(InterfaceNormalsName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get names of interface intercepts arrays
    */
   vtkSetStringMacro(InterfaceInterceptsName);
   vtkGetStringMacro(InterfaceInterceptsName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get depth limiter value
    */
   vtkSetMacro(DepthLimiter, unsigned int);
   vtkGetMacro(DepthLimiter, unsigned int);
-  //@}
+  ///@}
 
   /**
    * JB
@@ -651,7 +655,7 @@ public:
   class VTKCOMMONDATAMODEL_EXPORT vtkHyperTreeGridIterator
   {
   public:
-    vtkHyperTreeGridIterator() {}
+    vtkHyperTreeGridIterator() = default;
 
     /**
      * Initialize the iterator on the tree set of the given grid.
@@ -671,7 +675,7 @@ public:
     vtkHyperTree* GetNextTree();
 
   protected:
-    std::map<vtkIdType, vtkSmartPointer<vtkHyperTree> >::iterator Iterator;
+    std::map<vtkIdType, vtkSmartPointer<vtkHyperTree>>::iterator Iterator;
     vtkHyperTreeGrid* Grid;
   };
 
@@ -681,13 +685,13 @@ public:
    */
   void InitializeTreeIterator(vtkHyperTreeGridIterator&);
 
-  //@{
+  ///@{
   /**
    * Retrieve an instance of this class from an information object
    */
   static vtkHyperTreeGrid* GetData(vtkInformation* info);
   static vtkHyperTreeGrid* GetData(vtkInformationVector* v, int i = 0);
-  //@}
+  ///@}
 
   /**
    * Return a pointer to the geometry bounding box in the form
@@ -715,13 +719,25 @@ public:
    */
   void GetCenter(double center[3]);
 
-  //@{
   /**
-   * Return a pointer to this dataset's point/tree data.
+   * Return a pointer to this dataset's hypertree node data.
    * THIS METHOD IS THREAD SAFE
    */
-  vtkPointData* GetPointData();
-  //@}
+  vtkCellData* GetCellData();
+
+  /**
+   * Returns the hypertree node field data stored as cell data.
+   * If type != vtkDataObject::AttributeTypes::CELL,
+   * it defers to vtkDataObject;
+   */
+  vtkFieldData* GetAttributesAsFieldData(int type) override;
+
+  /**
+   * Returns the number of nodes.
+   * Ii type == vtkDataObject::AttributeTypes::CELL,
+   * it defers to vtkDataObject.
+   */
+  vtkIdType GetNumberOfElements(int type) override;
 
 protected:
   /**
@@ -732,7 +748,7 @@ protected:
   /**
    * Destructor
    */
-  virtual ~vtkHyperTreeGrid() override;
+  ~vtkHyperTreeGrid() override;
 
   /**
    * JB ModeSqueeze
@@ -746,14 +762,14 @@ protected:
   unsigned int BranchFactor; // 2 or 3
   unsigned int Dimension;    // 1, 2, or 3
 
-  //@{
+  ///@{
   /**
    * These arrays pointers are caches used to avoid a string comparison (when
    * getting ghost arrays using GetArray(name))
    */
   vtkUnsignedCharArray* TreeGhostArray;
   bool TreeGhostArrayCached;
-  //@}
+  ///@}
 private:
   unsigned int Orientation; // 0, 1, or 2
   unsigned int Axis[2];
@@ -786,9 +802,9 @@ protected:
   char* InterfaceNormalsName;
   char* InterfaceInterceptsName;
 
-  std::map<vtkIdType, vtkSmartPointer<vtkHyperTree> > HyperTrees;
+  std::map<vtkIdType, vtkSmartPointer<vtkHyperTree>> HyperTrees;
 
-  vtkNew<vtkPointData> PointData; // Scalars, vectors, etc. associated w/ each point
+  vtkNew<vtkCellData> CellData; // Scalars, vectors, etc. associated w/ each point
 
   unsigned int DepthLimiter;
 

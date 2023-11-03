@@ -1,6 +1,6 @@
 Name: VTK
-Bug-Database: https://gitlab.kitware.com/vtk/vtk/issues
-Bug-Submit: https://gitlab.kitware.com/vtk/vtk/issues/new
+Bug-Database: https://gitlab.kitware.com/vtk/vtk/-/issues
+Bug-Submit: https://gitlab.kitware.com/vtk/vtk/-/issues/new
 Documentation: https://vtk.org/documentation/
 Repository: https://gitlab.kitware.com/vtk/vtk.git
 Repository-Browse: https://gitlab.kitware.com/vtk/vtk

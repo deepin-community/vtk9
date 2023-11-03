@@ -22,17 +22,17 @@
 
 vtkStandardNewMacro(vtkVolumePicker);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVolumePicker::vtkVolumePicker()
 {
   this->PickCroppingPlanes = 0;
   this->CroppingPlaneId = -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkVolumePicker::~vtkVolumePicker() = default;
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumePicker::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -42,7 +42,7 @@ void vtkVolumePicker::PrintSelf(ostream& os, vtkIndent indent)
   os << indent << "CroppingPlaneId: " << this->CroppingPlaneId << "\n";
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkVolumePicker::ResetPickInfo()
 {
   this->Superclass::ResetPickInfo();
@@ -50,7 +50,7 @@ void vtkVolumePicker::ResetPickInfo()
   this->CroppingPlaneId = -1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Intersect a vtkVolume with a line by ray casting.  Compared to the
 // same method in the superclass, this method will look for cropping planes.
 
@@ -128,8 +128,8 @@ double vtkVolumePicker::IntersectVolumeWithLine(const double p1[3], const double
 
     // Get all of the line segments that intersect the visible blocks
     int flags = vmapper->GetCroppingRegionFlags();
-    if (!this->ClipLineWithCroppingRegion(bounds, extent, flags, x1, x2, t1, t2, extentPlaneId,
-          numSegments, t1List, t2List, s1List, planeIdList))
+    if (!vtkVolumePicker::ClipLineWithCroppingRegion(bounds, extent, flags, x1, x2, t1, t2,
+          extentPlaneId, numSegments, t1List, t2List, s1List, planeIdList))
     {
       return VTK_DOUBLE_MAX;
     }
@@ -138,7 +138,7 @@ double vtkVolumePicker::IntersectVolumeWithLine(const double p1[3], const double
   {
     // If no cropping, then use volume bounds
     double s2;
-    if (!this->ClipLineWithExtent(extent, x1, x2, s1, s2, extentPlaneId))
+    if (!vtkVolumePicker::ClipLineWithExtent(extent, x1, x2, s1, s2, extentPlaneId))
     {
       return VTK_DOUBLE_MAX;
     }
@@ -225,7 +225,7 @@ double vtkVolumePicker::IntersectVolumeWithLine(const double p1[3], const double
   return tMin;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // This method does several things.  Given the volume CroppingRegionPlanes
 // stored in bounds (in structured coords), and the volume extent, it
 // casts a ray through the 27 "blocks" that the volume has been divided into.

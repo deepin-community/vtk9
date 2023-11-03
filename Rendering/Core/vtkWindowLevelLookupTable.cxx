@@ -19,7 +19,7 @@
 
 vtkStandardNewMacro(vtkWindowLevelLookupTable);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkWindowLevelLookupTable::vtkWindowLevelLookupTable(int sze, int ext)
   : vtkLookupTable(sze, ext)
 {
@@ -39,7 +39,7 @@ vtkWindowLevelLookupTable::vtkWindowLevelLookupTable(int sze, int ext)
   this->MaximumTableValue[3] = 1.0;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Table is built as a linear ramp between MinimumTableValue and
 // MaximumTableValue.
 void vtkWindowLevelLookupTable::ForceBuild()
@@ -82,7 +82,7 @@ void vtkWindowLevelLookupTable::ForceBuild()
   this->BuildTime.Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Reverse the color table (don't rebuild in case someone has
 // been adjusting the table values by hand)
 // This is a little ugly ... it might be best to remove
@@ -126,7 +126,7 @@ void vtkWindowLevelLookupTable::SetInverseVideo(vtkTypeBool iv)
   this->Modified();
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkWindowLevelLookupTable::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

@@ -25,7 +25,7 @@ class vtkViewNodeFactory::vtkInternals
 public:
   std::map<std::string, vtkViewNode* (*)()> Overrides;
 
-  vtkInternals() {}
+  vtkInternals() = default;
 
   ~vtkInternals() { this->Overrides.clear(); }
 };
@@ -33,25 +33,25 @@ public:
 //============================================================================
 vtkStandardNewMacro(vtkViewNodeFactory);
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNodeFactory::vtkViewNodeFactory()
 {
   this->Internals = new vtkInternals;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNodeFactory::~vtkViewNodeFactory()
 {
   delete this->Internals;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNodeFactory::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkViewNode* vtkViewNodeFactory::CreateNode(vtkObject* who)
 {
   if (!who)
@@ -105,22 +105,7 @@ vtkViewNode* vtkViewNodeFactory::CreateNode(vtkObject* who)
   return vn;
 }
 
-//----------------------------------------------------------------------------
-#if !defined(VTK_LEGACY_REMOVE)
-vtkViewNode* vtkViewNodeFactory::CreateNode(const char* forwhom)
-{
-  if (this->Internals->Overrides.find(forwhom) == this->Internals->Overrides.end())
-  {
-    return nullptr;
-  }
-  vtkViewNode* (*func)() = this->Internals->Overrides.find(forwhom)->second;
-  vtkViewNode* vn = func();
-  vn->SetMyFactory(this);
-  return vn;
-}
-#endif
-
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkViewNodeFactory::RegisterOverride(const char* name, vtkViewNode* (*func)())
 {
   this->Internals->Overrides[name] = func;

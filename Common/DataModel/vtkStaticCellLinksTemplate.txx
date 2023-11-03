@@ -356,7 +356,7 @@ void vtkStaticCellLinksTemplate<TIds>::ThreadedBuildLinks(
 
   // Create an array of atomics with initial count=0. This will keep
   // track of point uses. Count them in parallel.
-  std::atomic<TIds>* counts = new std::atomic<TIds>[numPts] {};
+  std::atomic<TIds>* counts = new std::atomic<TIds>[numPts]();
   CountUses<TIds> count(cellArray, counts);
   vtkSMPTools::For(0, numCells, count);
 
@@ -491,6 +491,115 @@ void vtkStaticCellLinksTemplate<TIds>::BuildLinks(vtkPolyData* pd)
 }
 
 //----------------------------------------------------------------------------
+// Indicate whether the point ids provided form part of at least one cell.
+template <typename TIds>
+bool vtkStaticCellLinksTemplate<TIds>::MatchesCell(vtkIdType npts, const vtkIdType* pts)
+{
+  // Find the shortest cell links list.
+  int minList = 0;
+  vtkIdType minNumCells = VTK_INT_MAX;
+  TIds numCells;
+  for (auto i = 0; i < npts; ++i)
+  {
+    numCells = this->GetNcells(pts[i]);
+    if (numCells < minNumCells)
+    {
+      minList = i;
+      minNumCells = numCells;
+    }
+  }
+
+  // Process the cells in the shortest list
+  auto shortCells = this->GetCells(pts[minList]);
+  for (auto j = 0; j < minNumCells; ++j)
+  {
+    bool foundCell = true;
+    auto cellId = shortCells[j];
+    // Loop over all cell lists looking for this cellId
+    for (auto i = 0; i < npts && foundCell; ++i)
+    {
+      if (i != minList)
+      {
+        numCells = this->GetNcells(pts[i]);
+        auto linkedCells = this->GetCells(pts[i]);
+        vtkIdType k;
+        for (k = 0; k < numCells; ++k)
+        {
+          if (linkedCells[k] == cellId)
+          {
+            break; // we matched cell
+          }
+        }
+        foundCell = (k >= numCells ? false : foundCell);
+      } // search for cell in each list
+    }   // for all cell lists
+
+    if (foundCell)
+    {
+      return true;
+    }
+  } // for all cells in the shortest list
+
+  return false;
+}
+
+//----------------------------------------------------------------------------
+// Given some point ids, return the cells that use these points in the
+// provided id list.
+template <typename TIds>
+void vtkStaticCellLinksTemplate<TIds>::GetCells(
+  vtkIdType npts, const vtkIdType* pts, vtkIdList* cells)
+{
+  // Initialize to no uses.
+  cells->Reset();
+
+  // Find the shortest cell links list.
+  int minList = 0;
+  vtkIdType minNumCells = VTK_INT_MAX;
+  TIds numCells;
+  for (auto i = 0; i < npts; ++i)
+  {
+    numCells = this->GetNcells(pts[i]);
+    if (numCells < minNumCells)
+    {
+      minList = i;
+      minNumCells = numCells;
+    }
+  }
+
+  // Process the cells in the shortest list
+  auto shortCells = this->GetCells(pts[minList]);
+  for (auto j = 0; j < minNumCells; ++j)
+  {
+    bool foundCell = true;
+    auto cellId = shortCells[j];
+    // Loop over all cell lists looking for this cellId
+    for (auto i = 0; i < npts && foundCell; ++i)
+    {
+      if (i != minList)
+      {
+        numCells = this->GetNcells(pts[i]);
+        auto linkedCells = this->GetCells(pts[i]);
+        vtkIdType k;
+        for (k = 0; k < numCells; ++k)
+        {
+          if (linkedCells[k] == cellId)
+          {
+            break; // we matched cell
+          }
+        }
+        foundCell = (k >= numCells ? false : foundCell);
+      } // search for cell in each list
+    }   // for all cell lists
+
+    if (foundCell)
+    {
+      cells->InsertNextId(cellId);
+    }
+  } // for all cells in shortest list
+}
+
+//----------------------------------------------------------------------------
 // Satisfy vtkAbstractCellLinks API
 template <typename TIds>
 unsigned long vtkStaticCellLinksTemplate<TIds>::GetActualMemorySize()
@@ -531,6 +640,30 @@ void vtkStaticCellLinksTemplate<TIds>::DeepCopy(vtkAbstractCellLinks* src)
     this->Offsets = new TIds[this->NumPts + 1];
     std::copy(links->Offsets, links->Offsets + (this->NumPts + 1), this->Offsets);
   }
+}
+
+//----------------------------------------------------------------------------
+// Support the vtkAbstractCellLinks API
+template <typename TIds>
+void vtkStaticCellLinksTemplate<TIds>::SelectCells(
+  vtkIdType minMaxDegree[2], unsigned char* cellSelection)
+{
+  std::fill_n(cellSelection, this->NumCells, 0);
+  vtkSMPTools::For(
+    0, this->NumPts, [this, minMaxDegree, cellSelection](vtkIdType ptId, vtkIdType endPtId) {
+      for (; ptId < endPtId; ++ptId)
+      {
+        vtkIdType degree = this->Offsets[ptId + 1] - this->Offsets[ptId];
+        if (degree >= minMaxDegree[0] && degree < minMaxDegree[1])
+        {
+          TIds* cells = this->GetCells(ptId);
+          for (auto i = 0; i < degree; ++i)
+          {
+            cellSelection[cells[i]] = 1;
+          }
+        }
+      } // for all points in this batch
+    }); // end lambda
 }
 
 #endif

@@ -31,10 +31,11 @@ class VTKIMAGINGCORE_EXPORT vtkImageMirrorPad : public vtkImagePadFilter
 public:
   static vtkImageMirrorPad* New();
   vtkTypeMacro(vtkImageMirrorPad, vtkImagePadFilter);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
-  vtkImageMirrorPad() {}
-  ~vtkImageMirrorPad() override {}
+  vtkImageMirrorPad() = default;
+  ~vtkImageMirrorPad() override = default;
 
   void ComputeInputUpdateExtent(int inExt[6], int outExt[6], int wExt[6]) override;
   void ThreadedRequestData(vtkInformation* request, vtkInformationVector** inputVector,
@@ -47,5 +48,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageMirrorPad.h

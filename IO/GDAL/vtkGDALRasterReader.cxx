@@ -53,7 +53,7 @@
 
 vtkStandardNewMacro(vtkGDALRasterReader);
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 class vtkGDALRasterReader::vtkGDALRasterReaderInternal
 {
 public:
@@ -115,7 +115,7 @@ public:
   vtkGDALRasterReader* Reader;
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALRasterReader::vtkGDALRasterReaderInternal::vtkGDALRasterReaderInternal(
   vtkGDALRasterReader* reader)
   : NumberOfBands(0)
@@ -144,7 +144,7 @@ vtkGDALRasterReader::vtkGDALRasterReaderInternal::vtkGDALRasterReaderInternal(
   GDALAllRegister();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALRasterReader::vtkGDALRasterReaderInternal::~vtkGDALRasterReaderInternal()
 {
   this->ReleaseData();
@@ -154,10 +154,10 @@ vtkGDALRasterReader::vtkGDALRasterReaderInternal::~vtkGDALRasterReaderInternal()
   this->SelectionObserver = nullptr;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::vtkGDALRasterReaderInternal::ReadMetaData(const std::string& fileName)
 {
-  if (fileName.compare(this->PrevReadFileName) == 0)
+  if (fileName == this->PrevReadFileName)
   {
     return;
   }
@@ -198,13 +198,13 @@ void vtkGDALRasterReader::vtkGDALRasterReaderInternal::ReadMetaData(const std::s
     {
       for (int i = 0; papszMetaData[i] != nullptr; ++i)
       {
-        this->Reader->MetaData.push_back(papszMetaData[i]);
+        this->Reader->MetaData.emplace_back(papszMetaData[i]);
       }
     }
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::vtkGDALRasterReaderInternal::ReadData(const std::string& fileName)
 {
   // If data is not initialized by now, it means that we were unable to read
@@ -302,7 +302,7 @@ void vtkGDALRasterReader::vtkGDALRasterReaderInternal::ReadData(const std::strin
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename VTK_TYPE, typename RAW_TYPE>
 void vtkGDALRasterReader::vtkGDALRasterReaderInternal::GenericReadData()
 {
@@ -545,7 +545,7 @@ void vtkGDALRasterReader::vtkGDALRasterReaderInternal::GenericReadData()
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::vtkGDALRasterReaderInternal::ReleaseData()
 {
   if (this->GDALData)
@@ -555,7 +555,7 @@ void vtkGDALRasterReader::vtkGDALRasterReaderInternal::ReleaseData()
   this->CellArraySelection->RemoveAllArrays();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename VTK_TYPE, typename RAW_TYPE>
 void vtkGDALRasterReader::vtkGDALRasterReaderInternal::Convert(
   std::vector<RAW_TYPE>& rawUniformGridData, int targetWidth, int targetHeight,
@@ -630,7 +630,7 @@ void vtkGDALRasterReader::vtkGDALRasterReaderInternal::Convert(
   this->UniformGridData->GetCellData()->AddArray(scArr);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 bool vtkGDALRasterReader::vtkGDALRasterReaderInternal::GetGeoCornerPoint(
   GDALDataset* dataset, double x, double y, double* out) const
 {
@@ -698,7 +698,7 @@ bool vtkGDALRasterReader::vtkGDALRasterReaderInternal::GetGeoCornerPoint(
   return retVal;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const double* vtkGDALRasterReader::vtkGDALRasterReaderInternal::GetGeoCornerPoints()
 {
   this->GetGeoCornerPoint(this->GDALData, 0, 0, &this->CornerPoints[0]);
@@ -729,7 +729,7 @@ void vtkGDALRasterReader::vtkGDALRasterReaderInternal::GetOriginSpacing(
   origin[2] = 0;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::vtkGDALRasterReaderInternal::ReadColorTable(
   GDALRasterBand* rasterBand, vtkLookupTable* colorTable) const
 {
@@ -776,14 +776,14 @@ void vtkGDALRasterReader::vtkGDALRasterReaderInternal::ReadColorTable(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::vtkGDALRasterReaderInternal::SelectionCallback(vtkObject* vtkNotUsed(obj),
   unsigned long vtkNotUsed(eventid), void* clientdata, void* vtkNotUsed(calldata))
 {
   static_cast<vtkGDALRasterReader::vtkGDALRasterReaderInternal*>(clientdata)->Reader->Modified();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::PrintSelf(std::ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -817,9 +817,8 @@ void vtkGDALRasterReader::PrintSelf(std::ostream& os, vtkIndent indent)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALRasterReader::vtkGDALRasterReader()
-  : vtkImageReader2()
 {
   this->Impl = new vtkGDALRasterReaderInternal(this);
 
@@ -847,18 +846,18 @@ vtkGDALRasterReader::vtkGDALRasterReader()
   this->CollateBands = true;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkGDALRasterReader::~vtkGDALRasterReader()
 {
   delete this->Impl;
 
   if (this->FileName)
   {
-    this->SetFileName(0);
+    this->SetFileName(nullptr);
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALRasterReader::CanReadFile(const char* fname)
 {
   GDALDataset* dataset = static_cast<GDALDataset*>(GDALOpen(fname, GA_ReadOnly));
@@ -867,25 +866,25 @@ int vtkGDALRasterReader::CanReadFile(const char* fname)
   return canRead;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGDALRasterReader::GetProjectionString() const
 {
   return this->Projection.c_str();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const double* vtkGDALRasterReader::GetGeoCornerPoints()
 {
   return this->Impl->GetGeoCornerPoints();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const std::vector<std::string>& vtkGDALRasterReader::GetMetaData()
 {
   return this->MetaData;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 std::vector<std::string> vtkGDALRasterReader::GetDomainMetaData(const std::string& domain)
 {
   std::vector<std::string> domainMetaData;
@@ -896,20 +895,20 @@ std::vector<std::string> vtkGDALRasterReader::GetDomainMetaData(const std::strin
   {
     for (int i = 0; papszMetadata[i] != nullptr; ++i)
     {
-      domainMetaData.push_back(papszMetadata[i]);
+      domainMetaData.emplace_back(papszMetadata[i]);
     }
   }
 
   return domainMetaData;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const std::string& vtkGDALRasterReader::GetDriverShortName()
 {
   return this->DriverShortName;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const std::string& vtkGDALRasterReader::GetDriverLongName()
 {
   return this->DriverLongName;
@@ -924,7 +923,7 @@ vtkIdType vtkGDALRasterReader::GetNumberOfCells()
 #define strdup _strdup
 #endif
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALRasterReader::RequestData(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -993,7 +992,7 @@ int vtkGDALRasterReader::RequestData(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALRasterReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   vtkInformationVector** vtkNotUsed(inputVector), vtkInformationVector* outputVector)
 {
@@ -1062,13 +1061,13 @@ int vtkGDALRasterReader::RequestInformation(vtkInformation* vtkNotUsed(request),
   return 1;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int* vtkGDALRasterReader::GetRasterDimensions()
 {
   return this->Impl->RasterDimensions;
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALRasterReader::FillOutputPortInformation(int port, vtkInformation* info)
 {
   if (port == 0)
@@ -1084,7 +1083,7 @@ int vtkGDALRasterReader::FillOutputPortInformation(int port, vtkInformation* inf
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 double vtkGDALRasterReader::GetInvalidValue(size_t bandIndex, int* hasNoData)
 {
   if (bandIndex >= this->Impl->NoDataValue.size())
@@ -1099,25 +1098,25 @@ double vtkGDALRasterReader::GetInvalidValue(size_t bandIndex, int* hasNoData)
   return this->Impl->NoDataValue[bandIndex];
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALRasterReader::GetNumberOfCellArrays()
 {
   return this->Impl->CellArraySelection->GetNumberOfArrays();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 const char* vtkGDALRasterReader::GetCellArrayName(int index)
 {
   return this->Impl->CellArraySelection->GetArrayName(index);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkGDALRasterReader::GetCellArrayStatus(const char* name)
 {
   return this->Impl->CellArraySelection->ArrayIsEnabled(name);
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::SetCellArrayStatus(const char* name, int status)
 {
   if (status)
@@ -1130,13 +1129,13 @@ void vtkGDALRasterReader::SetCellArrayStatus(const char* name, int status)
   }
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::DisableAllCellArrays()
 {
   this->Impl->CellArraySelection->DisableAllArrays();
 }
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkGDALRasterReader::EnableAllCellArrays()
 {
   this->Impl->CellArraySelection->EnableAllArrays();

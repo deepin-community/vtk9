@@ -101,16 +101,16 @@ public:
    */
   virtual void PostRender(vtkActor*, vtkRenderer*);
 
-  //@{
+  ///@{
   /**
    * Set/Get lighting flag for an object. Initial value is true.
    */
   vtkGetMacro(Lighting, bool);
   vtkSetMacro(Lighting, bool);
   vtkBooleanMacro(Lighting, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get rendering of points as spheres. The size of the
    * sphere in pixels is controlled by the PointSize
@@ -120,9 +120,9 @@ public:
   vtkGetMacro(RenderPointsAsSpheres, bool);
   vtkSetMacro(RenderPointsAsSpheres, bool);
   vtkBooleanMacro(RenderPointsAsSpheres, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get rendering of lines as tubes. The width of the
    * line in pixels is controlled by the LineWidth
@@ -133,9 +133,9 @@ public:
   vtkGetMacro(RenderLinesAsTubes, bool);
   vtkSetMacro(RenderLinesAsTubes, bool);
   vtkBooleanMacro(RenderLinesAsTubes, bool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the shading interpolation method for an object.
    */
@@ -146,9 +146,9 @@ public:
   void SetInterpolationToPhong() { this->SetInterpolation(VTK_PHONG); }
   void SetInterpolationToPBR() { this->SetInterpolation(VTK_PBR); }
   const char* GetInterpolationAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Control the surface geometry representation for the object.
    */
@@ -158,9 +158,9 @@ public:
   void SetRepresentationToWireframe() { this->SetRepresentation(VTK_WIREFRAME); }
   void SetRepresentationToSurface() { this->SetRepresentation(VTK_SURFACE); }
   const char* GetRepresentationAsString();
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the color of the object. Has the side effect of setting the
    * ambient diffuse and specular colors as well. This is basically
@@ -171,9 +171,25 @@ public:
   double* GetColor() VTK_SIZEHINT(3);
   void GetColor(double rgb[3]);
   void GetColor(double& r, double& g, double& b);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get the Index Of Refraction of the base layer.
+   * It controls the amount of light reflected at normal incidence (the reflectance F0),
+   * depending on the IOR of the upper layer (eg. coat layer, or environment).
+   * For example, with a base IOR of 1.5 and an IOR of 1.0 outside (IOR of the air),
+   * 4% of the amount of the light is reflected at normal incidence.
+   * Notice that modifying this value is only useful for dielectrics materials, as
+   * the reflectance for metallic is the albedo.
+   * This parameter is only used by PBR Interpolation.
+   * Default value is 1.5
+   */
+  vtkSetClampMacro(BaseIOR, double, 1.0, VTK_FLOAT_MAX);
+  vtkGetMacro(BaseIOR, double);
+  ///@}
+
+  ///@{
   /**
    * Set/Get the metallic coefficient.
    * Usually this value is either 0 or 1 for real material but any value in between is valid.
@@ -182,21 +198,96 @@ public:
    */
   vtkSetClampMacro(Metallic, double, 0.0, 1.0);
   vtkGetMacro(Metallic, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the roughness coefficient.
-   * This value have to be between 0 (glossy) and 1 (rough).
-   * A glossy material have reflections and a high specular part.
+   * This value has to be between 0 (glossy) and 1 (rough).
+   * A glossy material has reflections and a high specular part.
    * This parameter is only used by PBR Interpolation.
    * Default value is 0.5
    */
   vtkSetClampMacro(Roughness, double, 0.0, 1.0);
   vtkGetMacro(Roughness, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get the anisotropy coefficient.
+   * This value controls the anisotropy of the material (0.0 means isotropic)
+   * This parameter is only used by PBR Interpolation.
+   * Default value is 0.0
+   */
+  vtkSetClampMacro(Anisotropy, double, 0.0, 1.0);
+  vtkGetMacro(Anisotropy, double);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the anisotropy rotation coefficient.
+   * This value controls the rotation of the direction of the anisotropy.
+   * This parameter is only used by PBR Interpolation.
+   * Default value is 0.0
+   */
+  vtkSetClampMacro(AnisotropyRotation, double, 0.0, 1.0);
+  vtkGetMacro(AnisotropyRotation, double);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the coat layer Index Of Refraction.
+   * This parameter is only used by PBR Interpolation.
+   * Default value is 2.0
+   */
+  vtkSetClampMacro(CoatIOR, double, 1.0, VTK_FLOAT_MAX);
+  vtkGetMacro(CoatIOR, double);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the coat layer roughness coefficient.
+   * This value has to be between 0 (glossy) and 1 (rough).
+   * This parameter is only used by PBR Interpolation.
+   * Default value is 0.0
+   */
+  vtkSetClampMacro(CoatRoughness, double, 0.0, 1.0);
+  vtkGetMacro(CoatRoughness, double);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the coat layer strength coefficient.
+   * This value affects the strength of the coat layer reflection.
+   * This parameter is only used by PBR Interpolation.
+   * Default value is 0.0
+   */
+  vtkSetClampMacro(CoatStrength, double, 0.0, 1.0);
+  vtkGetMacro(CoatStrength, double);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the color of the coat layer.
+   * This value is only used by PBR Interpolation.
+   * Default value is white [1.0, 1.0, 1.0]
+   */
+  vtkSetVector3Macro(CoatColor, double);
+  vtkGetVector3Macro(CoatColor, double);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the coat layer normal scale coefficient.
+   * This value affects the strength of the normal deviation from the coat normal texture.
+   * This parameter is only used by PBR Interpolation.
+   * Default value is 1.0
+   */
+  vtkSetClampMacro(CoatNormalScale, double, 0.0, 1.0);
+  vtkGetMacro(CoatNormalScale, double);
+  ///@}
+
+  ///@{
   /**
    * Set/Get the normal scale coefficient.
    * This value affects the strength of the normal deviation from the texture.
@@ -204,9 +295,9 @@ public:
    */
   vtkSetMacro(NormalScale, double);
   vtkGetMacro(NormalScale, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the occlusion strength coefficient.
    * This value affects the strength of the occlusion if a material texture is present.
@@ -215,9 +306,9 @@ public:
    */
   vtkSetClampMacro(OcclusionStrength, double, 0.0, 1.0);
   vtkGetMacro(OcclusionStrength, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the emissive factor.
    * This value is multiplied with the emissive color when an emissive texture is present.
@@ -226,50 +317,61 @@ public:
    */
   vtkSetVector3Macro(EmissiveFactor, double);
   vtkGetVector3Macro(EmissiveFactor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get the edge tint (for metals only).
+   * Set the color at grazing angle (fresnel reflectance).
+   * This parameter is only used by PBR Interpolation.
+   * Default value is [1.0, 1.0, 1.0]
+   */
+  vtkSetVector3Macro(EdgeTint, double);
+  vtkGetVector3Macro(EdgeTint, double);
+  ///@}
+
+  ///@{
   /**
    * Set/Get the ambient lighting coefficient.
    */
   vtkSetClampMacro(Ambient, double, 0.0, 1.0);
   vtkGetMacro(Ambient, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the diffuse lighting coefficient.
    */
   vtkSetClampMacro(Diffuse, double, 0.0, 1.0);
   vtkGetMacro(Diffuse, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the specular lighting coefficient.
    */
   vtkSetClampMacro(Specular, double, 0.0, 1.0);
   vtkGetMacro(Specular, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the specular power.
    */
   vtkSetClampMacro(SpecularPower, double, 0.0, 128.0);
   vtkGetMacro(SpecularPower, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the object's opacity. 1.0 is totally opaque and 0.0 is completely
    * transparent.
    */
   vtkSetClampMacro(Opacity, double, 0.0, 1.0);
   vtkGetMacro(Opacity, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the ambient surface color. Not all renderers support separate
    * ambient and diffuse colors. From a physical standpoint it really
@@ -278,26 +380,26 @@ public:
    */
   vtkSetVector3Macro(AmbientColor, double);
   vtkGetVector3Macro(AmbientColor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the diffuse surface color.
    * For PBR Interpolation, DiffuseColor is used as the base color
    */
   vtkSetVector3Macro(DiffuseColor, double);
   vtkGetVector3Macro(DiffuseColor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the specular surface color.
    */
   vtkSetVector3Macro(SpecularColor, double);
   vtkGetVector3Macro(SpecularColor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the visibility of edges. On some renderers it is
    * possible to render the edges of geometric primitives separately
@@ -306,17 +408,17 @@ public:
   vtkGetMacro(EdgeVisibility, vtkTypeBool);
   vtkSetMacro(EdgeVisibility, vtkTypeBool);
   vtkBooleanMacro(EdgeVisibility, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the color of primitive edges (if edge visibility is enabled).
    */
   vtkSetVector3Macro(EdgeColor, double);
   vtkGetVector3Macro(EdgeColor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off the visibility of vertices. On some renderers it is
    * possible to render the vertices of geometric primitives separately
@@ -325,26 +427,53 @@ public:
   vtkGetMacro(VertexVisibility, vtkTypeBool);
   vtkSetMacro(VertexVisibility, vtkTypeBool);
   vtkBooleanMacro(VertexVisibility, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the color of primitive vertices (if vertex visibility is enabled).
    */
   vtkSetVector3Macro(VertexColor, double);
   vtkGetVector3Macro(VertexColor, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Set/Get the RGBA color of selection primitives (if a selection is active on the mapper).
+   * Default is red and opaque.
+   */
+  vtkSetVector4Macro(SelectionColor, double);
+  vtkGetVector4Macro(SelectionColor, double);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the selection line width.
+   * Default is 2.
+   */
+  vtkSetMacro(SelectionLineWidth, float);
+  vtkGetMacro(SelectionLineWidth, float);
+  ///@}
+
+  ///@{
+  /**
+   * Set/Get the selection point size.
+   * Default is 2.
+   */
+  vtkSetMacro(SelectionPointSize, float);
+  vtkGetMacro(SelectionPointSize, float);
+  ///@}
+
+  ///@{
   /**
    * Set/Get the width of a Line. The width is expressed in screen units.
    * This is only implemented for OpenGL. The default is 1.0.
    */
   vtkSetClampMacro(LineWidth, float, 0, VTK_FLOAT_MAX);
   vtkGetMacro(LineWidth, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the stippling pattern of a Line, as a 16-bit binary pattern
    * (1 = pixel on, 0 = pixel off).
@@ -352,9 +481,9 @@ public:
    */
   vtkSetMacro(LineStipplePattern, int);
   vtkGetMacro(LineStipplePattern, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the stippling repeat factor of a Line, which specifies how
    * many times each bit in the pattern is to be repeated.
@@ -362,18 +491,18 @@ public:
    */
   vtkSetClampMacro(LineStippleRepeatFactor, int, 1, VTK_INT_MAX);
   vtkGetMacro(LineStippleRepeatFactor, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/Get the diameter of a point. The size is expressed in screen units.
    * This is only implemented for OpenGL. The default is 1.0.
    */
   vtkSetClampMacro(PointSize, float, 0, VTK_FLOAT_MAX);
   vtkGetMacro(PointSize, float);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off fast culling of polygons based on orientation of normal
    * with respect to camera. If backface culling is on, polygons facing
@@ -382,9 +511,9 @@ public:
   vtkGetMacro(BackfaceCulling, vtkTypeBool);
   vtkSetMacro(BackfaceCulling, vtkTypeBool);
   vtkBooleanMacro(BackfaceCulling, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Turn on/off fast culling of polygons based on orientation of normal
    * with respect to camera. If frontface culling is on, polygons facing
@@ -393,17 +522,17 @@ public:
   vtkGetMacro(FrontfaceCulling, vtkTypeBool);
   vtkSetMacro(FrontfaceCulling, vtkTypeBool);
   vtkBooleanMacro(FrontfaceCulling, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Returns the name of the material currently loaded, if any.
    */
   vtkSetStringMacro(MaterialName);
   vtkGetStringMacro(MaterialName);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Enable/Disable shading. When shading is enabled, the
    * Material must be set.
@@ -411,9 +540,9 @@ public:
   vtkSetMacro(Shading, vtkTypeBool);
   vtkGetMacro(Shading, vtkTypeBool);
   vtkBooleanMacro(Shading, vtkTypeBool);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Provide values to initialize shader variables.
    * Useful to initialize shader variables that change over time
@@ -425,9 +554,9 @@ public:
   virtual void AddShaderVariable(const char* name, int numVars, int* x);
   virtual void AddShaderVariable(const char* name, int numVars, float* x);
   virtual void AddShaderVariable(const char* name, int numVars, double* x);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Methods to provide to add shader variables from wrappers.
    */
@@ -464,9 +593,19 @@ public:
     double v[3] = { v1, v2, v3 };
     this->AddShaderVariable(name, 3, v);
   }
-  //@}
+  ///@}
 
-  //@{
+  ///@{
+  /**
+   * Show texture maps when the geometry is backfacing. Texture maps are
+   * always shown when frontfacing. By default this is true.
+   */
+  vtkSetMacro(ShowTexturesOnBackface, bool);
+  vtkGetMacro(ShowTexturesOnBackface, bool);
+  vtkBooleanMacro(ShowTexturesOnBackface, bool);
+  ///@}
+
+  ///@{
   /**
    * Set/Get the texture object to control rendering texture maps. This will
    * be a vtkTexture object. A property does not need to have an associated
@@ -474,14 +613,15 @@ public:
    * must be assigned unique names. Note that for texture blending the
    * textures will be rendering is alphabetical order and after any texture
    * defined in the actor.
-   * There exists 4 special textures with reserved names: "albedoTex", "materialTex", "normalTex"
-   * and "emissiveTex". While these textures can be added with the regular SetTexture method, it is
-   * prefered to use to method SetBaseColorTexture, SetORMTexture, SetNormalTexture and
-   * SetEmissiveTexture respectively.
+   * There exists 6 special textures with reserved names: "albedoTex", "materialTex", "normalTex",
+   * "emissiveTex", "anisotropyTex" and "coatNormalTex". While these textures can be added with the
+   * regular SetTexture method, it is preferred to use the methods SetBaseColorTexture,
+   * SetORMTexture, SetNormalTexture, SetEmissiveTexture, SetAnisotropyTexture and SetCoatNormalTex
+   * respectively.
    */
   void SetTexture(const char* name, vtkTexture* texture);
   vtkTexture* GetTexture(const char* name);
-  //@}
+  ///@}
 
   /**
    * Set the base color texture. Also called albedo, this texture is only used while rendering
@@ -503,6 +643,18 @@ public:
   void SetORMTexture(vtkTexture* texture) { this->SetTexture("materialTex", texture); }
 
   /**
+   * Set the anisotropy texture. This texture contains two independent components corresponding to
+   * the anisotropy value and anisotropy rotation. The last component (blue channel) is discarded.
+   * The anisotropy value is scaled by the anisotropy coefficient of the material. The anisotropy
+   * rotation rotates the direction of the anisotropy (ie. the tangent) around the normal and is not
+   * scaled by the anisotropy rotation coefficient.
+   * This texture must be in linear color space.
+   * This is only used by the PBR shading model.
+   * @sa SetInterpolationToPBR SetAnisotropy
+   */
+  void SetAnisotropyTexture(vtkTexture* texture) { this->SetTexture("anisotropyTex", texture); }
+
+  /**
    * Set the normal texture. This texture is required for normal mapping. It is valid for both PBR
    * and Phong interpolation.
    * The normal mapping is enabled if this texture is present and both normals and tangents are
@@ -520,6 +672,16 @@ public:
    * @sa SetInterpolationToPBR SetEmissiveFactor vtkTexture::UseSRGBColorSpaceOn
    */
   void SetEmissiveTexture(vtkTexture* texture) { this->SetTexture("emissiveTex", texture); }
+
+  /**
+   * Set the coat normal texture. This texture is required for coat normal mapping.
+   * It is valid only for PBR interpolation.
+   * The coat normal mapping is enabled if this texture is present and both normals and tangents are
+   * presents in the vtkPolyData.
+   * This texture must be in linear color space.
+   * @sa vtkPolyDataTangents SetCoatNormalScale
+   */
+  void SetCoatNormalTexture(vtkTexture* texture) { this->SetTexture("coatNormalTex", texture); }
 
   /**
    * Remove a texture from the collection.
@@ -548,13 +710,39 @@ public:
    */
   virtual void ReleaseGraphicsResources(vtkWindow* win);
 
-  //@{
+  ///@{
   /**
    * Set/Get the information object associated with the Property.
    */
   vtkGetObjectMacro(Information, vtkInformation);
   virtual void SetInformation(vtkInformation*);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * For PBR, calculate the reflectance from the refractive index of
+   * ingoing and outgoing interfaces.
+   */
+  static double ComputeReflectanceFromIOR(double IORTo, double IORFrom);
+  ///@}
+
+  ///@{
+  /**
+   * For PBR, calculate the refractive index from the reflectance of the interface
+   * and the refractive index of one of both medium.
+   */
+  static double ComputeIORFromReflectance(double reflectance, double ior);
+  ///@}
+
+  ///@{
+  /**
+   * For PBR, calculate the reflectance of the base layer depending on the presence
+   * of a coat layer. If there is no coat layer, the reflectance is the one at the
+   * interface environment - base layer. If a coat layer is present, the reflectance
+   * is the one at the interface between the base and the coat layer.
+   */
+  double ComputeReflectanceOfBaseLayer();
+  ///@}
 
 protected:
   vtkProperty();
@@ -572,18 +760,30 @@ protected:
   double SpecularColor[3];
   double EdgeColor[3];
   double VertexColor[3];
+  double SelectionColor[4] = { 1.0, 0.0, 0.0, 1.0 };
   double Ambient;
   double Diffuse;
   double Metallic;
   double Roughness;
+  double Anisotropy;
+  double AnisotropyRotation;
+  double BaseIOR;
+  double CoatIOR;
+  double CoatColor[3];
+  double CoatRoughness;
+  double CoatStrength;
+  double CoatNormalScale;
   double NormalScale;
   double OcclusionStrength;
   double EmissiveFactor[3];
   double Specular;
   double SpecularPower;
   double Opacity;
+  double EdgeTint[3];
   float PointSize;
   float LineWidth;
+  float SelectionPointSize = 2.f;
+  float SelectionLineWidth = 2.f;
   int LineStipplePattern;
   int LineStippleRepeatFactor;
   int Interpolation;
@@ -595,6 +795,7 @@ protected:
   bool Lighting;
   bool RenderPointsAsSpheres;
   bool RenderLinesAsTubes;
+  bool ShowTexturesOnBackface;
 
   vtkTypeBool Shading;
 
@@ -611,11 +812,10 @@ private:
   void operator=(const vtkProperty&) = delete;
 };
 
-//@{
 /**
  * Return the method of shading as a descriptive character string.
  */
-inline const char* vtkProperty::GetInterpolationAsString(void)
+inline const char* vtkProperty::GetInterpolationAsString()
 {
   if (this->Interpolation == VTK_FLAT)
   {
@@ -634,13 +834,11 @@ inline const char* vtkProperty::GetInterpolationAsString(void)
     return "Physically based rendering";
   }
 }
-//@}
 
-//@{
 /**
  * Return the method of shading as a descriptive character string.
  */
-inline const char* vtkProperty::GetRepresentationAsString(void)
+inline const char* vtkProperty::GetRepresentationAsString()
 {
   if (this->Representation == VTK_POINTS)
   {
@@ -655,6 +853,5 @@ inline const char* vtkProperty::GetRepresentationAsString(void)
     return "Surface";
   }
 }
-//@}
 
 #endif

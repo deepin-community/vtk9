@@ -34,17 +34,17 @@ public:
   vtkTypeMacro(vtkImageLogarithmicScale, vtkThreadedImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set/Get the scale factor for the logarithmic function.
    */
   vtkSetMacro(Constant, double);
   vtkGetMacro(Constant, double);
-  //@}
+  ///@}
 
 protected:
   vtkImageLogarithmicScale();
-  ~vtkImageLogarithmicScale() override {}
+  ~vtkImageLogarithmicScale() override = default;
 
   double Constant;
 

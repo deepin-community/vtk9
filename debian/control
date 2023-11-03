@@ -18,6 +18,7 @@ Build-Depends: chrpath,
                hdf5-tools,
                dh-sequence-javahelper,
                libalglib-dev,
+               javahelper,
                libavcodec-dev,
                libavformat-dev,
                libavutil-dev,
@@ -30,6 +31,7 @@ Build-Depends: chrpath,
                libftgl-dev,
                libgdal-dev,
                libgl1-mesa-dev | libgl-dev,
+	       libglvnd-dev,
                libgl2ps-dev (>= 1.4.1),
                libglew-dev,
                libglu1-mesa-dev | libglu-dev,
@@ -40,8 +42,7 @@ Build-Depends: chrpath,
                libjsoncpp-dev,
                liblz4-dev,
                libmrmpi-dev,
-               libnetcdf-cxx-legacy-dev,
-               libnetcdf-dev,
+               libnetcdf-dev (>= 1:4.9.0),
                libogg-dev,
                libosmesa6-dev,
                libpng-dev,
@@ -49,7 +50,7 @@ Build-Depends: chrpath,
                libproj-dev,
                libsqlite3-dev,
                libswscale-dev,
-               libtbb-dev,
+               libtbb-dev [!hurd-i386 !kfreebsd-i386 !kfreebsd-amd64 !alpha !ia64],
                libtheora-dev,
                libtiff-dev,
                libutfcpp-dev,
@@ -61,10 +62,12 @@ Build-Depends: chrpath,
                lzma,
                mpi-default-dev,
                pkg-config,
-               python3-all-dev,
+               python3-dev,
                python3-matplotlib,
                python3-mpi4py,
                qtbase5-dev,
+               libqt5opengl5-dev,
+               qtdeclarative5-dev,
                r-base-core,
                r-base-dev,
                r-base,
@@ -75,7 +78,7 @@ Build-Depends: chrpath,
                xauth,
                xvfb,
                zlib1g-dev
-Standards-Version: 4.6.0
+Standards-Version: 4.6.2
 Vcs-Browser: https://salsa.debian.org/science-team/vtk9
 Vcs-Git: https://salsa.debian.org/science-team/vtk9.git
 Homepage: https://www.vtk.org/
@@ -105,18 +108,17 @@ Depends: ${misc:Depends},
          libjpeg-dev,
          libjsoncpp-dev,
          liblz4-dev,
-         libnetcdf-cxx-legacy-dev,
          libnetcdf-dev,
          libpng-dev,
          libpq-dev,
          libproj-dev,
          libpython3-dev,
          libswscale-dev,
-         libtbb-dev,
+         libtbb-dev [linux-any],
          libtheora-dev,
          libtiff-dev,
          libutfcpp-dev,
-         libvtk9 (= ${binary:Version}),
+         libvtk9.1 (= ${binary:Version}),
          libvtk9-java (= ${binary:Version}) [!hppa !hurd-any !kfreebsd-any],
          libx11-dev,
          libxft-dev,
@@ -132,12 +134,6 @@ Depends: ${misc:Depends},
          zlib1g-dev
 Suggests: vtk9-doc,
           vtk9-examples
-Conflicts: libvtk5-dev,
-           libvtk6-dev,
-           libvtk7-dev
-Replaces: libvtk5-dev,
-          libvtk6-dev,
-          libvtk7-dev
 Description: VTK header files
  The Visualization Toolkit (VTK) is an open-source software system
  for 3D computer graphics, image processing, and visualization.
@@ -145,17 +141,17 @@ Description: VTK header files
  This package provides the VTK header files required to compile
  C++ programs that use VTK to do 3D visualisation.
 
-Package: libvtk9
+Package: libvtk9.1
 Architecture: any
 Multi-Arch: same
 Section: libs
+Breaks: libvtk9 (<< 9.1.0+really9.1.0)
+Replaces: libvtk9 (<< 9.1.0+really9.1.0)
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Suggests: mpi-default-bin,
           vtk9-doc,
           vtk9-examples
-Replaces: libvtk5.8,
-          libvtk7.1
 Description: VTK libraries
  The Visualization Toolkit (VTK) is an open-source software system
  for 3D computer graphics, image processing, and visualization.
@@ -164,7 +160,7 @@ Description: VTK libraries
  that use VTK.
 
 Package: libvtk9-java
-Architecture: amd64 arm64 armel armhf i386 mips64el mipsel ppc64el s390x alpha ia64 m68k powerpc ppc64 riscv64 sh4 sparc64 sw64 x32
+Architecture: amd64 arm64 armel armhf i386 mips64el mipsel ppc64el s390x alpha ia64 m68k powerpc ppc64 riscv64 sh4 sparc64 x32
 Section: java
 Depends: ${java:Depends},
          ${misc:Depends},
@@ -174,10 +170,6 @@ Suggests: java-virtual-machine,
           libvtk9-dev (= ${binary:Version}),
           vtk9-doc,
           vtk9-examples
-Breaks: libvtk6-java,
-        libvtk7-java
-Replaces: libvtk6-java,
-          libvtk7-java
 Description: VTK - Java language support
  The Visualization Toolkit (VTK) is an object oriented, high level
  library that allows one to easily write C++ programs, Tcl, Python and
@@ -188,7 +180,7 @@ Description: VTK - Java language support
 Package: python3-vtk9
 Architecture: any
 Section: python
-Depends: libvtk9 (= ${binary:Version}),
+Depends: libvtk9.1 (= ${binary:Version}),
          python3-mpi4py,
          ${misc:Depends},
          ${python3:Depends},
@@ -209,7 +201,7 @@ Description: Python bindings for VTK
 Package: vtk9
 Architecture: any
 Section: interpreters
-Depends: libvtk9 (= ${binary:Version}),
+Depends: libvtk9.1 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
 Suggests: vtk9-doc,
@@ -249,7 +241,7 @@ Description: VTK examples
  .
  This package provides examples for VTK9
 
-Package: libvtk9-qt
+Package: libvtk9.1-qt
 Architecture: any
 Multi-Arch: same
 Section: libs
@@ -267,7 +259,7 @@ Architecture: any
 Multi-Arch: same
 Section: libdevel
 Depends: libvtk9-dev (= ${binary:Version}),
-         libvtk9-qt (= ${binary:Version}),
+         libvtk9.1-qt (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends},
          qtbase5-dev,

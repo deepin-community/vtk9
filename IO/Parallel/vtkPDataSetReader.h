@@ -35,26 +35,26 @@ public:
   vtkTypeMacro(vtkPDataSetReader, vtkDataSetAlgorithm);
   static vtkPDataSetReader* New();
 
-  //@{
+  ///@{
   /**
    * This file to open and read.
    */
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-  //@}
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
+  ///@}
 
-  //@{
+  ///@{
   /**
    * This is set when UpdateInformation is called.
    * It shows the type of the output.
    */
   vtkGetMacro(DataType, int);
-  //@}
+  ///@}
 
   /**
    * Called to determine if the file can be read by the reader.
    */
-  int CanReadFile(const char* filename);
+  int CanReadFile(VTK_FILEPATH const char* filename);
 
 protected:
   vtkPDataSetReader();
@@ -62,7 +62,7 @@ protected:
 
   int RequestDataObject(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector) override;
-  void ReadPVTKFileInformation(istream* fp, vtkInformation* request,
+  void ReadPVTKFileInformation(istream* file, vtkInformation* request,
     vtkInformationVector** inputVector, vtkInformationVector* outputVector);
   void ReadVTKFileInformation(vtkInformation* request, vtkInformationVector** inputVector,
     vtkInformationVector* outputVector);

@@ -31,7 +31,9 @@
 #define vtkConditionVariable_h
 
 #include "vtkCommonCoreModule.h" // For export macro
+#include "vtkDeprecation.h"      // For VTK_DEPRECATED_IN_9_1_0
 #include "vtkObject.h"
+#include "vtkThreads.h" // for VTK_USE_PTHREADS and VTK_USE_WIN32_THREADS
 
 #include "vtkMutexLock.h" // Need for friend access to vtkSimpleMutexLock
 
@@ -51,7 +53,7 @@ typedef pthread_cond_t vtkConditionType;
 
 #ifdef VTK_USE_WIN32_THREADS
 #if 1
-typedef struct
+struct pthread_cond_t_t
 {
   // Number of threads waiting on condition.
   int WaitingThreadCount;
@@ -68,11 +70,12 @@ typedef struct
 
   // Was pthread_cond_broadcast called?
   size_t WasBroadcast;
-} pthread_cond_t;
+};
+using pthread_cond_t = struct pthread_cond_t_t;
 
 typedef pthread_cond_t vtkConditionType;
 #else  // 0
-typedef struct
+struct pthread_cond_t_t
 {
   // Number of threads waiting on condition.
   int WaitingThreadCount;
@@ -90,7 +93,8 @@ typedef struct
 
   // A manual-reset event that's used to block and release waiting threads.
   vtkWindowsHANDLE Event;
-} pthread_cond_t;
+};
+using pthread_cond_t = struct pthread_cond_t_t;
 
 typedef pthread_cond_t vtkConditionType;
 #endif // 0
@@ -103,6 +107,7 @@ typedef int vtkConditionType;
 #endif
 
 // Condition variable that is not a vtkObject.
+VTK_DEPRECATED_IN_9_1_0("Use std::condition_variable_any instead.")
 class VTKCOMMONCORE_EXPORT vtkSimpleConditionVariable
 {
 public:
@@ -144,6 +149,7 @@ private:
   vtkSimpleConditionVariable& operator=(const vtkSimpleConditionVariable& rhs) = delete;
 };
 
+VTK_DEPRECATED_IN_9_1_0("Use std::condition_variable_any instead.")
 class VTKCOMMONCORE_EXPORT vtkConditionVariable : public vtkObject
 {
 public:
@@ -175,7 +181,7 @@ public:
   int Wait(vtkMutexLock* mutex);
 
 protected:
-  vtkConditionVariable() {}
+  vtkConditionVariable() = default;
 
   vtkSimpleConditionVariable SimpleConditionVariable;
 

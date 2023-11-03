@@ -44,6 +44,7 @@ class vtkDataObjectTree;
 class vtkDataSet;
 class vtkImageData;
 class vtkMultiBlockDataSet;
+class vtkRenderWindow;
 class vtkSmartVolumeMapper;
 
 class VTKRENDERINGVOLUMEOPENGL2_EXPORT vtkMultiBlockVolumeMapper : public vtkVolumeMapper
@@ -53,7 +54,7 @@ public:
   vtkTypeMacro(vtkMultiBlockVolumeMapper, vtkVolumeMapper);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    *  \brief API Superclass
    *  \sa vtkAbstractVolumeMapper
@@ -79,9 +80,9 @@ public:
    * NOT use this method outside of the rendering process.
    */
   void ReleaseGraphicsResources(vtkWindow* window) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * VectorMode interface exposed from vtkSmartVolumeMapper.
    */
@@ -89,17 +90,17 @@ public:
   vtkGetMacro(VectorMode, int);
   void SetVectorComponent(int component);
   vtkGetMacro(VectorComponent, int);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Blending mode API from vtkVolumeMapper
    * \sa vtkVolumeMapper::SetBlendMode
    */
   void SetBlendMode(int mode) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Cropping API from vtkVolumeMapper
    * \sa vtkVolumeMapper::SetCropping
@@ -117,14 +118,21 @@ public:
    * \sa vtkVolumeMapper::SetCroppingRegionFlags
    */
   void SetCroppingRegionFlags(int mode) override;
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Forwarded to internal vtkSmartVolumeMappers used.
    * @sa vtkSmartVolumeMapper::SetRequestedRenderMode.
    */
   void SetRequestedRenderMode(int);
+  ///@}
+
+  //@{
+  /**
+   * \sa vtkSmartVolumeMapper::SetTransfer2DYAxisArray
+   */
+  void SetTransfer2DYAxisArray(const char* a);
   //@}
 
 protected:
@@ -139,6 +147,9 @@ protected:
    * \sa vtkAlgorithm::FillInputPortInformation
    */
   int FillInputPortInformation(int port, vtkInformation* info) override;
+
+  vtkRenderWindow* DebugWin;
+  vtkRenderer* DebugRen;
 
 private:
   /**
@@ -192,5 +203,7 @@ private:
   int VectorMode;
   int VectorComponent;
   int RequestedRenderMode;
+
+  char* Transfer2DYAxisArray;
 };
 #endif

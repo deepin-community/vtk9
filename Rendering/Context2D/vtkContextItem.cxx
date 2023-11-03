@@ -15,17 +15,9 @@
 
 #include "vtkContextItem.h"
 
-//-----------------------------------------------------------------------------
-vtkContextItem::vtkContextItem()
-{
-  this->Opacity = 1.0;
-}
-
-//-----------------------------------------------------------------------------
-vtkContextItem::~vtkContextItem() = default;
-
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkContextItem::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
+  os << indent << "Opacity: " << this->Opacity << endl;
 }

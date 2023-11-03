@@ -69,7 +69,7 @@ public:
     return nullptr;
   }
 
-  //@{
+  ///@{
   /**
    * Set/Get the number of slots available in the cache.
    * Default is 0.
@@ -87,7 +87,7 @@ public:
     this->Size = sz;
   }
   size_t GetSize() { return this->Size; }
-  //@}
+  ///@}
 
   /**
    * Query whether cache contains tstep
@@ -109,7 +109,7 @@ private:
 
   size_t Size;
 
-  std::map<double, std::shared_ptr<T> > Contents;
+  std::map<double, std::shared_ptr<T>> Contents;
 };
 
 class vtkOSPRayCacheItemObject

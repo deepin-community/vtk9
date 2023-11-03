@@ -37,17 +37,17 @@ public:
   vtkTypeMacro(vtkTreeWriter, vtkDataWriter);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get the input to this writer.
    */
   vtkTree* GetInput();
   vtkTree* GetInput(int port);
-  //@}
+  ///@}
 
 protected:
-  vtkTreeWriter() {}
-  ~vtkTreeWriter() override {}
+  vtkTreeWriter() = default;
+  ~vtkTreeWriter() override = default;
 
   void WriteData() override;
 

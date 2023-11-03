@@ -42,7 +42,7 @@
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyVTKSpecialType::PyVTKSpecialType(
   PyTypeObject* typeobj, PyMethodDef* cmethods, PyMethodDef* ccons, vtkcopyfunc copyfunc)
 {
@@ -52,10 +52,10 @@ PyVTKSpecialType::PyVTKSpecialType(
   this->vtk_copy = copyfunc;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Object protocol
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyObject* PyVTKSpecialObject_Repr(PyObject* self)
 {
   PyVTKSpecialObject* obj = (PyVTKSpecialObject*)self;
@@ -80,22 +80,23 @@ PyObject* PyVTKSpecialObject_Repr(PyObject* self)
     else
     {
 #ifdef VTK_PY3K
-      s = PyString_FromFormat("(%.80s)%S", name, t);
+      s = PyString_FromFormat("%s(%S)", name, t);
 #else
-      s = PyString_FromFormat("(%.80s)%s", name, PyString_AsString(t));
+      s = PyString_FromFormat("%s(%s)", name, PyString_AsString(t));
 #endif
     }
   }
   // otherwise just print address of object
   else if (obj->vtk_ptr)
   {
-    s = PyString_FromFormat("(%.80s)%p", name, obj->vtk_ptr);
+    s = PyString_FromFormat(
+      "<%s(%p) at %p>", name, static_cast<void*>(obj->vtk_ptr), static_cast<void*>(obj));
   }
 
   return s;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 PyObject* PyVTKSpecialObject_SequenceString(PyObject* self)
 {
   Py_ssize_t n, i;
@@ -184,10 +185,10 @@ PyObject* PyVTKSpecialObject_SequenceString(PyObject* self)
   return s;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // C API
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Create a new python object from the pointer to a C++ object
 PyObject* PyVTKSpecialObject_New(const char* classname, void* ptr)
 {
@@ -204,7 +205,7 @@ PyObject* PyVTKSpecialObject_New(const char* classname, void* ptr)
   return (PyObject*)self;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Create a new python object via the copy constructor of the C++ object
 PyObject* PyVTKSpecialObject_CopyNew(const char* classname, const void* ptr)
 {
@@ -229,7 +230,7 @@ PyObject* PyVTKSpecialObject_CopyNew(const char* classname, const void* ptr)
   return (PyObject*)self;
 }
 
-//--------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Add a special type, add methods and members to its type object.
 // A return value of nullptr signifies that it was already added.
 PyTypeObject* PyVTKSpecialType_Add(

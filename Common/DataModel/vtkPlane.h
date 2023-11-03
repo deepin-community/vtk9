@@ -28,6 +28,8 @@
 #include "vtkCommonDataModelModule.h" // For export macro
 #include "vtkImplicitFunction.h"
 
+class vtkPoints; // forward declaration
+
 class VTKCOMMONDATAMODEL_EXPORT vtkPlane : public vtkImplicitFunction
 {
 public:
@@ -39,36 +41,36 @@ public:
   vtkTypeMacro(vtkPlane, vtkImplicitFunction);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Evaluate plane equation for point x[3].
    */
   using vtkImplicitFunction::EvaluateFunction;
   void EvaluateFunction(vtkDataArray* input, vtkDataArray* output) override;
   double EvaluateFunction(double x[3]) override;
-  //@}
+  ///@}
 
   /**
    * Evaluate function gradient at point x[3].
    */
   void EvaluateGradient(double x[3], double g[3]) override;
 
-  //@{
+  ///@{
   /**
    * Set/get plane normal. Plane is defined by point and normal.
    */
   vtkSetVector3Macro(Normal, double);
   vtkGetVectorMacro(Normal, double, 3);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set/get point through which plane passes. Plane is defined by point
    * and normal.
    */
   vtkSetVector3Macro(Origin, double);
   vtkGetVectorMacro(Origin, double, 3);
-  //@}
+  ///@}
 
   /**
    * Translate the plane in the direction of the normal by the
@@ -77,7 +79,7 @@ public:
    */
   void Push(double distance);
 
-  //@{
+  ///@{
   /**
    * Project a point x onto plane defined by origin and normal. The
    * projected point is returned in xproj. NOTE : normal assumed to
@@ -86,9 +88,9 @@ public:
   static void ProjectPoint(
     const double x[3], const double origin[3], const double normal[3], double xproj[3]);
   void ProjectPoint(const double x[3], double xproj[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Project a vector v onto plane defined by origin and normal. The
    * projected vector is returned in vproj.
@@ -96,9 +98,9 @@ public:
   static void ProjectVector(
     const double v[3], const double origin[3], const double normal[3], double vproj[3]);
   void ProjectVector(const double v[3], double vproj[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Project a point x onto plane defined by origin and normal. The
    * projected point is returned in xproj. NOTE : normal does NOT have to
@@ -107,23 +109,23 @@ public:
   static void GeneralizedProjectPoint(
     const double x[3], const double origin[3], const double normal[3], double xproj[3]);
   void GeneralizedProjectPoint(const double x[3], double xproj[3]);
-  //@}
+  ///@}
 
   /**
    * Quick evaluation of plane equation n(x-origin)=0.
    */
   static double Evaluate(double normal[3], double origin[3], double x[3]);
 
-  //@{
+  ///@{
   /**
    * Return the distance of a point x to a plane defined by n(x-p0) = 0. The
    * normal n[3] must be magnitude=1.
    */
   static double DistanceToPlane(double x[3], double n[3], double p0[3]);
   double DistanceToPlane(double x[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given a line defined by the two points p1,p2; and a plane defined by the
    * normal n and point p0, compute an intersection. The parametric
@@ -135,9 +137,9 @@ public:
   static int IntersectWithLine(
     const double p1[3], const double p2[3], double n[3], double p0[3], double& t, double x[3]);
   int IntersectWithLine(const double p1[3], const double p2[3], double& t, double x[3]);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Given two planes, one infinite and one finite, defined by the normal n
    * and point o (infinite plane), and the second finite plane1 defined by
@@ -152,11 +154,22 @@ public:
     double py[3], double x0[3], double x1[3]);
   int IntersectWithFinitePlane(
     double pOrigin[3], double px[3], double py[3], double x0[3], double x1[3]);
-  //@}
+  ///@}
+
+  ///@{
+  /**
+   * Given a set of points calculate the best-fitting origin and normal for the plane.
+   * The origin will be the centroid of the points. The normal is determined
+   * by using the covariance matrix of the points relative to the centroid.
+   * Returns true if successful. If not successful the origin will still contain
+   * the centroid and the normal will point into z-direction.
+   */
+  static bool ComputeBestFittingPlane(vtkPoints* pts, double* origin, double* normal);
+  ///@}
 
 protected:
   vtkPlane();
-  ~vtkPlane() override {}
+  ~vtkPlane() override = default;
 
   double Normal[3];
   double Origin[3];

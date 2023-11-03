@@ -32,8 +32,8 @@ public:
   vtkTypeMacro(vtkVeraOutReader, vtkRectilinearGridAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
+  vtkSetFilePathMacro(FileName);
+  vtkGetFilePathMacro(FileName);
 
   /**
    * Get vtkDataArraySelection instance to select cell arrays to read.
@@ -57,7 +57,7 @@ protected:
 
   // Trigger the real data access
   int RequestData(
-    vtkInformation*, vtkInformationVector**, vtkInformationVector* outputVector) override;
+    vtkInformation*, vtkInformationVector**, vtkInformationVector* outVector) override;
 
   char* FileName;
   int NumberOfTimeSteps;

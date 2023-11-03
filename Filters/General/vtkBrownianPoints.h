@@ -41,25 +41,25 @@ public:
   vtkTypeMacro(vtkBrownianPoints, vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Set the minimum speed value.
    */
   vtkSetClampMacro(MinimumSpeed, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(MinimumSpeed, double);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Set the maximum speed value.
    */
   vtkSetClampMacro(MaximumSpeed, double, 0.0, VTK_DOUBLE_MAX);
   vtkGetMacro(MaximumSpeed, double);
-  //@}
+  ///@}
 
 protected:
   vtkBrownianPoints();
-  ~vtkBrownianPoints() override {}
+  ~vtkBrownianPoints() override = default;
 
   int RequestData(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
   double MinimumSpeed;

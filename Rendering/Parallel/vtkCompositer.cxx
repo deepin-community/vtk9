@@ -18,12 +18,11 @@
 #include "vtkFloatArray.h"
 #include "vtkMultiProcessController.h"
 #include "vtkObjectFactory.h"
-#include "vtkToolkits.h"
 #include "vtkUnsignedCharArray.h"
 
 vtkStandardNewMacro(vtkCompositer);
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositer::vtkCompositer()
 {
   this->Controller = vtkMultiProcessController::GetGlobalController();
@@ -35,13 +34,13 @@ vtkCompositer::vtkCompositer()
   }
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkCompositer::~vtkCompositer()
 {
   this->SetController(nullptr);
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositer::SetController(vtkMultiProcessController* mpc)
 {
   if (this->Controller == mpc)
@@ -60,7 +59,7 @@ void vtkCompositer::SetController(vtkMultiProcessController* mpc)
   this->Controller = mpc;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositer::CompositeBuffer(
   vtkDataArray* pBuf, vtkFloatArray* zBuf, vtkDataArray* pTmp, vtkFloatArray* zTmp)
 {
@@ -70,7 +69,7 @@ void vtkCompositer::CompositeBuffer(
   (void)zTmp;
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositer::ResizeFloatArray(vtkFloatArray* fa, int numComp, vtkIdType size)
 {
   fa->SetNumberOfComponents(numComp);
@@ -133,7 +132,7 @@ void vtkCompositer::DeleteArray(vtkDataArray* da)
   da->Delete();
 }
 
-//-------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkCompositer::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);

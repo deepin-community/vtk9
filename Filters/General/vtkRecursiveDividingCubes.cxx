@@ -12,6 +12,10 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_0_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkRecursiveDividingCubes.h"
 
 #include "vtkCellArray.h"
@@ -237,7 +241,7 @@ void vtkRecursiveDividingCubes::SubDivide(double origin[3], double h[3], double 
       {
         p[i] = (x[i] - X[i]) / Spacing[i];
       }
-      this->Voxel->InterpolationFunctions(p, w);
+      vtkVoxel::InterpolationFunctions(p, w);
       for (n[0] = n[1] = n[2] = 0.0, i = 0; i < 8; i++)
       {
         n[0] += Normals[i][0] * w[i];

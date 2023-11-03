@@ -13,11 +13,10 @@
 
 =========================================================================*/
 #include "vtkOutputWindow.h"
-#include "vtkToolkits.h"
 #if defined(_WIN32) && !defined(VTK_USE_X)
 #include "vtkWin32OutputWindow.h"
 #endif
-#if defined(ANDROID)
+#if defined(__ANDROID__) || defined(ANDROID)
 #include "vtkAndroidOutputWindow.h"
 #endif
 
@@ -48,7 +47,7 @@ public:
 };
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkOutputWindow* vtkOutputWindow::Instance = nullptr;
 static unsigned int vtkOutputWindowCleanupCounter = 0;
 
@@ -114,8 +113,6 @@ void vtkOutputWindowDisplayDebugText(const char* message)
 void vtkOutputWindowDisplayErrorText(
   const char* fname, int lineno, const char* message, vtkObject* sourceObj)
 {
-  vtkLogger::Log(vtkLogger::VERBOSITY_ERROR, fname, lineno, message);
-
   std::ostringstream vtkmsg;
   vtkmsg << "ERROR: In " << fname << ", line " << lineno << "\n" << message << "\n\n";
   if (sourceObj && sourceObj->HasObserver(vtkCommand::ErrorEvent))
@@ -124,6 +121,7 @@ void vtkOutputWindowDisplayErrorText(
   }
   else if (auto win = vtkOutputWindow::GetInstance())
   {
+    vtkLogger::Log(vtkLogger::VERBOSITY_ERROR, fname, lineno, message);
     vtkOutputWindowPrivateAccessor helper_raii(win);
     win->DisplayErrorText(vtkmsg.str().c_str());
   }
@@ -132,8 +130,6 @@ void vtkOutputWindowDisplayErrorText(
 void vtkOutputWindowDisplayWarningText(
   const char* fname, int lineno, const char* message, vtkObject* sourceObj)
 {
-  vtkLogger::Log(vtkLogger::VERBOSITY_WARNING, fname, lineno, message);
-
   std::ostringstream vtkmsg;
   vtkmsg << "Warning: In " << fname << ", line " << lineno << "\n" << message << "\n\n";
   if (sourceObj && sourceObj->HasObserver(vtkCommand::WarningEvent))
@@ -142,6 +138,7 @@ void vtkOutputWindowDisplayWarningText(
   }
   else if (auto win = vtkOutputWindow::GetInstance())
   {
+    vtkLogger::Log(vtkLogger::VERBOSITY_WARNING, fname, lineno, message);
     vtkOutputWindowPrivateAccessor helper_raii(win);
     win->DisplayWarningText(vtkmsg.str().c_str());
   }
@@ -282,7 +279,7 @@ void vtkOutputWindow::DisplayText(const char* txt)
     }
     if (c == 'q')
     {
-      this->PromptUser = 0;
+      this->PromptUser = false;
     }
   }
 
@@ -368,7 +365,6 @@ void vtkOutputWindow::SetInstance(vtkOutputWindow* instance)
   instance->Register(nullptr);
 }
 
-#if !defined(VTK_LEGACY_REMOVE)
 void vtkOutputWindow::SetUseStdErrorForAllMessages(bool val)
 {
   VTK_LEGACY_REPLACED_BODY(
@@ -396,4 +392,3 @@ void vtkOutputWindow::UseStdErrorForAllMessagesOff()
     vtkOutputWindow::UseStdErrorForAllMessagesOff, "VTK 9.0", vtkOutputWindow::SetDisplayMode);
   this->SetDisplayMode(DEFAULT);
 }
-#endif

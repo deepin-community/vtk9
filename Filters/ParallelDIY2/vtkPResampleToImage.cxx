@@ -12,9 +12,14 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
+
+// Hide VTK_DEPRECATED_IN_9_1_0() warning for this class
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkPResampleToImage.h"
 
 #include "vtkArrayDispatch.h"
+#include "vtkBoundingBox.h"
 #include "vtkCharArray.h"
 #include "vtkCompositeDataProbeFilter.h"
 #include "vtkCompositeDataSet.h"
@@ -54,7 +59,7 @@ vtkCxxSetObjectMacro(vtkPResampleToImage, Controller, vtkMultiProcessController)
 namespace
 {
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 template <typename T, std::size_t Len>
 struct Array
 {
@@ -73,7 +78,7 @@ private:
   T Data[Len];
 };
 
-//-----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct FieldMetaData
 {
   std::string Name;
@@ -146,7 +151,7 @@ inline void InitializeFieldData(
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct SerializeWorklet
 {
   template <typename ArrayType>
@@ -207,7 +212,7 @@ inline void DeserializeFieldData(diy::MemoryBuffer& bb, vtkFieldData* field, vtk
   }
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // A structure representing a list of points from an ImageData. Stores the
 // points' 3D indices (Indices) and serialized point data (Data) and they
 // should be stored in the same order.
@@ -236,7 +241,7 @@ inline vtkIdType ComputeSerializedFieldDataSize(const std::vector<FieldMetaData>
   return static_cast<vtkIdType>(bb.buffer.size());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 struct Block
 {
   PointList Points;
@@ -253,7 +258,7 @@ inline void DestroyBlock(void* blockp)
   delete static_cast<Block*>(blockp);
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // Creates a PointList of all the valid points in img
 inline void GetPointsFromImage(vtkImageData* img, const char* maskArrayName, PointList* points)
 {
@@ -312,28 +317,6 @@ void SetPointsToImage(
   points.Indices.clear(); // reset the points structure to a valid empty state
 }
 
-//----------------------------------------------------------------------------
-inline void ComputeGlobalBounds(
-  diy::mpi::communicator& comm, const double lbounds[6], double gbounds[6])
-{
-  Array<double, 3> localBoundsMin, localBoundsMax;
-  for (std::size_t i = 0; i < 3; ++i)
-  {
-    localBoundsMin[i] = lbounds[2 * i];
-    localBoundsMax[i] = lbounds[2 * i + 1];
-  }
-
-  Array<double, 3> globalBoundsMin, globalBoundsMax;
-  diy::mpi::all_reduce(comm, localBoundsMin, globalBoundsMin, diy::mpi::minimum<double>());
-  diy::mpi::all_reduce(comm, localBoundsMax, globalBoundsMax, diy::mpi::maximum<double>());
-
-  for (std::size_t i = 0; i < 3; ++i)
-  {
-    gbounds[2 * i] = globalBoundsMin[i];
-    gbounds[2 * i + 1] = globalBoundsMax[i];
-  }
-}
-
 inline void GetGlobalFieldMetaData(
   diy::mpi::communicator& comm, vtkDataSetAttributes* data, std::vector<FieldMetaData>* metadata)
 {
@@ -342,7 +325,7 @@ inline void GetGlobalFieldMetaData(
 
   // find a process that has field meta data information (choose the process with
   // minimum rank)
-  int rank = local.size() ? comm.rank() : comm.size();
+  int rank = !local.empty() ? comm.rank() : comm.size();
   int source;
   diy::mpi::all_reduce(comm, rank, source, diy::mpi::minimum<int>());
 
@@ -359,7 +342,7 @@ inline void GetGlobalFieldMetaData(
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void Redistribute(
   void* blockp, const diy::ReduceProxy& srp, const diy::RegularSwapPartners& partners)
 {
@@ -446,20 +429,20 @@ void Redistribute(
 
 } // anonymous namespace
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPResampleToImage::vtkPResampleToImage()
   : Controller(nullptr)
 {
   this->SetController(vtkMultiProcessController::GetGlobalController());
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 vtkPResampleToImage::~vtkPResampleToImage()
 {
   this->SetController(nullptr);
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 void vtkPResampleToImage::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
@@ -469,7 +452,7 @@ void vtkPResampleToImage::PrintSelf(ostream& os, vtkIndent indent)
   }
 }
 
-//---------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkPResampleToImage::RequestData(
   vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
@@ -494,7 +477,17 @@ int vtkPResampleToImage::RequestData(
   double samplingBounds[6];
   if (this->UseInputBounds)
   {
-    ComputeGlobalBounds(comm, localBounds, samplingBounds);
+    vtkBoundingBox bbox(localBounds);
+    vtkDIYUtilities::AllReduce(comm, bbox);
+
+    // To avoid accidentally sampling outside the dataset due to floating point roundoff,
+    // nudge the bounds inward by epsilon.
+    // Note: this is same as what's done in the non-parallel version of this
+    // filter i.e. vtkResampleToImage. So just doing the same here for
+    // consistency.
+    const double epsilon = 1.0e-6;
+    bbox.ScaleAboutCenter(1.0 - epsilon);
+    bbox.GetBounds(samplingBounds);
   }
   else
   {
@@ -543,7 +536,7 @@ int vtkPResampleToImage::RequestData(
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 namespace diy
 {
 
@@ -553,7 +546,7 @@ namespace detail
 {
 
 template <class T, std::size_t Len>
-struct mpi_datatype<Array<T, Len> >
+struct mpi_datatype<Array<T, Len>>
 {
   typedef Array<T, Len> ArrayType;
 

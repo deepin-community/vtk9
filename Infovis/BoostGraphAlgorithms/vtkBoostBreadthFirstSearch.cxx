@@ -60,7 +60,7 @@ template <typename DistanceMap>
 class my_distance_recorder : public default_bfs_visitor
 {
 public:
-  my_distance_recorder() {}
+  my_distance_recorder() = default;
   my_distance_recorder(DistanceMap dist, vtkIdType* far)
     : d(dist)
     , far_vertex(far)
@@ -97,9 +97,9 @@ vtkBoostBreadthFirstSearch::vtkBoostBreadthFirstSearch()
 {
   // Default values for the origin vertex
   this->OriginVertexIndex = 0;
-  this->InputArrayName = 0;
-  this->OutputArrayName = 0;
-  this->OutputSelectionType = 0;
+  this->InputArrayName = nullptr;
+  this->OutputArrayName = nullptr;
+  this->OutputSelectionType = nullptr;
   this->SetOutputSelectionType("MAX_DIST_FROM_ROOT");
   this->OriginValue = -1;
   this->OutputSelection = false;
@@ -110,9 +110,9 @@ vtkBoostBreadthFirstSearch::vtkBoostBreadthFirstSearch()
 
 vtkBoostBreadthFirstSearch::~vtkBoostBreadthFirstSearch()
 {
-  this->SetInputArrayName(0);
-  this->SetOutputArrayName(0);
-  this->SetOutputSelectionType(0);
+  this->SetInputArrayName(nullptr);
+  this->SetOutputArrayName(nullptr);
+  this->SetOutputSelectionType(nullptr);
 }
 
 void vtkBoostBreadthFirstSearch::SetOriginSelection(vtkSelection* s)
@@ -331,7 +331,7 @@ void vtkBoostBreadthFirstSearch::PrintSelf(ostream& os, vtkIndent indent)
      << (this->OutputSelectionType ? this->OutputSelectionType : "(none)") << endl;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostBreadthFirstSearch::FillInputPortInformation(int port, vtkInformation* info)
 {
   // now add our info
@@ -347,7 +347,7 @@ int vtkBoostBreadthFirstSearch::FillInputPortInformation(int port, vtkInformatio
   return 1;
 }
 
-//----------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 int vtkBoostBreadthFirstSearch::FillOutputPortInformation(int port, vtkInformation* info)
 {
   // now add our info

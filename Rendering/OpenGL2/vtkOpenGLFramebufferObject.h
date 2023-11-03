@@ -185,17 +185,17 @@ public:
   vtkTypeMacro(vtkOpenGLFramebufferObject, vtkFrameBufferObjectBase);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  //@{
+  ///@{
   /**
    * Get/Set the context. Context must be a vtkOpenGLRenderWindow.
    * This does not increase the reference count of the
    * context to avoid reference loops.
-   * SetContext() may raise an error is the OpenGL context does not support the
+   * SetContext() may raise an error if the OpenGL context does not support the
    * required OpenGL extensions.
    */
   void SetContext(vtkRenderWindow* context);
   vtkOpenGLRenderWindow* GetContext();
-  //@}
+  ///@}
 
   /**
    * Make the draw frame buffer active.
@@ -209,7 +209,7 @@ public:
   void UnBind();
   void UnBind(unsigned int mode);
 
-  //@{
+  ///@{
   /**
    * Store/Restore the current framebuffer bindings and buffers.
    */
@@ -217,9 +217,9 @@ public:
   void SaveCurrentBindingsAndBuffers(unsigned int mode);
   void RestorePreviousBindingsAndBuffers();
   void RestorePreviousBindingsAndBuffers(unsigned int mode);
-  //@}
+  ///@}
 
-  //@{
+  ///@{
   /**
    * User must take care that width/height match the dimensions of
    * the user defined texture attachments.
@@ -231,7 +231,7 @@ public:
    */
   bool Start(int width, int height);
   bool StartNonOrtho(int width, int height);
-  //@}
+  ///@}
 
   /**
    * Set up ortho viewport with scissor, lighting, blend, and depth
@@ -239,7 +239,7 @@ public:
    */
   void InitializeViewport(int width, int height);
 
-  //@{
+  ///@{
   // activate deactivate draw/read buffers (color buffers)
   void ActivateDrawBuffers(unsigned int n);
   void ActivateDrawBuffers(unsigned int* ids, int n);
@@ -252,7 +252,7 @@ public:
   }
   void DeactivateDrawBuffers();
   void DeactivateReadBuffer();
-  //@}
+  ///@}
 
   vtkGetMacro(ActiveReadBuffer, unsigned int);
   unsigned int GetActiveDrawBuffer(unsigned int id);
@@ -270,7 +270,7 @@ public:
   void RenderQuad(int minX, int maxX, int minY, int maxY, vtkShaderProgram* program,
     vtkOpenGLVertexArrayObject* vao);
 
-  //@{
+  ///@{
   /**
    * Directly assign/remove a texture to color attachments.
    */
@@ -279,14 +279,20 @@ public:
   void AddColorAttachment(unsigned int attId, vtkRenderbuffer* tex);
   void RemoveColorAttachment(unsigned int index);
   void RemoveColorAttachments(unsigned int num);
-  //@}
+  ///@}
+
+  /**
+   * Return the texture object bound to the passed attachment number.
+   * In the case that a renderbuffer is used, this will return nullptr.
+   */
+  vtkTextureObject* GetColorAttachmentAsTextureObject(unsigned int num);
 
   /**
    * Return the number of color attachments for the given mode
    */
   int GetNumberOfColorAttachments();
 
-  //@{
+  ///@{
   /**
    * Directly assign/remove a texture/renderbuffer to depth attachments.
    */
@@ -294,9 +300,10 @@ public:
   void AddDepthAttachment(vtkTextureObject* tex);
   void AddDepthAttachment(vtkRenderbuffer* tex);
   void RemoveDepthAttachment();
-  //@}
+  vtkTextureObject* GetDepthAttachmentAsTextureObject();
+  ///@}
 
-  //@{
+  ///@{
   /**
    * Convenience method to populate a framebuffer with
    * attachments created as well. Returns true if a
@@ -306,7 +313,7 @@ public:
   bool PopulateFramebuffer(int width, int height, bool useTextures, int numberOfColorAttachments,
     int colorDataType, bool wantDepthAttachment, int depthBitplanes, int multisamples,
     bool wantStencilAttachment = false);
-  //@}
+  ///@}
 
   /**
    * Returns the maximum number of targets that can be rendered to at one time.
@@ -322,7 +329,7 @@ public:
    */
   unsigned int GetMaximumNumberOfRenderTargets();
 
-  //@{
+  ///@{
   /**
    * Dimensions in pixels of the framebuffer.
    */
@@ -340,7 +347,7 @@ public:
                   << "," << _arg2 << ")");
   }
   void GetLastSize(int _arg[2]) override { this->GetLastSize(_arg[0], _arg[1]); }
-  //@}
+  ///@}
 
   /**
    * Returns if the context supports the required extensions.
@@ -401,7 +408,7 @@ public:
 
   /**
    * Download data from the read buffer of the current FBO. These
-   * are low level meothds. In the static variant a PBO must be
+   * are low level methods. In the static variant a PBO must be
    * passed in since we don't have access to a context. The static
    * method is provided so that one may download from the default
    * FBO.

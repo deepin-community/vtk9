@@ -46,7 +46,7 @@ int TestQtWithMSAA(int argc, char* argv[])
   auto widgetOrWindow = detail::create_widget_or_window(type, window);
 
   vtkNew<vtkRenderer> ren;
-  ren->SetGradientBackground(1);
+  ren->SetGradientBackground(true);
   ren->SetBackground2(0.7, 0.7, 0.7);
   window->AddRenderer(ren);
 
@@ -66,7 +66,7 @@ int TestQtWithMSAA(int argc, char* argv[])
   switch (retVal)
   {
     case vtkTesting::DO_INTERACTOR:
-      return app.exec();
+      return QApplication::exec();
     case vtkTesting::FAILED:
     case vtkTesting::NOT_RUN:
       return EXIT_FAILURE;

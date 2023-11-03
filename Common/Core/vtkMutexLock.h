@@ -25,7 +25,9 @@
 #define vtkMutexLock_h
 
 #include "vtkCommonCoreModule.h" // For export macro
+#include "vtkDeprecation.h"      // For VTK_DEPRECATED_IN_9_1_0
 #include "vtkObject.h"
+#include "vtkThreads.h" // for VTK_USE_PTHREADS and VTK_USE_WIN32_THREADS
 
 #if defined(VTK_USE_PTHREADS)
 #include <pthread.h> // Needed for PTHREAD implementation of mutex
@@ -43,7 +45,8 @@ typedef int vtkMutexType;
 #endif
 
 // Mutex lock that is not a vtkObject.
-class VTKCOMMONCORE_EXPORT vtkSimpleMutexLock
+
+class VTK_DEPRECATED_IN_9_1_0("Use std::mutex instead.") VTKCOMMONCORE_EXPORT vtkSimpleMutexLock
 {
 public:
   // left public purposely
@@ -73,7 +76,8 @@ private:
   vtkSimpleMutexLock& operator=(const vtkSimpleMutexLock& rhs) = delete;
 };
 
-class VTKCOMMONCORE_EXPORT vtkMutexLock : public vtkObject
+class VTK_DEPRECATED_IN_9_1_0("Use std::mutex instead.") VTKCOMMONCORE_EXPORT vtkMutexLock
+  : public vtkObject
 {
 public:
   static vtkMutexLock* New();
@@ -95,7 +99,7 @@ protected:
   friend class vtkConditionVariable; // needs to get at SimpleMutexLock.
 
   vtkSimpleMutexLock SimpleMutexLock;
-  vtkMutexLock() {}
+  vtkMutexLock() = default;
 
 private:
   vtkMutexLock(const vtkMutexLock&) = delete;
@@ -113,3 +117,5 @@ inline void vtkMutexLock::Unlock(void)
 }
 
 #endif
+
+// VTK-HeaderTest-Exclude: vtkMutexLock.h

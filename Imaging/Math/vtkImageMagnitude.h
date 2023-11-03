@@ -13,8 +13,8 @@
 
 =========================================================================*/
 /**
- * @class   vtkImageMagnitude
- * @brief   Colapses components with magnitude function..
+ * @class   vtkImageMagnitude.h
+ * @brief   Colapses components with magnitude function.
  *
  * vtkImageMagnitude takes the magnitude of the components.
  */
@@ -30,10 +30,11 @@ class VTKIMAGINGMATH_EXPORT vtkImageMagnitude : public vtkThreadedImageAlgorithm
 public:
   static vtkImageMagnitude* New();
   vtkTypeMacro(vtkImageMagnitude, vtkThreadedImageAlgorithm);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkImageMagnitude();
-  ~vtkImageMagnitude() override {}
+  ~vtkImageMagnitude() override = default;
 
   int RequestInformation(vtkInformation*, vtkInformationVector**, vtkInformationVector*) override;
 
@@ -45,5 +46,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkImageMagnitude.h

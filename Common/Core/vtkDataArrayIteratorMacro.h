@@ -62,6 +62,7 @@
  *
  * To use this macro, create a templated worker function:
  *
+ * @code
  * template <class Iterator>
  * void myFunc(Iterator begin, Iterator end, ...) {...}
  *
@@ -70,9 +71,10 @@
  *
  * vtkAbstractArray *someArray = ...;
  * switch (someArray->GetDataType())
- *   {
+ * {
  *   vtkDataArrayIteratorMacro(someArray, myFunc(vtkDABegin, vtkDAEnd, ...));
- *   }
+ * }
+ * @endcode
  *
  * @sa
  * vtkArrayDispatch vtkGenericDataArray
@@ -81,8 +83,6 @@
 
 #ifndef vtkDataArrayIteratorMacro_h
 #define vtkDataArrayIteratorMacro_h
-
-#ifndef VTK_LEGACY_REMOVE
 
 #include "vtkAOSDataArrayTemplate.h" // For classes referred to in the macro
 #include "vtkSetGet.h"               // For vtkTemplateMacro
@@ -130,8 +130,6 @@
       (void)vtkDAEnd;                                                                              \
       _call;                                                                                       \
     })
-
-#endif // legacy remove
 
 #endif // vtkDataArrayIteratorMacro_h
 

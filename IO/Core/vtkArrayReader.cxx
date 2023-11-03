@@ -18,8 +18,12 @@
   the U.S. Government retains certain rights in this software.
 -------------------------------------------------------------------------*/
 
+// Hide VTK_DEPRECATED_IN_9_1_0() warnings for this class.
+#define VTK_DEPRECATION_LEVEL 0
+
 #include "vtkArrayReader.h"
 
+#include "vtkArrayData.h"
 #include "vtkCommand.h"
 #include "vtkDenseArray.h"
 #include "vtkObjectFactory.h"
@@ -134,7 +138,7 @@ template <typename ValueT>
 vtkSparseArray<ValueT>* ReadSparseArrayBinary(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkSparseArray<ValueT> > array = vtkSmartPointer<vtkSparseArray<ValueT> >::New();
+  vtkSmartPointer<vtkSparseArray<ValueT>> array = vtkSmartPointer<vtkSparseArray<ValueT>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -168,8 +172,8 @@ template <>
 vtkSparseArray<vtkStdString>* ReadSparseArrayBinary<vtkStdString>(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkSparseArray<vtkStdString> > array =
-    vtkSmartPointer<vtkSparseArray<vtkStdString> >::New();
+  vtkSmartPointer<vtkSparseArray<vtkStdString>> array =
+    vtkSmartPointer<vtkSparseArray<vtkStdString>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -226,8 +230,8 @@ template <>
 vtkSparseArray<vtkUnicodeString>* ReadSparseArrayBinary<vtkUnicodeString>(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkSparseArray<vtkUnicodeString> > array =
-    vtkSmartPointer<vtkSparseArray<vtkUnicodeString> >::New();
+  vtkSmartPointer<vtkSparseArray<vtkUnicodeString>> array =
+    vtkSmartPointer<vtkSparseArray<vtkUnicodeString>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -284,7 +288,7 @@ template <typename ValueT>
 vtkDenseArray<ValueT>* ReadDenseArrayBinary(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkDenseArray<ValueT> > array = vtkSmartPointer<vtkDenseArray<ValueT> >::New();
+  vtkSmartPointer<vtkDenseArray<ValueT>> array = vtkSmartPointer<vtkDenseArray<ValueT>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -309,8 +313,8 @@ template <>
 vtkDenseArray<vtkStdString>* ReadDenseArrayBinary<vtkStdString>(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkDenseArray<vtkStdString> > array =
-    vtkSmartPointer<vtkDenseArray<vtkStdString> >::New();
+  vtkSmartPointer<vtkDenseArray<vtkStdString>> array =
+    vtkSmartPointer<vtkDenseArray<vtkStdString>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -343,8 +347,8 @@ template <>
 vtkDenseArray<vtkUnicodeString>* ReadDenseArrayBinary<vtkUnicodeString>(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkDenseArray<vtkUnicodeString> > array =
-    vtkSmartPointer<vtkDenseArray<vtkUnicodeString> >::New();
+  vtkSmartPointer<vtkDenseArray<vtkUnicodeString>> array =
+    vtkSmartPointer<vtkDenseArray<vtkUnicodeString>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -377,7 +381,7 @@ template <typename ValueT>
 vtkSparseArray<ValueT>* ReadSparseArrayAscii(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkSparseArray<ValueT> > array = vtkSmartPointer<vtkSparseArray<ValueT> >::New();
+  vtkSmartPointer<vtkSparseArray<ValueT>> array = vtkSmartPointer<vtkSparseArray<ValueT>>::New();
 
   // Read the stream header ...
   vtkArrayExtents extents;
@@ -445,7 +449,7 @@ template <typename ValueT>
 vtkDenseArray<ValueT>* ReadDenseArrayAscii(istream& stream)
 {
   // Create the array ...
-  vtkSmartPointer<vtkDenseArray<ValueT> > array = vtkSmartPointer<vtkDenseArray<ValueT> >::New();
+  vtkSmartPointer<vtkDenseArray<ValueT>> array = vtkSmartPointer<vtkDenseArray<ValueT>>::New();
 
   // Read the file header ...
   vtkArrayExtents extents;
@@ -523,7 +527,7 @@ int vtkArrayReader::RequestData(
     vtkArray* array = nullptr;
     if (this->ReadFromInputString)
     {
-      array = this->Read(this->InputString);
+      array = vtkArrayReader::Read(this->InputString);
     }
     else
     {
@@ -532,7 +536,7 @@ int vtkArrayReader::RequestData(
 
       vtksys::ifstream file(this->FileName, std::ios::binary);
 
-      array = this->Read(file);
+      array = vtkArrayReader::Read(file);
     }
     if (!array)
       throw std::runtime_error("Error reading array.");

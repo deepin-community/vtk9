@@ -37,6 +37,7 @@ class VTKCOMMONDATAMODEL_EXPORT vtkStructuredPoints : public vtkImageData
 public:
   static vtkStructuredPoints* New();
   vtkTypeMacro(vtkStructuredPoints, vtkImageData);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /**
    * To simplify filter superclasses,
@@ -45,7 +46,7 @@ public:
 
 protected:
   vtkStructuredPoints();
-  ~vtkStructuredPoints() override {}
+  ~vtkStructuredPoints() override = default;
 
 private:
   vtkStructuredPoints(const vtkStructuredPoints&) = delete;
@@ -53,5 +54,3 @@ private:
 };
 
 #endif
-
-// VTK-HeaderTest-Exclude: vtkStructuredPoints.h

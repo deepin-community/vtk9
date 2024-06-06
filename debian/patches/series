@@ -1,3 +1,5 @@
+08_CVE-2021-42521.patch
+09_newer_expat.patch
 gcc-13.patch
 10_matplotlib.patch
 20_do_not_link_against_socket.patch
@@ -13,3 +15,4 @@ gcc-13.patch
 99_fix_ftbfs.patch
 110_vtk9_netcdf.patch
 120_fix_shader_crash.patch
+121_add_support_for_loong64.patch

@@ -1,0 +1,64 @@
+From: Ben Boeckel <ben.boeckel@kitware.com>
+Date: Mon, 15 Apr 2024 22:22:22 -0400
+Subject: vtkXMLDataParser: track `AppendedData` state explicitly
+Bug-Debian: https://bugs.debian.org/1064762
+Origin: upstream,https://gitlab.kitware.com/vtk/vtk/-/commit/3efa07ad277efe5c1d11a2ef2b907c095f68bbef
+Forwarded: not-needed
+
+Newer `libexpat` doesn't like being given the appended data after the
+artificially ended document anymore. Avoid pushing it through to its
+parser.
+
+---
+ IO/XMLParser/vtkXMLDataParser.cxx | 6 +++++-
+ IO/XMLParser/vtkXMLDataParser.h   | 3 +++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+--- vtk9.orig/IO/XMLParser/vtkXMLDataParser.cxx
++++ vtk9/IO/XMLParser/vtkXMLDataParser.cxx
+@@ -47,6 +47,7 @@
+   this->RootElement = nullptr;
+   this->AppendedDataPosition = 0;
+   this->AppendedDataMatched = 0;
++  this->AppendedDataFound = false;
+   this->DataStream = nullptr;
+   this->InlineDataStream = vtkBase64InputStream::New();
+   this->AppendedDataStream = vtkBase64InputStream::New();
+@@ -99,6 +100,7 @@
+ {
+   this->Superclass::PrintSelf(os, indent);
+   os << indent << "AppendedDataPosition: " << this->AppendedDataPosition << "\n";
++  os << indent << "AppendedDataFound: " << this->AppendedDataFound << "\n";
+   if (this->RootElement)
+   {
+     this->RootElement->PrintXML(os, indent);
+@@ -227,7 +229,7 @@
+   // If we have reached the appended data section, we stop parsing.
+   // This prevents the XML parser from having to walk over the entire
+   // appended data section.
+-  if (this->AppendedDataPosition)
++  if (this->AppendedDataPosition || this->AppendedDataFound)
+   {
+     return 1;
+   }
+@@ -448,6 +450,8 @@
+     {
+       return 0;
+     }
++
++    this->AppendedDataFound = true;
+   }
+ 
+   return 1;
+--- vtk9.orig/IO/XMLParser/vtkXMLDataParser.h
++++ vtk9/IO/XMLParser/vtkXMLDataParser.h
+@@ -215,6 +215,9 @@
+   // How much of the string "<AppendedData" has been matched in input.
+   int AppendedDataMatched;
+ 
++  // Whether AppendedData has been dealt with or not.
++  bool AppendedDataFound;
++
+   // The byte order of the binary input.
+   int ByteOrder;
+ 

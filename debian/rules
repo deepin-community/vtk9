@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 BUILDDIR = $(CURDIR)/debian/build
 
-DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+include /usr/share/dpkg/architecture.mk
 
 nojava_archs=hppa hurd-i386 kfreebsd-i386 kfreebsd-amd64
 ifneq ($(DEB_BUILD_ARCH),$(filter $(DEB_BUILD_ARCH), $(nojava_archs)))

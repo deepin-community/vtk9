@@ -1,3 +1,27 @@
+vtk9 (9.1.0+really9.1.0+dfsg2-7deepin1) unstable; urgency=medium
+
+  * Upload 9.1.0+really9.1.0+dfsg2-7deepin1. Matching debian version
+    9.1.0+really9.1.0+dfsg2-7deepin9.
+
+  [ Bo YU ]
+  * Team upload.
+  * Add support for loongarch64. Thanks to Dandan Zhang
+    <zhangdandan@loongson.cn>. (Closes: #1054471)
+
+  [ Michael R. Crusoe ]
+  * Cherry-pick patch from upstream to fix issue with newer expat and
+    appended data. Closes: #1064762
+  * d/control: build-dep on libhdf5-mpi-dev instead of libhdf5-openmpi-
+    dev. Closes: #1068321
+  * Cherry-pick patch from upstream to fix CVE-2021-42521. Closes:
+    #1031877.
+  * Fix Maintainer name of Debian Science team (routine-update)
+  * Remove trailing whitespace in debian/copyright (routine-update)
+  * d/control: Updated some dependencies on obsolete or supercede packages
+    names.
+
+ -- Tianyu Chen <sweetyfish@deepin.org>  Thu, 06 Jun 2024 14:49:37 +0800
+
 vtk9 (9.1.0+really9.1.0+dfsg2-7) unstable; urgency=medium
 
   * Team upload.

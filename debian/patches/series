@@ -16,3 +16,4 @@ gcc-13.patch
 110_vtk9_netcdf.patch
 120_fix_shader_crash.patch
 121_add_support_for_loong64.patch
+0001-deepin-sw_64-support.diff

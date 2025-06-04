@@ -1,3 +1,9 @@
+vtk9 (9.1.0+really9.1.0+dfsg2-7deepin2) unstable; urgency=medium
+
+  * feat: add sw64 support.
+
+ -- hudeng <hudeng@deepin.org>  Wed, 04 Jun 2025 18:12:03 +0800
+
 vtk9 (9.1.0+really9.1.0+dfsg2-7deepin1) unstable; urgency=medium
 
   * Upload 9.1.0+really9.1.0+dfsg2-7deepin1. Matching debian version

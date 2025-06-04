@@ -1,0 +1,27 @@
+diff --git a/Utilities/KWIML/vtkkwiml/include/kwiml/abi.h b/Utilities/KWIML/vtkkwiml/include/kwiml/abi.h
+index 8caea2b6..e5ac7f4a 100644
+--- a/Utilities/KWIML/vtkkwiml/include/kwiml/abi.h
++++ b/Utilities/KWIML/vtkkwiml/include/kwiml/abi.h
+@@ -362,7 +362,7 @@ suppression macro KWIML_ABI_NO_VERIFY was defined.
+ # define KWIML_ABI_ENDIAN_ID KWIML_ABI_ENDIAN_ID_LITTLE
+ 
+ /* Alpha */
+-#elif defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA)
++#elif defined(__alpha) || defined(__alpha__) || defined(_M_ALPHA) || defined(__sw_64__)
+ # define KWIML_ABI_ENDIAN_ID KWIML_ABI_ENDIAN_ID_LITTLE
+ 
+ /* Arm */
+diff --git a/Wrapping/Tools/vtkParsePreprocess.c b/Wrapping/Tools/vtkParsePreprocess.c
+index 2d477f84..7cfa779f 100644
+--- a/Wrapping/Tools/vtkParsePreprocess.c
++++ b/Wrapping/Tools/vtkParsePreprocess.c
+@@ -2823,6 +2823,9 @@ void vtkParsePreprocess_AddStandardMacros(PreprocessInfo* info, preproc_platform
+ #ifdef __alpha__
+     PREPROC_ADD_MACRO(info, __alpha__);
+ #endif
++#ifdef __sw_64__
++    PREPROC_ADD_MACRO(info, __sw_64__);
++#endif
+ #ifdef __hppa
+     PREPROC_ADD_MACRO(info, __hppa);
+ #endif

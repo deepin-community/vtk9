@@ -1,3 +1,11 @@
+vtk9 (9.1.0+really9.1.0+dfsg2-7deepin3) unstable; urgency=medium
+
+  * fix: CVE-2025-57106, CVE-2025-57107, CVE-2025-57108, CVE-2025-57109
+    Fix heap buffer overflow and use-after-free vulnerabilities in
+    vtkGLTFDocumentLoader and vtkGLTFImporter.
+
+ -- hudeng <hudeng@deepin.org>  Wed, 27 May 2026 02:43:48 +0800
+
 vtk9 (9.1.0+really9.1.0+dfsg2-7deepin2) unstable; urgency=medium
 
   * feat: add sw64 support.

@@ -17,3 +17,4 @@ gcc-13.patch
 120_fix_shader_crash.patch
 121_add_support_for_loong64.patch
 0001-deepin-sw_64-support.diff
+130_CVE-2025-57106-57109.patch
